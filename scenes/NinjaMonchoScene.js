@@ -24,7 +24,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   create() {
-    console.log("¡Mecánica de pérdida de valor por REBOTE activa!");
+    console.log("¡Plataformas múltiples y detector de rebote universal activos!");
 
     let musicaFondo = this.sound.get('musica-fondo');
     if (!musicaFondo) {
@@ -40,22 +40,40 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.add.image(400, 300, 'fondo-cielo').setDisplaySize(800, 600);
 
-    const piso = this.add.tileSprite(400, 568, 400, 32, 'tile-piso');
-    piso.setScale(2);
-    this.physics.add.existing(piso, true);
+    // ----------------------------------------------------
+    // NUEVO: SISTEMA DE MÚLTIPLES PLATAFORMAS (Static Group)
+    // ----------------------------------------------------
+    this.pisos = this.physics.add.staticGroup();
 
-    this.jugador = this.physics.add.sprite(400, 200, 'ninja');
+    // 1. Piso principal (cubre todo el ancho abajo)
+    const pisoBase = this.add.tileSprite(400, 568, 800, 32, 'tile-piso');
+    pisoBase.setScale(2);
+    this.pisos.add(pisoBase);
+
+    // 2. Plataforma flotante izquierda
+    const platIzq = this.add.tileSprite(150, 420, 150, 32, 'tile-piso');
+    platIzq.setScale(2);
+    this.pisos.add(platIzq);
+
+    // 3. Plataforma flotante derecha (más alta)
+    const platDer = this.add.tileSprite(650, 280, 150, 32, 'tile-piso');
+    platDer.setScale(2);
+    this.pisos.add(platDer);
+
+    // Jugador
+    this.jugador = this.physics.add.sprite(400, 100, 'ninja'); // Lo hacemos nacer un poco más alto
     this.jugador.setScale(2);
     this.jugador.setGravityY(600);
     this.jugador.setCollideWorldBounds(true);
 
     this.items = this.physics.add.group();
 
-    this.physics.add.collider(this.jugador, piso);
+    // ----------------------------------------------------
+    // MODIFICADO: Colisiones contra TODO el grupo de pisos
+    // ----------------------------------------------------
+    this.physics.add.collider(this.jugador, this.pisos);
+    this.physics.add.collider(this.items, this.pisos, this.procesarImpactoPiso, null, this);
     
-    // El collider contra el piso dispara la función que chequeará si hubo rebote
-    this.physics.add.collider(this.items, piso, this.procesarImpactoPiso, null, this);
-
     this.physics.add.overlap(this.jugador, this.items, this.recolectarItem, null, this);
 
     this.time.addEvent({
@@ -116,44 +134,42 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         else { this.jugador.anims.play('moncho-idle', true); }
     }
 
-    // Fricción horizontal: Sólo aplicamos cuando toca el suelo.
-    // Además, usamos este momento para destrabar el flag de "ya reboté".
     this.items.getChildren().forEach(item => {
+        if (item.textoDebug) {
+            item.textoDebug.setPosition(item.x, item.y - 25);
+            item.textoDebug.setText(item.valorPuntos);
+        }
+
         if (item.body.touching.down) {
             item.setVelocityX(item.body.velocity.x * 0.92);
             if (Math.abs(item.body.velocity.x) < 1) {
                 item.setVelocityX(0);
             }
         } else {
-            // Si el objeto está en el aire (volando o rebotando), reseteamos su flag.
-            // Así, el próximo impacto contra el piso contará como un rebote nuevo.
-            item.yaRestoPuntosEsteRebote = false;
+            if (item.body.velocity.y > 0) {
+                item.yaRestoPuntosEsteRebote = false;
+            }
         }
     });
   }
 
   // ----------------------------------------------------
-  // NUEVO: Función que resta puntos SOLO por rebote
+  // NUEVO: Identificación universal del item
   // ----------------------------------------------------
   procesarImpactoPiso(obj1, obj2) {
-      // Identificamos cuál de los dos objetos es el item y no el piso
-      const item = obj1.texture ? obj1 : obj2;
+      // Le preguntamos a Phaser: ¿El obj1 forma parte del grupo de items?
+      // Si la respuesta es sí, el item es obj1. Si es no, el item es obj2.
+      const item = this.items.contains(obj1) ? obj1 : obj2;
 
-      // Si el item acaba de tocar el piso y aún no le cobramos "peaje" por este rebote:
       if (!item.yaRestoPuntosEsteRebote) {
-          
-          // La clave de Phaser: Si después de chocar, el cuerpo tiene velocidad Y negativa (sube), 
-          // significa que la física del motor generó un rebote efectivo.
-          // Ponemos un umbral pequeñísimo (-5) para ignorar cuando ya está casi quieto vibrando.
-          if (item.body.velocity.y < -5) { 
-              item.yaRestoPuntosEsteRebote = true; // Bloqueamos para no restar en cada milisegundo de este impacto
+          if (item.body.velocity.y < -10) { 
+              item.yaRestoPuntosEsteRebote = true; 
               item.valorPuntos -= 5;
               
-              // Opcional: Feedback visual para que se note que pierde valor
               item.setAlpha(item.valorPuntos / 100);
               
-              // Si su valor llega a 0 (rebotó 20 veces), desaparece
               if (item.valorPuntos <= 0) {
+                  if (item.textoDebug) item.textoDebug.destroy();
                   item.destroy();
               }
           }
@@ -165,7 +181,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.textoTiempo.setText('Tiempo: ' + this.tiempoRestante);
 
     if (this.tiempoRestante <= 0) {
-        console.log("¡Se acabó el tiempo! Perdiste.");
         this.sound.stopAll(); 
         this.sound.play('snd-caida', { volume: 0.8 }); 
         this.scene.restart(); 
@@ -187,19 +202,24 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     item.setVelocityX(Phaser.Math.Between(-120, 120));
     item.setCollideWorldBounds(true);
 
-    // NUEVO: Arranca con 100 puntos y el flag destrabado
     item.valorPuntos = 100;
     item.yaRestoPuntosEsteRebote = false;
+
+    item.textoDebug = this.add.text(xAleatoria, -40, '100', {
+        fontSize: '12px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 3
+    }).setOrigin(0.5);
   }
 
   recolectarItem(jugador, item) {
     const tipoItem = item.texture.key;
     this.inventario.push(tipoItem);
     
-    // NUEVO: Moncho suma exactamente el valor que le quedó al item
     this.puntaje += item.valorPuntos;
     this.textoPuntaje.setText('Puntos: ' + this.puntaje);
     
+    if (item.textoDebug) {
+        item.textoDebug.destroy();
+    }
     item.destroy(); 
 
     const cuadrados = this.inventario.filter(tipo => tipo === 'cuadrado').length;
@@ -207,7 +227,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     const rombos = this.inventario.filter(tipo => tipo === 'rombo').length;
 
     if (cuadrados >= 2 && triangulos >= 2 && rombos >= 2) {
-        console.log("¡Ganaste! Reiniciando el mapa...");
         this.sound.stopAll(); 
         this.scene.restart();
     }
