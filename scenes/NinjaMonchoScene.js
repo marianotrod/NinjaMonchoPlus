@@ -16,24 +16,21 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.load.image('cuadrado', 'public/assets/cuadrado.png');
     this.load.image('triangulo', 'public/assets/triangulo.png');
     this.load.image('rombo', 'public/assets/rombo.png');
-    
-    // ----------------------------------------------------
-    // MODIFICADO: Ahora cargamos el demonio como Spritesheet
-    // (Ajustá el frameWidth/Height si tus frames miden más de 16x16)
-    // ----------------------------------------------------
-    this.load.spritesheet('demonio', 'public/assets/demonio.png', {
-        frameWidth: 16,
-        frameHeight: 16
-    });
+    this.load.spritesheet('demonio', 'public/assets/demonio.png', { frameWidth: 16, frameHeight: 16 });
 
-    // Audios 
+    // Audios y Efectos
     this.load.audio('musica-fondo', ['public/assets/GameMusic.ogg', 'public/assets/GameMusic.mp3']);
     this.load.audio('snd-salto', ['public/assets/Jump.ogg', 'public/assets/Jump.mp3']);
     this.load.audio('snd-caida', ['public/assets/fall.ogg', 'public/assets/fall.mp3']);
+    
+    this.load.audio('musica-win', ['public/assets/WinMusic.ogg', 'public/assets/WinMusic.mp3']);
+    this.load.audio('musica-lose', ['public/assets/LoseMusic.ogg', 'public/assets/LoseMusic.mp3']);
   }
 
   create() {
-    console.log("¡Paso 5: Demonios con Spritesheet y direcciones dinámicas!");
+    console.log("¡Paso 6: Solución al bug de superposición de música activa!");
+
+    this.juegoTerminado = false;
 
     let musicaFondo = this.sound.get('musica-fondo');
     if (!musicaFondo) {
@@ -43,9 +40,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         musicaFondo.play();
     }
 
-    this.inventario = [];
+    this.inventario = []; 
     this.puntaje = 0;          
-    this.tiempoRestante = 20;  
+    this.tiempoRestante = 60;  
 
     this.add.image(400, 300, 'fondo-cielo').setDisplaySize(800, 600);
 
@@ -74,8 +71,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.physics.add.overlap(this.jugador, this.items, this.recolectarItem, null, this);
     this.physics.add.overlap(this.jugador, this.enemigos, this.tocarDemonio, null, this);
 
-    this.time.addEvent({ delay: 1000, callback: this.spawnearItem, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 3000, callback: this.spawnearDemonio, callbackScope: this, loop: true });
+    this.timerItems = this.time.addEvent({ delay: 1000, callback: this.spawnearItem, callbackScope: this, loop: true });
+    this.timerDemonios = this.time.addEvent({ delay: 3000, callback: this.spawnearDemonio, callbackScope: this, loop: true });
 
     this.textoPuntaje = this.add.text(20, 20, 'Puntos: 0', { 
         fontSize: '20px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4,
@@ -98,7 +95,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   update() {
-    // Controles Moncho
+    if (this.juegoTerminado) return;
+
     if (this.teclado.left.isDown) { this.jugador.setVelocityX(-160); this.jugador.setFlipX(true); } 
     else if (this.teclado.right.isDown) { this.jugador.setVelocityX(160); this.jugador.setFlipX(false); } 
     else { this.jugador.setVelocityX(0); }
@@ -116,7 +114,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         else { this.jugador.anims.play('moncho-idle', true); }
     }
 
-    // Comportamiento de los Items
     this.items.getChildren().forEach(item => {
         if (item.textoDebug) { item.textoDebug.setPosition(item.x, item.y - 25); item.textoDebug.setText(item.valorPuntos); }
         if (item.body.touching.down) {
@@ -127,30 +124,16 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         }
     });
 
-    // ----------------------------------------------------
-    // MODIFICADO: Comportamiento e Inteligencia Visual del Demonio
-    // ----------------------------------------------------
     this.enemigos.getChildren().forEach(demonio => {
-        // Fricción horizontal estándar cuando toca el piso
         if (demonio.body.touching.down) {
             demonio.setVelocityX(demonio.body.velocity.x * 0.98); 
             if (Math.abs(demonio.body.velocity.x) < 1) demonio.setVelocityX(0);
         }
+        if (demonio.body.velocity.x < 0) { demonio.setFlipX(true); } 
+        else if (demonio.body.velocity.x > 0) { demonio.setFlipX(false); }
 
-        // 1. Orientación Horizontal (Izquierda / Derecha)
-        // Asumiendo que el sprite original mira hacia la derecha:
-        if (demonio.body.velocity.x < 0) {
-            demonio.setFlipX(true);  // Da vuelta el sprite para que mire a la izquierda
-        } else if (demonio.body.velocity.x > 0) {
-            demonio.setFlipX(false); // Deja el sprite normal mirando a la derecha
-        }
-
-        // 2. Cambio de Frame Vertical (Sube / Baja)
-        if (demonio.body.velocity.y < 0) {
-            demonio.setFrame(0); // Frame 1: Subiendo
-        } else if (demonio.body.velocity.y > 0) {
-            demonio.setFrame(1); // Frame 2: Bajando
-        }
+        if (demonio.body.velocity.y < 0) { demonio.setFrame(0); } 
+        else if (demonio.body.velocity.y > 0) { demonio.setFrame(1); }
     });
   }
 
@@ -173,8 +156,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   tickReloj() {
     this.tiempoRestante--;
     this.textoTiempo.setText('Tiempo: ' + this.tiempoRestante);
+    
     if (this.tiempoRestante <= 0) {
-        this.sound.stopAll(); this.sound.play('snd-caida', { volume: 0.8 }); this.scene.restart(); 
+        this.finalizarJuego(false);
     }
   }
 
@@ -197,20 +181,17 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     item.textoDebug = this.add.text(xAleatoria, -40, '100', { fontSize: '12px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
   }
 
-  spawnearDemonio() {
+spawnearDemonio() {
     if (this.enemigos.countActive(true) >= 3) return;
-
     const xAleatoria = Phaser.Math.Between(32, 768);
-    
-    // Nace usando la spritesheet 'demonio'
     const demonio = this.enemigos.create(xAleatoria, -20, 'demonio');
-    
     demonio.setScale(2);
-    demonio.setBounce(0.85); 
+    
+    // CORRECCIÓN: Rebote en 1 (100%) para que nunca pierda altura
+    demonio.setBounce(1); 
+    
     demonio.setVelocityX(Phaser.Math.Between(-150, 150)); 
     demonio.setCollideWorldBounds(true);
-    
-    // Quitamos el setTint(0xff0000) anterior para que se vean los colores reales de tu spritesheet
     demonio.clearTint(); 
   }
 
@@ -223,12 +204,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (item.textoDebug) item.textoDebug.destroy();
     item.destroy(); 
 
-    const cuadrados = this.inventario.filter(tipo => tipo === 'cuadrado').length;
-    const triangulos = this.inventario.filter(tipo => tipo === 'triangulo').length;
-    const rombos = this.inventario.filter(tipo => tipo === 'rombo').length;
-
-    if (cuadrados >= 2 && triangulos >= 2 && rombos >= 2) {
-        this.sound.stopAll(); this.scene.restart();
+    if (this.puntaje >= 1000) {
+        this.finalizarJuego(true);
     }
   }
 
@@ -243,7 +220,54 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.time.delayedCall(200, () => {
         this.jugador.clearTint();
     });
-    
-    console.log("¡Auch! Un demonio te quitó 50 puntos.");
+  }
+
+ finalizarJuego(ganaste) {
+      this.juegoTerminado = true;
+      
+      this.physics.pause();
+      
+      this.relojJuego.remove();
+      this.timerItems.remove();
+      this.timerDemonios.remove();
+
+      this.sound.stopAll(); 
+      if (ganaste) {
+          this.sound.play('musica-win', { volume: 0.5 });
+      } else {
+          this.sound.play('musica-lose', { volume: 0.5 });
+      }
+
+      // Configuración de textos centrados
+      const mensajeTitulo = ganaste ? '¡GANASTE!' : '¡PERDISTE!\n\n(Se acabó el tiempo!)';
+      const colorTitulo = ganaste ? '#00FF00' : '#FF0000';
+
+      this.add.text(400, 200, mensajeTitulo, {
+          fontSize: '28px', fill: colorTitulo, fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 6, align: 'center'
+      }).setOrigin(0.5);
+
+      this.add.text(400, 340, `Puntos totales: ${this.puntaje}`, {
+          fontSize: '18px', fill: '#FFFFFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4
+      }).setOrigin(0.5);
+
+      // ----------------------------------------------------
+      // CORRECCIÓN: Tiempo de gracia y botón específico (Espacio)
+      // ----------------------------------------------------
+      
+      // Esperamos 2 segundos (2000 milisegundos) antes de habilitar el reinicio
+      this.time.delayedCall(2000, () => {
+          
+          // Recién ahora mostramos el texto de instrucción
+          this.add.text(400, 440, 'presiona ESPACIO para\nintentarlo otra vez', {
+              fontSize: '12px', fill: '#AAAAAA', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4, align: 'center'
+          }).setOrigin(0.5);
+
+          // Y recién ahora habilitamos la barra espaciadora
+          this.input.keyboard.once('keydown-SPACE', () => {
+              this.sound.stopAll(); 
+              this.scene.restart();
+          });
+          
+      });
   }
 }
