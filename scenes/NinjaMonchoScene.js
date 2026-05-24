@@ -35,6 +35,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     // 🔮 INTERRUPTOR DE MODO DE JUEGO
     // true = Ganás juntando 3 de cada talismán | false = Ganás llegando a 1000 puntos
     this.MODO_TALISMANES = true;
+    // 🦘 INTERRUPTOR DE FÍSICA: ¿Pisar demonios cambia su dirección?
+    this.PISOTON_INVIERTE_DEMONIO = true;
 
     let musicaFondo = this.sound.get('musica-fondo');
     if (!musicaFondo) {
@@ -128,27 +130,45 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.anims.create({ key: 'moncho-caminar', frames: this.anims.generateFrameNumbers('ninja', { start: 0, end: 4 }), frameRate: 12, repeat: -1 });
     this.anims.create({ key: 'moncho-saltar', frames: [{ key: 'ninja', frame: 5 }], frameRate: 10 });
     this.anims.create({ key: 'moncho-caer', frames: [{ key: 'ninja', frame: 7 }], frameRate: 10 });
+    // ⚡ NUEVO: Animación de Stun (le puse el frame 8 de placeholder, después lo cambiás)
+    this.anims.create({ key: 'moncho-stun', frames: this.anims.generateFrameNumbers('ninja', { start: 10, end: 13}), frameRate: 12, repeat: -1 });
+
+    // ⚡ NUEVO: Estados del jugador para controlar el Stun y la Invencibilidad
+    this.jugador.isStunned = false;
+    this.jugador.isInvul = false;
   }
 
   update() {
     if (this.juegoTerminado) return;
 
-    if (this.teclado.left.isDown) { this.jugador.setVelocityX(-160); this.jugador.setFlipX(true); } 
-    else if (this.teclado.right.isDown) { this.jugador.setVelocityX(160); this.jugador.setFlipX(false); } 
-    else { this.jugador.setVelocityX(0); }
+    // ⚡ CONTROL DE STUN: Solo se mueve si NO está stuneado
+    if (!this.jugador.isStunned) {
+        
+        // --- Controles Normales ---
+        if (this.teclado.left.isDown) { this.jugador.setVelocityX(-160); this.jugador.setFlipX(true); } 
+        else if (this.teclado.right.isDown) { this.jugador.setVelocityX(160); this.jugador.setFlipX(false); } 
+        else { this.jugador.setVelocityX(0); }
 
-    if (this.teclado.up.isDown && this.jugador.body.touching.down) {
-        this.jugador.setVelocityY(-500);
-        this.sound.play('snd-salto', { volume: 1 }); 
-    }
+        if (this.teclado.up.isDown && this.jugador.body.touching.down) {
+            this.jugador.setVelocityY(-500);
+            this.sound.play('snd-salto', { volume: 1 }); 
+        }
 
-    if (!this.jugador.body.touching.down) {
-        if (this.jugador.body.velocity.y < 0) { this.jugador.anims.play('moncho-saltar', true); } 
-        else { this.jugador.anims.play('moncho-caer', true); }
+        // --- Animaciones Normales ---
+        if (!this.jugador.body.touching.down) {
+            if (this.jugador.body.velocity.y < 0) { this.jugador.anims.play('moncho-saltar', true); } 
+            else { this.jugador.anims.play('moncho-caer', true); }
+        } else {
+            if (this.jugador.body.velocity.x !== 0) { this.jugador.anims.play('moncho-caminar', true); } 
+            else { this.jugador.anims.play('moncho-idle', true); }
+        }
+
     } else {
-        if (this.jugador.body.velocity.x !== 0) { this.jugador.anims.play('moncho-caminar', true); } 
-        else { this.jugador.anims.play('moncho-idle', true); }
+        // --- Animación de daño mientras vuela hacia atrás ---
+        this.jugador.anims.play('moncho-stun', true);
     }
+
+    // (Acá sigue tu código normal de this.items.getChildren().forEach...)
 
     this.items.getChildren().forEach(item => {
         if (item.textoDebug) { item.textoDebug.setPosition(item.x, item.y - 25); item.textoDebug.setText(item.valorPuntos); }
@@ -270,19 +290,79 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
   }
 
-  tocarDemonio(jugador, demonio) {
-    this.puntaje -= 50;
-    if (this.puntaje < 0) this.puntaje = 0;
-    this.textoPuntaje.setText('Puntos: ' + this.puntaje);
+ tocarDemonio(jugador, demonio) {
+    // Si ya está invulnerable (por daño o por pisotón), ignoramos el choque
+    if (jugador.isInvul) return;
 
-    demonio.destroy();
+    // Detectamos si Moncho viene cayendo
+    const leCayoEnLaCabeza = jugador.body.velocity.y > 0 && jugador.y < demonio.y;
 
-    this.jugador.setTint(0xff0000);
-    this.time.delayedCall(200, () => {
-        this.jugador.clearTint();
-    });
+    if (leCayoEnLaCabeza) {
+        // 🟢 SÚPER TRAMPOLÍN EXITOSO
+        jugador.setVelocityY(-550); 
+        this.sound.play('snd-salto', { volume: 1 });
+        
+        // Cobramos el peaje
+        this.puntaje -= 50;
+        if (this.puntaje < 0) this.puntaje = 0;
+        this.textoPuntaje.setText('Puntos: ' + this.puntaje);
+
+        // ⚡ NUEVA MECÁNICA: CAMBIO DE FLECHA DEL ENEMIGO
+        if (this.PISOTON_INVIERTE_DEMONIO) {
+            // Le damos masa hacia abajo y le invertimos el rebote horizontal
+            demonio.setVelocityY(300); 
+            //demonio.setVelocityX(demonio.body.velocity.x * -1); 
+        }
+
+        // Le damos invulnerabilidad inmediata para que pueda salir volando
+        jugador.isInvul = true;
+        
+        // Parpadeo cortito de "salto exitoso"
+        this.tweens.add({
+            targets: jugador,
+            alpha: 0.5, 
+            duration: 100, 
+            yoyo: true,
+            repeat: 2, 
+            onComplete: () => {
+                jugador.isInvul = false;
+                jugador.setAlpha(1); 
+            }
+        });
+
+    } else {
+        // 🔴 DAÑO Y STUN (Choque malo)
+        this.puntaje -= 50;
+        if (this.puntaje < 0) this.puntaje = 0;
+        this.textoPuntaje.setText('Puntos: ' + this.puntaje);
+
+        // Inmovilizado e invulnerable
+        jugador.isStunned = true;
+        jugador.isInvul = true;
+
+        // Knockback (empujón)
+        const fuerzaEmpujeX = jugador.x < demonio.x ? -200 : 200;
+        jugador.setVelocity(fuerzaEmpujeX, -250); 
+
+        // Recupera el control a medio segundo
+        this.time.delayedCall(500, () => {
+            jugador.isStunned = false; 
+
+            // Parpadeo de daño más largo
+            this.tweens.add({
+                targets: jugador,
+                alpha: 0.2, 
+                duration: 100, 
+                yoyo: true,
+                repeat: 5, 
+                onComplete: () => {
+                    jugador.isInvul = false;
+                    jugador.setAlpha(1); 
+                }
+            });
+        });
+    }
   }
-
   finalizarJuego(ganaste) {
       this.juegoTerminado = true;
       
