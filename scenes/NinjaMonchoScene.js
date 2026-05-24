@@ -32,6 +32,10 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.juegoTerminado = false;
 
+    // 🔮 INTERRUPTOR DE MODO DE JUEGO
+    // true = Ganás juntando 3 de cada talismán | false = Ganás llegando a 1000 puntos
+    this.MODO_TALISMANES = true;
+
     let musicaFondo = this.sound.get('musica-fondo');
     if (!musicaFondo) {
         musicaFondo = this.sound.add('musica-fondo', { loop: true, volume: 0.4 });
@@ -74,15 +78,47 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.timerItems = this.time.addEvent({ delay: 1000, callback: this.spawnearItem, callbackScope: this, loop: true });
     this.timerDemonios = this.time.addEvent({ delay: 3000, callback: this.spawnearDemonio, callbackScope: this, loop: true });
 
+    // ⚡ TEXTOS CON TAMAÑO EN PÍXELES PUROS (Múltiplos de 8)
     this.textoPuntaje = this.add.text(20, 20, 'Puntos: 0', { 
-        fontSize: '20px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4,
+        fontSize: '24px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4,
         padding: { top: 8, bottom: 8, left: 4, right: 4 } 
     });
 
     this.textoTiempo = this.add.text(780, 20, 'Tiempo: 20', { 
-        fontSize: '20px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4,
+        fontSize: '24px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4,
         padding: { top: 8, bottom: 8, left: 4, right: 4 } 
     }).setOrigin(1, 0);
+
+    // ⚡ FILA DE 9 TALISMANES OBJETIVOS (HUD Centro Visual)
+    this.hudTalismanes = { cuadrado: [], triangulo: [], rombo: [] };
+
+    if (this.MODO_TALISMANES) {
+        // Coordenadas de inicio en X para cada bloque de 3 figuras
+        const configuracionGrupos = {
+            cuadrado: { xInicio: 260 },
+            triangulo: { xInicio: 370 },
+            rombo: { xInicio: 480 }
+        };
+        const separacionX = 20; // Espacio entre figuras del mismo tipo
+
+        ['cuadrado', 'triangulo', 'rombo'].forEach(tipo => {
+            const conf = configuracionGrupos[tipo];
+            for (let i = 0; i < 3; i++) {
+                const x = conf.xInicio + (i * separacionX);
+                const y = 32; // Centrado horizontalmente con los textos
+                
+                // Renderizado 1:1 nativo
+                const icono = this.add.image(x, y, tipo);
+                this.hudTalismanes[tipo].push(icono);
+            }
+        });
+    }
+
+    // ⚡ TRUCO DE RE-RENDERIZADO DE FUENTE NATIVA
+    document.fonts.ready.then(() => {
+        if (this.textoPuntaje && this.textoPuntaje.scene) this.textoPuntaje.updateText();
+        if (this.textoTiempo && this.textoTiempo.scene) this.textoTiempo.updateText();
+    });
 
     this.relojJuego = this.time.addEvent({ delay: 1000, callback: this.tickReloj, callbackScope: this, loop: true });
 
@@ -178,18 +214,18 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     item.valorPuntos = 100;
     item.yaRestoPuntosEsteRebote = false;
 
-    item.textoDebug = this.add.text(xAleatoria, -40, '100', { fontSize: '12px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+    item.textoDebug = this.add.text(xAleatoria, -40, '100', { 
+        fontSize: '16px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 3
+    }).setOrigin(0.5);
   }
 
-spawnearDemonio() {
+  spawnearDemonio() {
     if (this.enemigos.countActive(true) >= 3) return;
     const xAleatoria = Phaser.Math.Between(32, 768);
     const demonio = this.enemigos.create(xAleatoria, -20, 'demonio');
     demonio.setScale(2);
     
-    // CORRECCIÓN: Rebote en 1 (100%) para que nunca pierda altura
     demonio.setBounce(1); 
-    
     demonio.setVelocityX(Phaser.Math.Between(-150, 150)); 
     demonio.setCollideWorldBounds(true);
     demonio.clearTint(); 
@@ -204,8 +240,33 @@ spawnearDemonio() {
     if (item.textoDebug) item.textoDebug.destroy();
     item.destroy(); 
 
-    if (this.puntaje >= 1000) {
-        this.finalizarJuego(true);
+    // ---- COMPROBACIÓN DE CONDICIÓN DE VICTORIA ----
+    if (this.MODO_TALISMANES) {
+        
+        // Sacamos el último icono del HUD correspondiente a la forma que acabamos de recolectar
+        const listaIconosHUD = this.hudTalismanes[tipoItem];
+        if (listaIconosHUD && listaIconosHUD.length > 0) {
+            const iconoABorrar = listaIconosHUD.pop();
+            if (iconoABorrar) iconoABorrar.destroy();
+        }
+
+        // Contamos cuántos tenemos en el inventario real
+        const cuadrados = this.inventario.filter(tipo => tipo === 'cuadrado').length;
+        const triangulos = this.inventario.filter(tipo => tipo === 'triangulo').length;
+        const rombos = this.inventario.filter(tipo => tipo === 'rombo').length;
+
+        console.log(`Inventario -> Cuadrados: ${cuadrados}/3 | Triángulos: ${triangulos}/3 | Rombos: ${rombos}/3`);
+
+        // Si juntaste al menos 3 de cada uno, se cumple la victoria
+        if (cuadrados >= 3 && triangulos >= 3 && rombos >= 3) {
+            this.finalizarJuego(true);
+        }
+
+    } else {
+        // Modo clásico por puntos
+        if (this.puntaje >= 1000) {
+            this.finalizarJuego(true);
+        }
     }
   }
 
@@ -222,7 +283,7 @@ spawnearDemonio() {
     });
   }
 
- finalizarJuego(ganaste) {
+  finalizarJuego(ganaste) {
       this.juegoTerminado = true;
       
       this.physics.pause();
@@ -238,31 +299,23 @@ spawnearDemonio() {
           this.sound.play('musica-lose', { volume: 0.5 });
       }
 
-      // Configuración de textos centrados
       const mensajeTitulo = ganaste ? '¡GANASTE!' : '¡PERDISTE!\n\n(Se acabó el tiempo!)';
       const colorTitulo = ganaste ? '#00FF00' : '#FF0000';
 
       this.add.text(400, 200, mensajeTitulo, {
-          fontSize: '28px', fill: colorTitulo, fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 6, align: 'center'
+          fontSize: '32px', fill: colorTitulo, fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 6, align: 'center'
       }).setOrigin(0.5);
 
       this.add.text(400, 340, `Puntos totales: ${this.puntaje}`, {
-          fontSize: '18px', fill: '#FFFFFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4
+          fontSize: '24px', fill: '#FFFFFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4
       }).setOrigin(0.5);
-
-      // ----------------------------------------------------
-      // CORRECCIÓN: Tiempo de gracia y botón específico (Espacio)
-      // ----------------------------------------------------
       
-      // Esperamos 2 segundos (2000 milisegundos) antes de habilitar el reinicio
       this.time.delayedCall(2000, () => {
           
-          // Recién ahora mostramos el texto de instrucción
           this.add.text(400, 440, 'presiona ESPACIO para\nintentarlo otra vez', {
-              fontSize: '12px', fill: '#AAAAAA', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4, align: 'center'
+              fontSize: '16px', fill: '#AAAAAA', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4, align: 'center'
           }).setOrigin(0.5);
 
-          // Y recién ahora habilitamos la barra espaciadora
           this.input.keyboard.once('keydown-SPACE', () => {
               this.sound.stopAll(); 
               this.scene.restart();
