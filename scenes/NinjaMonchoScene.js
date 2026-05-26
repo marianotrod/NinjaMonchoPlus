@@ -6,7 +6,12 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   preload() {
     // Assets Visuales
     this.load.image('fondo-cielo', 'public/assets/Cielo.webp'); 
-    this.load.image('tile-piso', 'public/assets/piso.png'); 
+    
+    // Matriz modular 16x16 (se escalará a 32x32 en el create)
+    this.load.spritesheet('MapTileSet', 'public/assets/MapTileSet.png', { 
+        frameWidth: 16, 
+        frameHeight: 16 
+    });
     
     this.load.spritesheet('ninja', 'public/assets/NinjaSpriteSheet.png', {
         frameWidth: 16,
@@ -22,20 +27,17 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.load.audio('musica-fondo', ['public/assets/GameMusic.ogg', 'public/assets/GameMusic.mp3']);
     this.load.audio('snd-salto', ['public/assets/Jump.ogg', 'public/assets/Jump.mp3']);
     this.load.audio('snd-caida', ['public/assets/fall.ogg', 'public/assets/fall.mp3']);
-    
     this.load.audio('musica-win', ['public/assets/WinMusic.ogg', 'public/assets/WinMusic.mp3']);
     this.load.audio('musica-lose', ['public/assets/LoseMusic.ogg', 'public/assets/LoseMusic.mp3']);
   }
 
   create() {
-    console.log("¡Paso 6: Solución al bug de superposición de música activa!");
+    console.log("¡Matriz Escala x2 cargada correctamente con mapa manual!");
 
     this.juegoTerminado = false;
 
     // 🔮 INTERRUPTOR DE MODO DE JUEGO
-    // true = Ganás juntando 3 de cada talismán | false = Ganás llegando a 1000 puntos
     this.MODO_TALISMANES = true;
-    // 🦘 INTERRUPTOR DE FÍSICA: ¿Pisar demonios cambia su dirección?
     this.PISOTON_INVIERTE_DEMONIO = true;
 
     let musicaFondo = this.sound.get('musica-fondo');
@@ -52,14 +54,93 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.add.image(400, 300, 'fondo-cielo').setDisplaySize(800, 600);
 
-    // Múltiples Plataformas
-    this.pisos = this.physics.add.staticGroup();
-    const pisoBase = this.add.tileSprite(400, 568, 800, 32, 'tile-piso').setScale(2);
-    this.pisos.add(pisoBase);
-    const platIzq = this.add.tileSprite(150, 420, 150, 32, 'tile-piso').setScale(2);
-    this.pisos.add(platIzq);
-    const platDer = this.add.tileSprite(650, 280, 150, 32, 'tile-piso').setScale(2);
-    this.pisos.add(platDer);
+    // 🏷️ 1. CATÁLOGO DE PIEZAS
+    this.catalogoPiezas = {
+        // ROCAS SOLIDAS OSCURAS
+        'CR01TL': { frame: 0,  tipo: 'solido' },   
+        'CR01TR': { frame: 1,  tipo: 'solido' },   
+        'CR01BL': { frame: 10,  tipo: 'solido' },   
+        'CR01BR': { frame: 11,  tipo: 'solido' },  
+        //ROCAS SOLIDAS CLARAS 
+        'CR02TL': { frame: 2,  tipo: 'solido' },  
+        'CR02TR': { frame: 3,  tipo: 'solido' },  
+        'CR02BL': { frame: 12,  tipo: 'solido' },   
+        'CR02BR': { frame: 13,  tipo: 'solido' }, 
+        //PASTO
+        'CP01TC': { frame: 4,  tipo: 'solido' },  
+        'CP02TC': { frame: 14,  tipo: 'solido' }, 
+        'PP01TC': { frame: 15,  tipo: 'fondo' }, 
+        'PP02TC': { frame: 16,  tipo: 'fondo' }, 
+        'PP03TC': { frame: 17,  tipo: 'fondo' }, 
+        //HIELO
+        'CH01TC': { frame: 40,  tipo: 'pasarela' },
+        'CH02TC': { frame: 41,  tipo: 'pasarela' },
+        'CH03TC': { frame: 42,  tipo: 'pasarela' },
+        'CH01CC': { frame: 50,  tipo: 'fondo' },
+        'CH02CC': { frame: 51,  tipo: 'fondo' },
+        'CH03CC': { frame: 52,  tipo: 'fondo' },
+        'CH04CC': { frame: 53,  tipo: 'fondo' },
+        'CH01BC': { frame: 60,  tipo: 'fondo' },
+        'CH02BC': { frame: 61,  tipo: 'fondo' },  
+        'CH03BC': { frame: 62,  tipo: 'fondo' }
+    };
+
+    // 🧱 2. GRUPO FÍSICO ESTÁTICO
+    this.bloquesFisicos = this.physics.add.staticGroup();
+
+    // 🗺️ 3. MAPA DEFINIDO A MANO (25 columnas x 19 filas - Escala x2)
+    const mapaNivel = [
+        ['CR01TL','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR','CR01TR'], // Fila 0 (Techo)
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 1
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 2
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 3
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 4
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 5
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 6
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 7
+        ['CR01TL',    '',     '',     '',     '', 'CH01TC','CH02TC','CH02TC','CH03TC',  '',     '',     '',     '',     '',     '', 'CH01TC','CH02TC','CH02TC','CH03TC',  '',     '',     '',     '',     '', 'CR01TR'], // Fila 8
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CH01CC',   '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 9
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 10
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 11
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 12
+        ['CR01TL',    '', 'CR01TL','CR01TR','CR01TL','CR01TR',  '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',  '', 'CH01TC','CH02TC','CH02TC','CH03TC',  '', 'CR01TR'], // Fila 13
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 14
+        ['CR01TL',    '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '',     '', 'CR01TR'], // Fila 15
+        ['CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC','CP01TC'], // Fila 16
+        ['CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL'], // Fila 17
+        ['CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL','CR02BL']  // Fila 18
+    ];
+
+    // 🛠️ 4. BUCLE PROCESADOR DE LA GRILLA
+    mapaNivel.forEach((fila, indiceFila) => {
+        fila.forEach((codigo, indiceColumna) => {
+            if (codigo === '') return;
+
+            const datosPieza = this.catalogoPiezas[codigo];
+            if (!datosPieza) return;
+
+            const posX = (indiceColumna * 32) + 16;
+            const posY = (indiceFila * 32) + 16;
+
+            let bloque;
+
+            if (datosPieza.tipo !== 'fondo') {
+                bloque = this.bloquesFisicos.create(posX, posY, 'MapTileSet', datosPieza.frame);
+                bloque.setScale(2);
+                bloque.body.updateFromGameObject();
+
+                if (datosPieza.tipo === 'pasarela') {
+                    bloque.body.checkCollision.up = true;
+                    bloque.body.checkCollision.down = false;
+                    bloque.body.checkCollision.left = false;
+                    bloque.body.checkCollision.right = false;
+                }
+            } else {
+                bloque = this.add.image(posX, posY, 'MapTileSet', datosPieza.frame);
+                bloque.setScale(2);
+            }
+        });
+    });
 
     // Jugador
     this.jugador = this.physics.add.sprite(400, 100, 'ninja'); 
@@ -70,9 +151,10 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.items = this.physics.add.group();
     this.enemigos = this.physics.add.group();
 
-    this.physics.add.collider(this.jugador, this.pisos);
-    this.physics.add.collider(this.items, this.pisos, this.procesarImpactoPiso, null, this);
-    this.physics.add.collider(this.enemigos, this.pisos);
+    // 🛑 COLIDERS
+    this.physics.add.collider(this.jugador, this.bloquesFisicos);
+    this.physics.add.collider(this.items, this.bloquesFisicos, this.procesarImpactoPiso, null, this);
+    this.physics.add.collider(this.enemigos, this.bloquesFisicos);
 
     this.physics.add.overlap(this.jugador, this.items, this.recolectarItem, null, this);
     this.physics.add.overlap(this.jugador, this.enemigos, this.tocarDemonio, null, this);
@@ -80,7 +162,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.timerItems = this.time.addEvent({ delay: 1000, callback: this.spawnearItem, callbackScope: this, loop: true });
     this.timerDemonios = this.time.addEvent({ delay: 3000, callback: this.spawnearDemonio, callbackScope: this, loop: true });
 
-    // ⚡ TEXTOS CON TAMAÑO EN PÍXELES PUROS (Múltiplos de 8)
+    // TEXTOS
     this.textoPuntaje = this.add.text(20, 20, 'Puntos: 0', { 
         fontSize: '24px', fill: '#FFF', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4,
         padding: { top: 8, bottom: 8, left: 4, right: 4 } 
@@ -91,32 +173,28 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         padding: { top: 8, bottom: 8, left: 4, right: 4 } 
     }).setOrigin(1, 0);
 
-    // ⚡ FILA DE 9 TALISMANES OBJETIVOS (HUD Centro Visual)
+    // HUD CENTRAL
     this.hudTalismanes = { cuadrado: [], triangulo: [], rombo: [] };
 
     if (this.MODO_TALISMANES) {
-        // Coordenadas de inicio en X para cada bloque de 3 figuras
         const configuracionGrupos = {
             cuadrado: { xInicio: 260 },
             triangulo: { xInicio: 370 },
             rombo: { xInicio: 480 }
         };
-        const separacionX = 20; // Espacio entre figuras del mismo tipo
+        const separacionX = 20;
 
         ['cuadrado', 'triangulo', 'rombo'].forEach(tipo => {
             const conf = configuracionGrupos[tipo];
             for (let i = 0; i < 3; i++) {
                 const x = conf.xInicio + (i * separacionX);
-                const y = 32; // Centrado horizontalmente con los textos
-                
-                // Renderizado 1:1 nativo
+                const y = 32; 
                 const icono = this.add.image(x, y, tipo);
                 this.hudTalismanes[tipo].push(icono);
             }
         });
     }
 
-    // ⚡ TRUCO DE RE-RENDERIZADO DE FUENTE NATIVA
     document.fonts.ready.then(() => {
         if (this.textoPuntaje && this.textoPuntaje.scene) this.textoPuntaje.updateText();
         if (this.textoTiempo && this.textoTiempo.scene) this.textoTiempo.updateText();
@@ -130,10 +208,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.anims.create({ key: 'moncho-caminar', frames: this.anims.generateFrameNumbers('ninja', { start: 0, end: 4 }), frameRate: 12, repeat: -1 });
     this.anims.create({ key: 'moncho-saltar', frames: [{ key: 'ninja', frame: 5 }], frameRate: 10 });
     this.anims.create({ key: 'moncho-caer', frames: [{ key: 'ninja', frame: 7 }], frameRate: 10 });
-    // ⚡ NUEVO: Animación de Stun (le puse el frame 8 de placeholder, después lo cambiás)
     this.anims.create({ key: 'moncho-stun', frames: this.anims.generateFrameNumbers('ninja', { start: 10, end: 13}), frameRate: 12, repeat: -1 });
 
-    // ⚡ NUEVO: Estados del jugador para controlar el Stun y la Invencibilidad
     this.jugador.isStunned = false;
     this.jugador.isInvul = false;
   }
@@ -141,10 +217,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   update() {
     if (this.juegoTerminado) return;
 
-    // ⚡ CONTROL DE STUN: Solo se mueve si NO está stuneado
     if (!this.jugador.isStunned) {
-        
-        // --- Controles Normales ---
         if (this.teclado.left.isDown) { this.jugador.setVelocityX(-160); this.jugador.setFlipX(true); } 
         else if (this.teclado.right.isDown) { this.jugador.setVelocityX(160); this.jugador.setFlipX(false); } 
         else { this.jugador.setVelocityX(0); }
@@ -154,7 +227,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
             this.sound.play('snd-salto', { volume: 1 }); 
         }
 
-        // --- Animaciones Normales ---
         if (!this.jugador.body.touching.down) {
             if (this.jugador.body.velocity.y < 0) { this.jugador.anims.play('moncho-saltar', true); } 
             else { this.jugador.anims.play('moncho-caer', true); }
@@ -162,13 +234,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
             if (this.jugador.body.velocity.x !== 0) { this.jugador.anims.play('moncho-caminar', true); } 
             else { this.jugador.anims.play('moncho-idle', true); }
         }
-
     } else {
-        // --- Animación de daño mientras vuela hacia atrás ---
         this.jugador.anims.play('moncho-stun', true);
     }
-
-    // (Acá sigue tu código normal de this.items.getChildren().forEach...)
 
     this.items.getChildren().forEach(item => {
         if (item.textoDebug) { item.textoDebug.setPosition(item.x, item.y - 25); item.textoDebug.setText(item.valorPuntos); }
@@ -225,7 +293,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     const formaAleatoria = Phaser.Math.RND.pick(formas);
     const xAleatoria = Phaser.Math.Between(32, 768);
 
-    const item = this.items.create(xAleatoria, -20, formaAleatoria);
+    const item = this.items.create(xAleatoria, 20, formaAleatoria);
     item.setScale(2);
     item.setBounce(0.75);
     item.setVelocityX(Phaser.Math.Between(-120, 120));
@@ -242,7 +310,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   spawnearDemonio() {
     if (this.enemigos.countActive(true) >= 3) return;
     const xAleatoria = Phaser.Math.Between(32, 768);
-    const demonio = this.enemigos.create(xAleatoria, -20, 'demonio');
+    const demonio = this.enemigos.create(xAleatoria, 20, 'demonio');
     demonio.setScale(2);
     
     demonio.setBounce(1); 
@@ -260,64 +328,46 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (item.textoDebug) item.textoDebug.destroy();
     item.destroy(); 
 
-    // ---- COMPROBACIÓN DE CONDICIÓN DE VICTORIA ----
     if (this.MODO_TALISMANES) {
-        
-        // Sacamos el último icono del HUD correspondiente a la forma que acabamos de recolectar
         const listaIconosHUD = this.hudTalismanes[tipoItem];
         if (listaIconosHUD && listaIconosHUD.length > 0) {
             const iconoABorrar = listaIconosHUD.pop();
             if (iconoABorrar) iconoABorrar.destroy();
         }
 
-        // Contamos cuántos tenemos en el inventario real
         const cuadrados = this.inventario.filter(tipo => tipo === 'cuadrado').length;
         const triangulos = this.inventario.filter(tipo => tipo === 'triangulo').length;
         const rombos = this.inventario.filter(tipo => tipo === 'rombo').length;
 
-        console.log(`Inventario -> Cuadrados: ${cuadrados}/3 | Triángulos: ${triangulos}/3 | Rombos: ${rombos}/3`);
-
-        // Si juntaste al menos 3 de cada uno, se cumple la victoria
         if (cuadrados >= 3 && triangulos >= 3 && rombos >= 3) {
             this.finalizarJuego(true);
         }
-
     } else {
-        // Modo clásico por puntos
         if (this.puntaje >= 1000) {
             this.finalizarJuego(true);
         }
     }
   }
 
- tocarDemonio(jugador, demonio) {
-    // Si ya está invulnerable (por daño o por pisotón), ignoramos el choque
+  tocarDemonio(jugador, demonio) {
     if (jugador.isInvul) return;
 
-    // Detectamos si Moncho viene cayendo
     const leCayoEnLaCabeza = jugador.body.velocity.y > 0 && jugador.y < demonio.y;
 
     if (leCayoEnLaCabeza) {
-        // 🟢 SÚPER TRAMPOLÍN EXITOSO
         jugador.setVelocityY(-550); 
         this.sound.play('snd-salto', { volume: 1 });
         
-        // Cobramos el peaje
         this.puntaje -= 50;
         if (this.puntaje < 0) this.puntaje = 0;
         this.textoPuntaje.setText('Puntos: ' + this.puntaje);
 
-        // ⚡ NUEVA MECÁNICA: CAMBIO DE FLECHA DEL ENEMIGO
         if (this.PISOTON_INVIERTE_DEMONIO) {
-            // Le damos masa hacia abajo y le invertimos el rebote horizontal
             demonio.setVelocityY(300); 
-            //demonio.setVelocityX(demonio.body.velocity.x * -1); 
         }
 
-        // Le damos invulnerabilidad inmediata para que pueda salir volando
         jugador.isInvul = true;
         
-        // Parpadeo cortito de "salto exitoso"
         this.tweens.add({
             targets: jugador,
             alpha: 0.5, 
@@ -331,24 +381,19 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         });
 
     } else {
-        // 🔴 DAÑO Y STUN (Choque malo)
         this.puntaje -= 50;
         if (this.puntaje < 0) this.puntaje = 0;
         this.textoPuntaje.setText('Puntos: ' + this.puntaje);
 
-        // Inmovilizado e invulnerable
         jugador.isStunned = true;
         jugador.isInvul = true;
 
-        // Knockback (empujón)
         const fuerzaEmpujeX = jugador.x < demonio.x ? -200 : 200;
         jugador.setVelocity(fuerzaEmpujeX, -250); 
 
-        // Recupera el control a medio segundo
         this.time.delayedCall(500, () => {
             jugador.isStunned = false; 
 
-            // Parpadeo de daño más largo
             this.tweens.add({
                 targets: jugador,
                 alpha: 0.2, 
@@ -363,9 +408,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         });
     }
   }
+
   finalizarJuego(ganaste) {
       this.juegoTerminado = true;
-      
       this.physics.pause();
       
       this.relojJuego.remove();
@@ -391,7 +436,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       }).setOrigin(0.5);
       
       this.time.delayedCall(2000, () => {
-          
           this.add.text(400, 440, 'presiona ESPACIO para\nintentarlo otra vez', {
               fontSize: '16px', fill: '#AAAAAA', fontFamily: '"Press Start 2P"', stroke: '#000', strokeThickness: 4, align: 'center'
           }).setOrigin(0.5);
@@ -400,7 +444,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
               this.sound.stopAll(); 
               this.scene.restart();
           });
-          
       });
   }
 }
