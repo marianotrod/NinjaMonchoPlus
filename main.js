@@ -1,4 +1,5 @@
-import NinjaMonchoScene from "./scenes/NinjaMonchoScene.js";
+import NinjaMonchoScene from './scenes/NinjaMonchoScene.js';
+import UIScene from './scenes/UIScene.js';
 
 const GAME_WIDTH = 512;
 const GAME_HEIGHT = 288;
@@ -20,7 +21,8 @@ const config = {
       debug: true,
     },
   },
-  scene: [NinjaMonchoScene],
+  // ACÁ: Se agrega UIScene después de NinjaMonchoScene
+  scene: [NinjaMonchoScene, UIScene],
 };
 
 // Función para calcular y aplicar el multiplicador entero exacto (1x, 2x, 3x, 4x...)
