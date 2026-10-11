@@ -27,12 +27,13 @@ export default class UIScene extends Phaser.Scene {
     // 3. HUD Central de talismanes
     this.hudTalismanes = { cuadrado: [], triangulo: [], rombo: [] };
 
+    // Separación más holgada (16px entre cada icono) y posiciones de inicio distribuidas
     const configuracionGrupos = {
-      cuadrado: { xInicio: 200 },
-      triangulo: { xInicio: 250 },
-      rombo: { xInicio: 300 }
+      cuadrado: { xInicio: 175 },
+      triangulo: { xInicio: 235 },
+      rombo: { xInicio: 295 }
     };
-    const separacionX = 12;
+    const separacionX = 16; // Distancia cómoda para que no se solapen
 
     ['cuadrado', 'triangulo', 'rombo'].forEach(tipo => {
       const conf = configuracionGrupos[tipo];
