@@ -4,7 +4,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   preload() {
-    // Assets Visuales y Audios (lo mismo que tenías)
     this.load.image('fondo-cielo', 'public/assets/Cielo.webp'); 
     this.load.spritesheet('MapTileSet', 'public/assets/MapTileSet.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('ninja', 'public/assets/NinjaSpriteSheet.png', { frameWidth: 16, frameHeight: 16 });
@@ -25,11 +24,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.MODO_TALISMANES = true;
     this.PISOTON_INVIERTE_DEMONIO = true;
 
-    // Lanzar la escena de UI en paralelo
     this.scene.launch('UIScene');
-
-    // Limpiar eventos previos si la escena se reinicia
-    //this.events.removeAllListeners();
 
     // Límites físicos (2 tiles offscreen arriba)
     this.physics.world.setBounds(0, -32, 512, 320);
@@ -48,7 +43,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.add.image(256, 144, 'fondo-cielo').setDisplaySize(512, 288);
 
-    // 1. Catálogo de piezas
     this.catalogoPiezas = {
       'CR01TL': { frame: 0,  tipo: 'solido' },   
       'CR01TR': { frame: 1,  tipo: 'solido' },   
@@ -75,9 +69,19 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       'CH03BC': { frame: 62, tipo: 'fondo' }
     };
 
+    // --- NUEVO CATÁLOGO DE ENEMIGOS ---
+    this.catalogoEnemigos = {
+      'demonio_comun': {
+        textura: 'demonio',
+        velXMin: 45,
+        velXMax: 100,
+        reboteYMin: -100, // Fuerza mínima (salto cortito)
+        reboteYMax: -200  // Fuerza máxima (salto mediano)
+      }
+    };
+
     this.bloquesFisicos = this.physics.add.staticGroup();
 
-    // 2. MAPA NATIVO
     const _ = '';
     const L = 'CR01TL'; 
     const R = 'CR01TR'; 
@@ -146,7 +150,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       });
     });
 
-    // 3. Jugador y entidades
     this.jugador = this.physics.add.sprite(256, 200, 'ninja'); 
     this.jugador.setGravityY(600);
     this.jugador.setCollideWorldBounds(true);
@@ -226,9 +229,20 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.enemigos.getChildren().forEach(demonio => {
       if (demonio.body.touching.down) {
+        
+        // --- LÓGICA DEL PRIMER REBOTE CON CATÁLOGO ---
+        if (!demonio.primerReboteHecho) {
+          demonio.primerReboteHecho = true;
+          // Genera un rebote aleatorio usando los datos guardados en el demonio
+          // Nota: en Phaser, valores en Y más negativos saltan más alto.
+          const fuerzaReboteY = Phaser.Math.Between(demonio.reboteYMax, demonio.reboteYMin);
+          demonio.setVelocityY(fuerzaReboteY);
+        }
+
         demonio.setVelocityX(demonio.body.velocity.x * 0.98); 
         if (Math.abs(demonio.body.velocity.x) < 1) demonio.setVelocityX(0);
       }
+      
       if (demonio.body.velocity.x < 0) demonio.setFlipX(true); 
       else if (demonio.body.velocity.x > 0) demonio.setFlipX(false); 
 
@@ -261,9 +275,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     const formaAleatoria = Phaser.Math.RND.pick(['cuadrado', 'triangulo', 'rombo']);
     const xAleatoria = Phaser.Math.Between(32, 480);
 
-    const item = this.items.create(xAleatoria, 20, formaAleatoria);
+    const item = this.items.create(xAleatoria, -8, formaAleatoria);
     item.setBounce(0.75);
-    item.setVelocityX(Phaser.Math.Between(-80, 80));
+    
+    const direccion = Phaser.Math.RND.pick([-1, 1]);
+    const velocidadX = Phaser.Math.Between(25, 80) * direccion;
+    item.setVelocityX(velocidadX);
+
     item.setCollideWorldBounds(true);
     item.valorPuntos = 100;
     item.yaRestoPuntosEsteRebote = false;
@@ -271,9 +289,22 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   spawnearDemonio() {
     if (this.enemigos.countActive(true) >= 3) return;
-    const demonio = this.enemigos.create(Phaser.Math.Between(32, 480), 20, 'demonio');
+    
+    // Elegimos el tipo desde el catálogo
+    const config = this.catalogoEnemigos['demonio_comun'];
+    
+    const demonio = this.enemigos.create(Phaser.Math.Between(32, 480), -8, config.textura);
     demonio.setBounce(1); 
-    demonio.setVelocityX(Phaser.Math.Between(-100, 100)); 
+    demonio.primerReboteHecho = false;
+    
+    // Asignamos las variables de rebote específicas de este enemigo
+    demonio.reboteYMin = config.reboteYMin;
+    demonio.reboteYMax = config.reboteYMax;
+    
+    const direccion = Phaser.Math.RND.pick([-1, 1]);
+    const velocidadX = Phaser.Math.Between(config.velXMin, config.velXMax) * direccion;
+    demonio.setVelocityX(velocidadX);
+
     demonio.setCollideWorldBounds(true);
   }
 
@@ -343,13 +374,11 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.sound.stopAll(); 
     this.sound.play(ganaste ? 'musica-win' : 'musica-lose', { volume: 0.5 });
 
-    // Emite el evento a la UI para que dibuje el texto de fin
     this.events.emit('juego-terminado', { ganaste: ganaste, puntos: this.puntaje });
 
     this.time.delayedCall(1500, () => {
       this.input.keyboard.once('keydown-SPACE', () => {
         this.sound.stopAll(); 
-        // Cerramos la UI antes de reiniciar la escena principal
         this.scene.stop('UIScene');
         this.scene.restart();
       });
