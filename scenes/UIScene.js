@@ -1,4 +1,4 @@
-import { i18n } from '../i18n.js'; // Asegurate de que la ruta sea correcta según tus carpetas
+import { i18n } from '../i18n.js'; 
 
 export default class UIScene extends Phaser.Scene {
   constructor() {
@@ -63,6 +63,34 @@ export default class UIScene extends Phaser.Scene {
         const iconoABorrar = listaIconosHUD.pop();
         if (iconoABorrar) iconoABorrar.destroy();
       }
+    });
+
+    // EVENTO NUEVO: Reseteo visual del HUD al recibir daño
+    juegoEscena.events.on('inventario-perdido', () => {
+      ['cuadrado', 'triangulo', 'rombo'].forEach(tipo => {
+        const listaIconosHUD = this.hudTalismanes[tipo];
+        
+        // Destruimos todos los iconos sobrantes
+        listaIconosHUD.forEach(icono => {
+            if (icono) icono.destroy(); 
+        });
+        
+        // Vaciamos el array de referencia
+        this.hudTalismanes[tipo] = [];
+        
+        // Reconstruimos el HUD inicial con un parpadeo rojo
+        const conf = configuracionGrupos[tipo];
+        for (let i = 0; i < 3; i++) {
+          const x = conf.xInicio + (i * separacionX);
+          const y = 8;
+          const nuevoIcono = this.add.image(x, y, tipo).setDepth(1);
+          
+          nuevoIcono.setTint(0xff5555); // Se ponen rojos
+          this.time.delayedCall(200, () => nuevoIcono.clearTint()); // Vuelven a la normalidad
+          
+          this.hudTalismanes[tipo].push(nuevoIcono);
+        }
+      });
     });
 
     // Escuchar el fin de juego para mostrar textos finales

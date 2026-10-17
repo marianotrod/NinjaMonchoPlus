@@ -1,5 +1,7 @@
 import Ninja from './Ninja.js'; 
 import { i18n } from '../i18n.js'; 
+import { Bestiario } from './Bestiario.js';
+import Enemigo from './Enemigo.js';
 
 export default class NinjaMonchoScene extends Phaser.Scene {
   constructor() {
@@ -77,14 +79,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       'CH01BC': { frame: 60, tipo: 'fondo' },
       'CH02BC': { frame: 61, tipo: 'fondo' },   
       'CH03BC': { frame: 62, tipo: 'fondo' }
-    };
-
-    this.catalogoEnemigos = {
-      'demonio_comun': {
-        textura: 'demonio',
-        velXMin: 45, velXMax: 100, 
-        reboteYMin: -100, reboteYMax: -220  
-      }
     };
 
     this.bloquesFisicos = this.physics.add.staticGroup();
@@ -224,15 +218,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }, null, this);
   }
 
-prepararHotJoin() {
+  prepararHotJoin() {
     this.teclaW_P2 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
     this.hotJoinTimer = 0;
 
-    // Contenedor posicionado a la derecha, debajo del piso (ajustá este 268 si lo querés más arriba o abajo)
     this.uiHotJoin = this.add.container(496, 284);
     this.uiHotJoin.setDepth(100);
 
-    // Texto alineado a la derecha (Origin 1)
     const txtHotJoin = this.add.text(0, -6, i18n.t('hotjoin_prompt'), {
       fontFamily: '"Press Start 2P"',
       fontSize: '8px',
@@ -240,10 +232,7 @@ prepararHotJoin() {
       resolution: 10
     }).setOrigin(1, 0.5); 
 
-    // Fondo negro: Mide 60px y está anclado a la derecha. (Va del pixel -60 al 0).
     const bgBarra = this.add.rectangle(0, 1, 60, 4, 0x000000, 0.5).setOrigin(1, 0.5);
-    
-    // Barrita blanca: Arranca a la izquierda del fondo negro (-59 para dejar 1px de margen) y crece a la derecha.
     this.barraHotJoin = this.add.rectangle(-59, 1, 0, 2, 0xffffff).setOrigin(0, 0.5);
 
     this.uiHotJoin.add([txtHotJoin, bgBarra, this.barraHotJoin]);
@@ -269,11 +258,10 @@ prepararHotJoin() {
       const cartel = this.add.text(496, 268, i18n.t('hotjoin_joined'), {
         fontFamily: '"Press Start 2P"',
         fontSize: '8px',
-        color: '#FBBF24', // Usamos 'color' en lugar de 'fill'
+        color: '#FBBF24',
         resolution: 10
       }).setOrigin(1, 0.5).setDepth(200);
 
-      // Temporizador que alterna el color 18 veces (aprox 1.8 segundos)
       let esNaranja = true;
       this.time.addEvent({
         delay: 100, 
@@ -284,7 +272,6 @@ prepararHotJoin() {
         }
       });
 
-      // El tween original que lo hace flotar y desaparecer
       this.tweens.add({
         targets: cartel,
         y: 230, alpha: 0, duration: 2000, ease: 'Power1',
@@ -337,79 +324,34 @@ prepararHotJoin() {
     this.enemigos.getChildren().forEach(demonio => {
       if (this.DEBUG_DEMONIOS && demonio.textoDebug) {
         demonio.textoDebug.setPosition(demonio.x, demonio.y - 18);
-        demonio.textoDebug.setText(`Y: ${demonio.ultimoReboteY}\nC: ${demonio.contadorRebotes}`);
+        demonio.textoDebug.setText(`Y: ${demonio.ultimoReboteY || 0}\nC: ${demonio.contadorRebotes || 0}`);
       }
-
-      if (demonio.body.touching.down) {
-        if (demonio.body.velocity.y > demonio.reboteYMin || demonio.body.velocity.y < demonio.reboteYMax) {
-          const fuerzaAleatoria = Phaser.Math.Between(demonio.reboteYMax, demonio.reboteYMin);
-          demonio.setVelocityY(fuerzaAleatoria);
-        }
-
-        let fuerzaActual = Math.round(demonio.body.velocity.y);
-
-        if (Math.abs(fuerzaActual - demonio.ultimoReboteY) <= 5) {
-          demonio.contadorRebotes++; 
-        } else {
-          demonio.contadorRebotes = 1; 
-          demonio.ultimoReboteY = fuerzaActual;
-          demonio.enModoAntiLoop = false;
-        }
-
-        if (demonio.contadorRebotes >= 3) {
-          demonio.enModoAntiLoop = true;
-        }
-
-        if (demonio.enModoAntiLoop) {
-          if (Math.random() < 0.70) { 
-            let nuevaFuerza;
-            if (fuerzaActual > demonio.reboteYMax + 5) {
-              nuevaFuerza = Phaser.Math.Between(demonio.reboteYMax, fuerzaActual - 5);
-            } else {
-              nuevaFuerza = Phaser.Math.Between(fuerzaActual + 5, demonio.reboteYMin);
-            }
-
-            demonio.setVelocityY(nuevaFuerza); 
-            demonio.ultimoReboteY = Math.round(nuevaFuerza);
-            
-            demonio.enModoAntiLoop = false;
-            demonio.contadorRebotes = 0; 
-          }
-        }
-      }
-      
-      if (demonio.body.velocity.x < 0) demonio.setFlipX(true); 
-      else if (demonio.body.velocity.x > 0) demonio.setFlipX(false); 
-
-      if (demonio.body.velocity.y < 0) demonio.setFrame(0); 
-      else if (demonio.body.velocity.y > 0) demonio.setFrame(1); 
+      // Llamamos a la lógica modular del enemigo
+      demonio.actualizarComportamiento();
     });
   }
 
   procesarImpactoPiso(obj1, obj2) {
     const item = this.items.contains(obj1) ? obj1 : obj2; 
     
+    // Los talismanes rebotan gratis, no les pasa nada
+    if (item.esTalisman) return; 
+
     if (!item.yaRestoPuntosEsteRebote) {
       if (item.body.velocity.y < -10) { 
         item.yaRestoPuntosEsteRebote = true; 
-        item.valorPuntos -= 5; 
-        item.setAlpha(item.valorPuntos / 100); 
         
-        if (item.valorPuntos <= 0) {
-          const esTalisman = item.esTalisman; 
-          const tipoTextura = item.texture.key;
-          
-          item.destroy();
-
-          if (esTalisman) {
-            this.spawnearItem(tipoTextura); 
-          } else {
-            this.spawnearMoneda(); 
-          }
-        }
+        // Pierde 10% de su valor actual, con un piso mínimo de 1 punto
+        item.valorPuntos = Math.max(1, Math.floor(item.valorPuntos * 0.9));
+        
+        // Enrojecimiento (Tint): Le restamos canales Verde y Azul en base al porcentaje
+        const porcentaje = Math.max(0, item.valorPuntos / 200); 
+        const colorGB = Math.floor(255 * porcentaje); 
+        item.setTint(Phaser.Display.Color.GetColor(255, colorGB, colorGB));
       }
     }
   }
+   
 
   tickReloj() {
     this.tiempoRestante--;
@@ -426,11 +368,11 @@ prepararHotJoin() {
     item.setBounce(0.75); 
     
     const direccion = Phaser.Math.RND.pick([-1, 1]);
-    const velocidadX = Phaser.Math.Between(25, 80) * direccion;
-    item.setVelocityX(velocidadX);
-
+    item.setVelocityX(Phaser.Math.Between(25, 80) * direccion);
     item.setCollideWorldBounds(true); 
-    item.valorPuntos = 100; 
+    
+    // Los talismanes ya no tienen valor de puntos
+    item.valorPuntos = 0; 
     item.yaRestoPuntosEsteRebote = false; 
   }
 
@@ -442,29 +384,29 @@ prepararHotJoin() {
     item.setBounce(0.75); 
     
     const direccion = Phaser.Math.RND.pick([-1, 1]);
-    const velocidadX = Phaser.Math.Between(25, 80) * direccion;
-    item.setVelocityX(velocidadX);
-
+    item.setVelocityX(Phaser.Math.Between(25, 80) * direccion);
     item.setCollideWorldBounds(true); 
-    item.valorPuntos = 50; 
+    
+    // Las monedas arrancan en 200
+    item.valorPuntos = 200; 
     item.yaRestoPuntosEsteRebote = false; 
   }
 
   spawnearDemonio() {
     if (this.enemigos.countActive(true) >= 3) return; 
     
-    const config = this.catalogoEnemigos['demonio_comun'];
+    // Obtenemos la configuración del Bestiario
+    const config = Bestiario['demonio_saltarin']; 
+    const xAleatoria = Phaser.Math.Between(32, 480);
     
-    const demonio = this.enemigos.create(Phaser.Math.Between(32, 480), -8, config.textura);
-    demonio.setBounce(1);  
+    // Instanciamos el enemigo modular
+    const demonio = new Enemigo(this, xAleatoria, -8, config);
+    this.enemigos.add(demonio);
     
-    demonio.reboteYMin = config.reboteYMin;
-    demonio.reboteYMax = config.reboteYMax;
-
-    demonio.ultimoReboteY = 0;
-    demonio.contadorRebotes = 0;
-    demonio.enModoAntiLoop = false;
-
+    demonio.setCollideWorldBounds(true);
+    
+    demonio.arrancar();
+    // Mantenemos la lógica de debug
     demonio.textoDebug = this.add.text(demonio.x, demonio.y - 18, '', {
       fontSize: '9px',
       fill: '#00ff00',
@@ -473,12 +415,6 @@ prepararHotJoin() {
     }).setOrigin(0.5, 1);
     demonio.textoDebug.setDepth(10);
     demonio.textoDebug.setVisible(this.DEBUG_DEMONIOS);
-    
-    const direccion = Phaser.Math.RND.pick([-1, 1]);
-    const velocidadX = Phaser.Math.Between(config.velXMin, config.velXMax) * direccion;
-    demonio.setVelocityX(velocidadX);
-
-    demonio.setCollideWorldBounds(true);
   }
 
   reproducirSonido(key, volumen = 0.5) {
@@ -510,16 +446,7 @@ prepararHotJoin() {
   }
 
   recolectarItem(jugador, item) {
-    if (jugador.isSpawning) return; 
-    if (!item || !item.active) return; 
-
-    const puntosGanados = item.valorPuntos;
-    this.puntaje += puntosGanados; 
-    this.events.emit('actualizar-puntaje', this.puntaje);
-    
-    const colorTexto = puntosGanados >= 100 ? '#4ADE80' : '#FBBF24';
-    this.mostrarTextoFlotante(item.x, item.y, `+${puntosGanados}`, colorTexto);
-    this.reproducirSonido('snd-salto', 0.5);
+    if (jugador.isSpawning || !item || !item.active) return; 
 
     if (item.esTalisman) {
       const tipoItem = item.texture.key; 
@@ -532,40 +459,73 @@ prepararHotJoin() {
         const rombos = this.inventario.filter(tipo => tipo === 'rombo').length;
 
         if (cuadrados >= 3 && triangulos >= 3 && rombos >= 3) {
-          this.finalizarJuego(true);
+          this.finalizarJuego(true); // PENDIENTE: Cambiar esto por la lógica del Hit-Stop
         }
       }
+    } else {
+      // Es una moneda, damos puntos
+      this.puntaje += item.valorPuntos; 
+      this.events.emit('actualizar-puntaje', this.puntaje);
+      
+      const colorTexto = item.valorPuntos >= 150 ? '#4ADE80' : (item.valorPuntos > 50 ? '#FBBF24' : '#EF4444');
+      this.mostrarTextoFlotante(item.x, item.y, `+${item.valorPuntos}`, colorTexto);
     }
 
+    this.reproducirSonido('snd-salto', 0.5);
     item.destroy(); 
-    this.spawnearMoneda(); 
-
-    if (!this.MODO_TALISMANES && this.puntaje >= 1000) {
-      this.finalizarJuego(true);
-    }
+    this.spawnearMoneda(); // Haya agarrado lo que haya agarrado, devuelve 1 moneda al ecosistema
   }
 
   tocarDemonio(jugador, demonio) {
     if (jugador.isInvul || jugador.isSpawning) return; 
 
     if (jugador.body.velocity.y > 0 && jugador.y < demonio.y) {
+      // Mecánica de pisotón (Pogo)
       jugador.hacerPisoton();
-      
-      this.puntaje = Math.max(0, this.puntaje - 50);
-      this.events.emit('actualizar-puntaje', this.puntaje);
-      this.mostrarTextoFlotante(demonio.x, demonio.y, `-50`, '#EF4444');
-
       if (this.PISOTON_INVIERTE_DEMONIO) {
         demonio.setVelocityY(250); 
-        demonio.ultimoReboteY = 0;
-        demonio.contadorRebotes = 0;
+        if (demonio.rasgos && demonio.rasgos.saltarin && demonio.rasgos.saltarin.activo) {
+          demonio.ultimoReboteY = 0; demonio.contadorRebotes = 0;
+        }
       }
     } else {
-      this.puntaje = Math.max(0, this.puntaje - 50);
-      this.events.emit('actualizar-puntaje', this.puntaje);
-      this.mostrarTextoFlotante(jugador.x, jugador.y, `-50`, '#EF4444');
+      // DAÑO RECIBIDO
+      jugador.aplicarDaño(demonio.x); // Le avisa al Ninja que fue aturdido
+      this.mostrarTextoFlotante(jugador.x, jugador.y, `¡OUCH!`, '#EF4444');
 
-      jugador.aplicarDaño(demonio.x);
+      if (this.MODO_TALISMANES && this.inventario.length > 0) {
+        const cantidadPerdidos = this.inventario.length;
+        const arrayPerdidos = [...this.inventario];
+        
+        this.inventario = []; // Vaciamos inventario
+        // Disparar evento para que la UI de los talismanes se blanquee
+        this.events.emit('inventario-perdido'); 
+
+        // 1. Explosión visual (saltan de Moncho y desaparecen)
+        arrayPerdidos.forEach(tipo => {
+          // Usamos sprites falsos sin agregarlos al grupo de colisiones
+          let dummy = this.physics.add.sprite(jugador.x, jugador.y, tipo);
+          dummy.setVelocity(Phaser.Math.Between(-100, 100), Phaser.Math.Between(-200, -350));
+          this.tweens.add({
+            targets: dummy, alpha: 0, duration: 800,
+            onComplete: () => dummy.destroy()
+          });
+        });
+
+        // 2. Destruir las monedas más valiosas de la escena
+        let monedasEnPantalla = this.items.getChildren().filter(i => !i.esTalisman);
+        monedasEnPantalla.sort((a, b) => b.valorPuntos - a.valorPuntos); // De mayor a menor
+        let monedasABorrar = monedasEnPantalla.slice(0, cantidadPerdidos);
+        monedasABorrar.forEach(m => m.destroy());
+
+        // 3. Respawnear los talismanes con un pequeño retraso
+        this.time.delayedCall(1200, () => {
+          arrayPerdidos.forEach((tipo, index) => {
+            // Los hacemos caer uno por uno en cascada para que quede vistoso
+            this.time.delayedCall(index * 250, () => this.spawnearItem(tipo));
+          });
+        });
+      }
     }
   }
 
