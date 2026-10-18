@@ -53,11 +53,11 @@ export default class ConstructorNivel {
             /*  09 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
             /*  10 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
             /*  11 */ [L,_,_,_,_,_,H1,H2,H2,H2,H3,_,_,_,_,_,_,_,_,H1,H2,H2,H2,H3,_,_,_,_,_,_,_,R],
-            /*  12 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  13 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  14 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  15 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  16 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
+            /*  12 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,P,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
+            /*  13 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,P,P,P,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
+            /*  14 */ [L,_,_,_,_,_,_,_,_,_,_,_,P,P,P,P,P,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
+            /*  15 */ [L,_,_,_,_,_,_,_,_,_,_,P,P,P,P,P,P,P,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
+            /*  16 */ [L,_,_,_,_,_,_,_,_,_,P,P,P,P,P,P,P,P,P,_,_,_,_,_,_,_,_,_,_,_,_,R],
             /*  17 */ [P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P]
         ];
 
@@ -82,20 +82,22 @@ export default class ConstructorNivel {
                     bloque.body.updateFromGameObject();
 
                     if (datosPieza.tipo === 'pasarela') {
+                        // --- ETIQUETA OFICIAL DE ONE-WAY ---
+                        bloque.esOneWay = true;
+                        
                         bloque.body.checkCollision.up = true;
                         bloque.body.checkCollision.down = false;
                         bloque.body.checkCollision.left = false;
                         bloque.body.checkCollision.right = false;
                     } else if (datosPieza.tipo === 'solido') {
-                        const codigoArriba = indiceFila > 0 ? mapaNivel[indiceFila - 1][indiceColumna] : '';
-                        if (scene.catalogoPiezas[codigoArriba]?.tipo === 'solido') {
-                            bloque.body.checkCollision.up = false;
-                        }
+                        // --- EXPLICITAMENTE NO ES ONE-WAY ---
+                        bloque.esOneWay = false;
 
-                        const codigoAbajo = indiceFila < mapaNivel.length - 1 ? mapaNivel[indiceFila + 1][indiceColumna] : '';
-                        if (scene.catalogoPiezas[codigoAbajo]?.tipo === 'solido') {
-                            bloque.body.checkCollision.down = false;
-                        }
+                        // Colisión sólida por todos los lados sin optimización
+                        bloque.body.checkCollision.up = true;
+                        bloque.body.checkCollision.down = true;
+                        bloque.body.checkCollision.left = true;
+                        bloque.body.checkCollision.right = true;
                     }
                 } else {
                     bloque = scene.add.image(posX, posY, 'MapTileSet', datosPieza.frame);
