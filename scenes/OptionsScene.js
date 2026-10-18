@@ -1,4 +1,5 @@
 import { i18n } from '../i18n.js';
+import MenuInputManager from './MenuInputManager.js'; // Importamos el gestor unificado
 
 export default class OptionsScene extends Phaser.Scene {
   constructor() {
@@ -13,7 +14,7 @@ export default class OptionsScene extends Phaser.Scene {
       fontSize: '16px',
       color: '#4ADE80',
       resolution: 10
-    }).setOrigin(0.5); // Título principal centrado
+    }).setOrigin(0.5); 
 
     if (this.registry.get('volMusica') === undefined) this.registry.set('volMusica', 5);
     if (this.registry.get('volSonido') === undefined) this.registry.set('volSonido', 5);
@@ -44,7 +45,6 @@ export default class OptionsScene extends Phaser.Scene {
     this.textosOpciones = [];
     this.indiceSeleccionado = 0;
     
-    // Cálculo para centrar el bloque ancho: (512 - 192) / 2 = 160
     const startX = 160; 
     const startY = 110;
     const espaciado = 30;
@@ -55,7 +55,7 @@ export default class OptionsScene extends Phaser.Scene {
         fontSize: '8px',
         color: '#FFFFFF',
         resolution: 10
-      }).setOrigin(0, 0.5); // Alineado a la izquierda
+      }).setOrigin(0, 0.5); 
       
       this.textosOpciones.push(txt);
     });
@@ -67,14 +67,32 @@ export default class OptionsScene extends Phaser.Scene {
       resolution: 10
     }).setOrigin(0.5);
 
-    this.teclado = this.input.keyboard.createCursorKeys();
-    this.teclaEspacio = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    
-    this.teclado.up.on('down', () => this.moverCursor(-1));
-    this.teclado.down.on('down', () => this.moverCursor(1));
-    this.teclado.left.on('down', () => this.opciones[this.indiceSeleccionado].modificar(-1));
-    this.teclado.right.on('down', () => this.opciones[this.indiceSeleccionado].modificar(1));
-    this.teclaEspacio.on('down', () => this.opciones[this.indiceSeleccionado].accion());
+    // INSTANCIAMOS EL MÓDULO DE INPUT GLOBAL
+    this.menuInput = new MenuInputManager(this);
+  }
+
+  // REEMPLAZAMOS LOS EVENTOS POR EL BUCLE UPDATE CON EL GESTOR
+  update() {
+    const input = this.menuInput.obtenerInput();
+
+    if (input.up) {
+      this.moverCursor(-1);
+    }
+    if (input.down) {
+      this.moverCursor(1);
+    }
+    if (input.left) {
+      this.opciones[this.indiceSeleccionado].modificar(-1);
+    }
+    if (input.right) {
+      this.opciones[this.indiceSeleccionado].modificar(1);
+    }
+    if (input.confirm) {
+      this.opciones[this.indiceSeleccionado].accion();
+    }
+    if (input.cancel) {
+      this.volver(); // Salir rápidamente con B o Esc
+    }
   }
 
   generarBarraTexto(etiqueta, valor) {
@@ -120,7 +138,6 @@ export default class OptionsScene extends Phaser.Scene {
   }
 
   volver() {
-    this.input.keyboard.removeAllKeys();
     this.scene.start('TitleScene');
   }
 }

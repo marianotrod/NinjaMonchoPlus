@@ -1,4 +1,5 @@
 import { i18n } from '../i18n.js';
+import MenuInputManager from './MenuInputManager.js';
 
 export default class CreditsScene extends Phaser.Scene {
   constructor() {
@@ -42,10 +43,16 @@ export default class CreditsScene extends Phaser.Scene {
       resolution: 10
     }).setOrigin(0.5);
 
-    this.teclaEspacio = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.teclaEspacio.on('down', () => {
-      this.input.keyboard.removeAllKeys();
+    // INSTANCIAMOS EL MÓDULO DE INPUT GLOBAL
+    this.menuInput = new MenuInputManager(this);
+  }
+
+  update() {
+    const input = this.menuInput.obtenerInput();
+
+    // Si acepta o cancela, vuelve atrás
+    if (input.confirm || input.cancel) {
       this.scene.start('TitleScene');
-    });
+    }
   }
 }

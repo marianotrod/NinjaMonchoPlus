@@ -27,6 +27,11 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.tiempoUltimoTap = { left: 0, right: 0 };
     this.delayDobleTap = 250; 
 
+    // --- NUEVO: SISTEMA DE DOBLE CANDADO PARA EL DASH ---
+    this.dashDisponible = true; 
+    this.ultimoDashTimer = 0; 
+    this.dashCooldown = 500; // 500ms de tiempo mínimo entre dashes
+
     // Banderas para interactuar con plataformas
     this.quiereAtravesarOneWay = false;
     this.bloquearCaidaPesada = false;
@@ -39,18 +44,27 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     // --- SISTEMA DE HABILIDADES MODULARES ---
     this.habilidades = {
-      dobleSalto: true, // Probá ponerlo en true
+      dobleSalto: true, 
       dash: true, 
       wallJump: true,
       caidaPesada: true
     };
 
+    // ÍNDICE DEL GAMEPAD ASIGNADO DINÁMICAMENTE POR LA ESCENA
+    this.assignedPadIndex = null;
+
+    this.prevPadState = { left: false, right: false, down: false, A: false, R1: false };
+
     this.estadoDebugHabilidades = 0; 
     this.saltoExtraDisponible = false;
     this.teclaDebug = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACKSPACE);
     
-    // Tecla AvPág (Page Down) para desactivar Win/Lose
     this.teclaAvPag = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PAGE_DOWN);
+  }
+
+  // MÉTODO PARA ASIGNAR EL PAD DESDE LA ESCENA
+  asignarPadIndex(index) {
+    this.assignedPadIndex = index;
   }
 
   tieneHabilidad(nombre) {
@@ -59,11 +73,48 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     return this.habilidades[nombre];
   }
 
+  obtenerInputs() {
+    let pad = null;
+    if (this.assignedPadIndex !== null && this.sceneRef.input.gamepad && this.sceneRef.input.gamepad.total > this.assignedPadIndex) {
+      pad = this.sceneRef.input.gamepad.getPad(this.assignedPadIndex);
+    }
+
+    const stickIzqX = (pad && pad.leftStick) ? pad.leftStick.x : 0;
+    const stickIzqY = (pad && pad.leftStick) ? pad.leftStick.y : 0;
+    const stickDerX = (pad && pad.rightStick) ? pad.rightStick.x : 0;
+    const stickDerY = (pad && pad.rightStick) ? pad.rightStick.y : 0;
+
+    const padLeft = pad ? (pad.left || stickIzqX < -0.5 || stickDerX < -0.5) : false;
+    const padRight = pad ? (pad.right || stickIzqX > 0.5 || stickDerX > 0.5) : false;
+    const padDown = pad ? (pad.down || stickIzqY > 0.5 || stickDerY > 0.5) : false;
+    
+    const padA = pad ? pad.A : false; 
+    const padR1 = pad ? pad.R1 : false; 
+
+    const padLeftJustDown = padLeft && !this.prevPadState.left;
+    const padRightJustDown = padRight && !this.prevPadState.right;
+    const padAJustDown = padA && !this.prevPadState.A;
+    const padR1JustDown = padR1 && !this.prevPadState.R1;
+
+    this.prevPadState = { left: padLeft, right: padRight, down: padDown, A: padA, R1: padR1 };
+
+    return {
+      leftIsDown: this.teclas.left.isDown || padLeft,
+      rightIsDown: this.teclas.right.isDown || padRight,
+      downIsDown: this.teclas.down.isDown || padDown,
+      upIsDown: this.teclas.up.isDown || padA, 
+      
+      leftJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.left) || padLeftJustDown,
+      rightJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.right) || padRightJustDown,
+      upJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.up) || padAJustDown, 
+      
+      dashJustDown: padR1JustDown 
+    };
+  }
+
   update() {
-    // --- MODO DEBUG: BACKSPACE (ESTADOS DE HABILIDADES) ---
     if (Phaser.Input.Keyboard.JustDown(this.teclaDebug)) {
       this.estadoDebugHabilidades = (this.estadoDebugHabilidades + 1) % 3;
-      
       let colorVisual;
       if (this.estadoDebugHabilidades === 0) {
           colorVisual = 0xffffff;
@@ -75,12 +126,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
           colorVisual = 0xEF4444;
           console.log(`${this.animPrefix}: TODO BLOQUEADO`);
       }
-      
       this.setTint(colorVisual);
       this.sceneRef.time.delayedCall(300, () => this.clearTint());
     }
 
-    // --- MODO DEBUG: AV PÁG (TOGGLE WIN/LOSE EN LA ESCENA) ---
     if (Phaser.Input.Keyboard.JustDown(this.teclaAvPag)) {
       if (typeof this.sceneRef.toggleModoDiosWinLose === 'function') {
         this.sceneRef.toggleModoDiosWinLose();
@@ -92,7 +141,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       this.sceneRef.time.delayedCall(400, () => this.clearTint());
     }
 
-    // --- ESTADO DE SPAWN ---
+    const input = this.obtenerInputs();
+
     if (this.isSpawning) {
       this.setVelocityX(0); 
       this.anims.play(`${this.animPrefix}-caer`, true);
@@ -103,58 +153,65 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // --- ESTADO STUN ---
     if (this.isStunned) {
       this.anims.play(`${this.animPrefix}-stun`, true);
       return;
     }
 
-    // --- SI ESTÁ DASHEANDO, IGNORAMOS EL RESTO DEL CONTROL ---
     if (this.isDashing) {
         return; 
     }
 
     const tiempoActual = this.sceneRef.time.now;
 
-    // --- BUFFER DE SALTO ---
-    if (Phaser.Input.Keyboard.JustDown(this.teclas.up)) {
+    if (input.upJustDown) {
       this.bufferSaltoTimer = tiempoActual + 150; 
     }
-    // FIX: Usamos 'let' para poder "consumir" el salto una vez utilizado
     let quiereSaltar = tiempoActual < this.bufferSaltoTimer;
 
-    // --- DETECCIÓN DE DOBLE TAP (DASH) ---
-    if (Phaser.Input.Keyboard.JustDown(this.teclas.left)) {
-        if (tiempoActual - this.tiempoUltimoTap.left < this.delayDobleTap && this.tieneHabilidad('dash')) {
+    // --- DETECCIÓN DE ENTORNO ---
+    let enElPiso = this.body.touching.down || this.body.blocked.down;
+    const tocandoParedIzquierda = this.body.blocked.left || this.body.touching.left;
+    const tocandoParedDerecha = this.body.blocked.right || this.body.touching.right;
+    const tocandoPared = tocandoParedIzquierda || tocandoParedDerecha;
+
+    // RECARGA DE DASH POR ENTORNO
+    if (enElPiso || tocandoPared) {
+      this.dashDisponible = true;
+    }
+
+    // EL DOBLE CANDADO: ¿Tiene la habilidad? Y ¿Pasó el cooldown? Y ¿Tocó el piso/pared/enemigo?
+    const puedeDashear = this.tieneHabilidad('dash') && this.dashDisponible && (tiempoActual >= this.ultimoDashTimer);
+
+    if (input.leftJustDown) {
+        if (tiempoActual - this.tiempoUltimoTap.left < this.delayDobleTap && puedeDashear) {
             this.ejecutarDash(-1);
             return;
         }
         this.tiempoUltimoTap.left = tiempoActual;
     }
 
-    if (Phaser.Input.Keyboard.JustDown(this.teclas.right)) {
-        if (tiempoActual - this.tiempoUltimoTap.right < this.delayDobleTap && this.tieneHabilidad('dash')) {
+    if (input.rightJustDown) {
+        if (tiempoActual - this.tiempoUltimoTap.right < this.delayDobleTap && puedeDashear) {
             this.ejecutarDash(1);
             return;
         }
         this.tiempoUltimoTap.right = tiempoActual;
     }
 
-    // --- DETECCIÓN DE ENTORNO (PISO Y PAREDES) ---
-    let enElPiso = this.body.touching.down || this.body.blocked.down;
-    const tocandoParedIzquierda = this.body.blocked.left || this.body.touching.left;
-    const tocandoParedDerecha = this.body.blocked.right || this.body.touching.right;
-    const tocandoPared = tocandoParedIzquierda || tocandoParedDerecha;
+    if (input.dashJustDown && puedeDashear) {
+        const direccion = input.leftIsDown ? -1 : (input.rightIsDown ? 1 : (this.flipX ? -1 : 1));
+        this.ejecutarDash(direccion);
+        return;
+    }
 
-    // --- SEGUIMIENTO DE LA TECLA ABAJO (Para separar acciones) ---
-    if (enElPiso && this.teclas.down.isDown) {
+    if (enElPiso && input.downIsDown) {
       this.bloquearCaidaPesada = true;
     }
-    if (!this.teclas.down.isDown) {
+    if (!input.downIsDown) {
       this.bloquearCaidaPesada = false;
     }
 
-    // --- COYOTE TIME ---
     if (enElPiso) {
       this.tieneControlAereo = true;
       this.body.allowGravity = true;
@@ -165,13 +222,11 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     }
     const puedeUsarCoyote = tiempoActual < this.coyoteTimer;
 
-    // --- AVISO AL MAPA: INTENCIÓN DE ATRAVESAR ONE-WAY ---
-    if (enElPiso && this.teclas.down.isDown) {
+    if (enElPiso && input.downIsDown) {
       this.dropThroughTimer = tiempoActual + 200; 
     }
     this.quiereAtravesarOneWay = (tiempoActual < this.dropThroughTimer);
 
-    // --- WALL JUMP UNIVERSAL ---
     const wallJumpIzquierda = tocandoParedIzquierda && quiereSaltar;
     const wallJumpDerecha = tocandoParedDerecha && quiereSaltar;
 
@@ -179,62 +234,57 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       this.isWallJumping = true; 
       this.tieneControlAereo = false; 
       this.bufferSaltoTimer = 0; 
-      quiereSaltar = false; // Consumimos el salto
+      quiereSaltar = false; 
       this.setVelocityY(-330); 
       
       if (tocandoParedIzquierda) {
-        this.setVelocityX(160); 
+        this.setVelocityX(280); 
         this.setFlipX(false);
       } else {
-        this.setVelocityX(-160); 
+        this.setVelocityX(-280); 
         this.setFlipX(true);
       }
       
       this.sceneRef.reproducirSonido('snd-salto', 1.2);
     }
 
-    // --- LÓGICA DE RECUPERACIÓN DE CONTROL PARA ZIGZAG ---
     if (this.isWallJumping && !this.bloqueoWallJumpConfigurado) {
       this.bloqueoWallJumpConfigurado = true;
-      this.sceneRef.time.delayedCall(200, () => {
+      this.sceneRef.time.delayedCall(250, () => {
         this.isWallJumping = false;
         this.bloqueoWallJumpConfigurado = false;
       });
     }
 
-    // --- SALTO NORMAL (DESDE EL PISO O USANDO COYOTE TIME) ---
     if ((enElPiso || puedeUsarCoyote) && quiereSaltar) {
       this.setVelocityY(-420);
       enElPiso = false; 
       this.bufferSaltoTimer = 0; 
       this.coyoteTimer = 0; 
-      quiereSaltar = false; // FIX: Consumimos el salto para que no haga el doble salto al instante
+      quiereSaltar = false; 
       this.sceneRef.reproducirSonido('snd-salto', 1);
     }
 
-    // --- CAÍDA PESADA / HARD DROP ---
-    if (!enElPiso && this.teclas.down.isDown && !this.bloquearCaidaPesada && this.tieneHabilidad('caidaPesada')) {
+    if (!enElPiso && input.downIsDown && !this.bloquearCaidaPesada && this.tieneHabilidad('caidaPesada')) {
       this.setVelocityY(480);
     }
 
-    // --- RE-ENGANCHE DE CONTROL AÉREO ---
     if (!enElPiso && !this.tieneControlAereo) {
-      if (!this.teclas.left.isDown && !this.teclas.right.isDown) {
+      if (!input.leftIsDown && !input.rightIsDown) {
         this.tieneControlAereo = true;
       }
     }
 
-    // --- MOVIMIENTO LATERAL ---
     if (!this.isWallJumping) {
       if (enElPiso || this.tieneControlAereo) {
         let velocidadObjetivo = 0; 
         let tocandoDireccion = false;
 
-        if (this.teclas.left.isDown) {
+        if (input.leftIsDown) {
           velocidadObjetivo = -140;
           this.setFlipX(true);
           tocandoDireccion = true;
-        } else if (this.teclas.right.isDown) {
+        } else if (input.rightIsDown) {
           velocidadObjetivo = 140;
           this.setFlipX(false);
           tocandoDireccion = true;
@@ -256,13 +306,12 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // --- LÓGICA DE DOBLE SALTO Y FRICCIÓN DE PARED AUTOMÁTICA ---
     if (!enElPiso && !this.isWallJumping) {
       if (quiereSaltar && this.saltoExtraDisponible && this.tieneHabilidad('dobleSalto')) {
         this.setVelocityY(-350); 
         this.saltoExtraDisponible = false; 
         this.bufferSaltoTimer = 0; 
-        quiereSaltar = false; // Consumimos el salto
+        quiereSaltar = false; 
         this.sceneRef.reproducirSonido('snd-salto', 1.2); 
         this.setAlpha(0.5);
         this.sceneRef.time.delayedCall(150, () => this.setAlpha(1));
@@ -273,7 +322,6 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // --- ANIMACIONES ---
     if (this.isDashing) {
       this.anims.play(`${this.animPrefix}-saltar`, true);
     } else if (this.isWallJumping) {
@@ -295,9 +343,11 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  // --- FUNCIÓN DE DASH MODULAR ---
   ejecutarDash(direccion) {
     this.isDashing = true;
+    this.dashDisponible = false; // Consumimos la recarga
+    this.ultimoDashTimer = this.sceneRef.time.now + this.dashCooldown; // Arrancamos el cooldown
+
     this.body.allowGravity = false; 
     this.setVelocityY(0); 
     
@@ -338,6 +388,9 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   hacerPisoton() {
+    this.dashDisponible = true; // El combate aéreo recarga el dash
+    this.ultimoDashTimer = 0; // Premia al jugador reseteando también el cooldown
+
     this.setVelocityY(-450);
     this.sceneRef.reproducirSonido('snd-salto', 1);
 

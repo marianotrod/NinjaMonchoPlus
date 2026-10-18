@@ -2,7 +2,7 @@ import Ninja from './Ninja.js';
 import { i18n } from '../i18n.js'; 
 import { Bestiario } from './Bestiario.js';
 import Enemigo from './Enemigo.js';
-import ConstructorNivel from './ConstructorNivel.js'; // Importamos el nuevo gestor
+import ConstructorNivel from './ConstructorNivel.js';
 
 export default class NinjaMonchoScene extends Phaser.Scene {
   constructor() {
@@ -40,6 +40,11 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.DEBUG_DEMONIOS = true; 
     this.modoDiosActivo = false; 
 
+    // --- LEEMOS LA ASIGNACIÓN DE SESIÓN (O nulo si usó teclado en el menú) ---
+    this.padIndexP1 = this.registry.get('padIndexP1'); 
+    if (this.padIndexP1 === undefined) this.padIndexP1 = null;
+    this.padIndexP2 = null;
+
     this.scene.launch('UIScene');
     this.physics.world.setBounds(0, -32, 512, 320);
 
@@ -57,16 +62,18 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.add.image(256, 144, 'fondo-cielo').setDisplaySize(512, 288);
 
-    // --- DELEGAMOS LA CONSTRUCCIÓN DEL NIVEL ---
     const spawns = ConstructorNivel.construir(this);
     this.spawnMonchoX = spawns.spawnMonchoX;
     this.spawnCoopX = spawns.spawnCoopX;
-    // -------------------------------------------
 
     this.items = this.physics.add.group();
     this.enemigos = this.physics.add.group();
 
     this.jugador = new Ninja(this, this.spawnMonchoX, -32);
+    // Si ya trae el pad desde el menú, se lo asignamos
+    if (this.padIndexP1 !== null) {
+      this.jugador.asignarPadIndex(this.padIndexP1);
+    }
     this.conectarFisicasJugador(this.jugador);
 
     if (this.cantidadJugadores === 2) {
@@ -75,7 +82,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.prepararHotJoin(); 
     }
 
-    // Los bloques físicos ya fueron creados por el ConstructorNivel
     this.physics.add.collider(this.items, this.bloquesFisicos, this.procesarImpactoPiso, null, this);
     this.physics.add.collider(this.enemigos, this.bloquesFisicos);
 
@@ -122,12 +128,11 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   conectarFisicasJugador(jugador) {
-    // ¡ACÁ ESTÁ LA MAGIA DEL FILTRO!
     this.physics.add.collider(jugador, this.bloquesFisicos, null, (j, bloque) => {
       if (j.quiereAtravesarOneWay && bloque.body.checkCollision.up && !bloque.body.checkCollision.down) {
-          return false; // Lo deja pasar si aprieta abajo y es una pasarela
+          return false; 
       }
-      return true; // Choca normal contra el piso sólido "P" o las paredes
+      return true; 
     }, this);
 
     this.physics.add.overlap(jugador, this.items, (j, item) => {
@@ -140,8 +145,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   prepararHotJoin() {
-    this.teclaW_P2 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
     this.hotJoinTimer = 0;
+    this.hotJoinTecladoP2 = false;
 
     this.uiHotJoin = this.add.container(496, 284);
     this.uiHotJoin.setDepth(100);
@@ -157,6 +162,20 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.barraHotJoin = this.add.rectangle(-59, 1, 0, 2, 0xffffff).setOrigin(0, 0.5);
 
     this.uiHotJoin.add([txtHotJoin, bgBarra, this.barraHotJoin]);
+    
+    this.input.keyboard.on('keydown', (event) => {
+      if (this.cantidadJugadores === 1 && !this.juegoTerminado) {
+          if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space'].includes(event.code)) {
+             this.hotJoinTecladoP2 = true;
+          }
+      }
+    });
+
+    this.input.keyboard.on('keyup', (event) => {
+        if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space'].includes(event.code)) {
+             this.hotJoinTecladoP2 = false;
+        }
+    });
   }
 
   crearPlayer2(esMidGame = false) {
@@ -171,6 +190,11 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     });
 
     this.jugador2 = new Ninja(this, this.spawnCoopX, -32, 'ninja_coop', teclasP2, 'coop');
+    
+    if (this.padIndexP2 !== null) {
+      this.jugador2.asignarPadIndex(this.padIndexP2);
+    }
+    
     this.conectarFisicasJugador(this.jugador2);
 
     if (esMidGame) {
@@ -232,14 +256,38 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       }
     }
 
+    // --- LÓGICA UNIFICADA DE ASIGNACIÓN Y HOT JOIN ---
+    let p2IntentandoEntrar = this.hotJoinTecladoP2;
+
+    if (this.input.gamepad && this.input.gamepad.total > 0) {
+      this.input.gamepad.gamepads.forEach(pad => {
+        if (!pad) return;
+        if (pad.buttons.some(b => b.pressed)) {
+          // SALVAVIDAS P1: Si P1 entró con teclado al menú y ahora agarra el pad
+          if (this.padIndexP1 === null) {
+            this.padIndexP1 = pad.index;
+            this.registry.set('padIndexP1', pad.index); 
+            this.jugador.asignarPadIndex(pad.index);
+            console.log(`Fallback: Gamepad ${pad.index} asignado al P1`);
+          } 
+          // Si el botón lo apretó un pad distinto al de P1, es P2 queriendo entrar
+          else if (pad.index !== this.padIndexP1) {
+            if (this.cantidadJugadores === 1) p2IntentandoEntrar = true;
+            this.padIndexP2 = pad.index; 
+          }
+        }
+      });
+    }
+
     if (this.cantidadJugadores === 1 && this.uiHotJoin) {
-      if (this.teclaW_P2.isDown) {
+      if (p2IntentandoEntrar) {
         this.hotJoinTimer += delta; 
         let progreso = Phaser.Math.Clamp(this.hotJoinTimer / 1000, 0, 1);
         this.barraHotJoin.width = 58 * progreso; 
 
         if (this.hotJoinTimer >= 1000) {
           this.crearPlayer2(true); 
+          this.hotJoinTecladoP2 = false; 
         }
       } else {
         this.hotJoinTimer = 0;

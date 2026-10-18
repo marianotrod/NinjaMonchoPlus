@@ -1,4 +1,5 @@
 import { i18n } from '../i18n.js';
+import MenuInputManager from './MenuInputManager.js'; // Ajustá la ruta según tu carpeta
 
 export default class TitleScene extends Phaser.Scene {
   constructor() {
@@ -27,7 +28,6 @@ export default class TitleScene extends Phaser.Scene {
     this.textosOpciones = [];
     this.indiceSeleccionado = 0;
 
-    // Cálculo para centrar el bloque: (512 - 88) / 2 = 212
     const startX = 212; 
     const startY = 140;
     const espaciado = 30;
@@ -38,12 +38,11 @@ export default class TitleScene extends Phaser.Scene {
         fontSize: '8px',
         color: '#FFFFFF',
         resolution: 10
-      }).setOrigin(0, 0.5); // Alineación izquierda
+      }).setOrigin(0, 0.5); 
       
       this.textosOpciones.push(txt);
     });
 
-    // El cursor va un poco más a la izquierda del bloque
     this.cursor = this.add.text(startX - 20, startY, ">", {
       fontFamily: '"Press Start 2P"',
       fontSize: '8px',
@@ -51,12 +50,23 @@ export default class TitleScene extends Phaser.Scene {
       resolution: 10
     }).setOrigin(0.5);
 
-    this.teclado = this.input.keyboard.createCursorKeys();
-    this.teclaEspacio = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    
-    this.teclado.up.on('down', () => this.moverCursor(-1));
-    this.teclado.down.on('down', () => this.moverCursor(1));
-    this.teclaEspacio.on('down', () => this.seleccionarOpcion());
+    // INSTANCIAMOS EL MÓDULO DE INPUT GLOBAL
+    this.menuInput = new MenuInputManager(this);
+  }
+
+  // AHORA USAMOS EL UPDATE PARA LEER LOS CONTROLES
+  update() {
+    const input = this.menuInput.obtenerInput();
+
+    if (input.up) {
+      this.moverCursor(-1);
+    }
+    if (input.down) {
+      this.moverCursor(1);
+    }
+    if (input.confirm) {
+      this.seleccionarOpcion();
+    }
   }
 
   moverCursor(direccion) {
@@ -67,7 +77,6 @@ export default class TitleScene extends Phaser.Scene {
   }
 
   seleccionarOpcion() {
-    this.input.keyboard.removeAllKeys();
     this.opciones[this.indiceSeleccionado].accion();
   }
 

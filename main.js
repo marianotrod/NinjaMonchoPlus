@@ -18,6 +18,9 @@ const config = {
   scale: {
     mode: Phaser.Scale.NONE // El escalado lo maneja el algoritmo entero en CSS
   },
+  input: {
+    gamepad: true // <-- ¡ESTO ACTIVA EL SOPORTE PARA JOYSTICKS!
+  },
   physics: {
     default: "arcade",
     arcade: {

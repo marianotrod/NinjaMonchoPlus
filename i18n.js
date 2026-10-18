@@ -14,7 +14,7 @@ const textos = {
     opcion_musica: 'MÚSICA',
     opcion_sonido: 'SONIDO',
     menu_creditos: 'CRÉDITOS',
-    hotjoin_prompt: "J2 MANTEN [W] PARA UNIRTE",
+    hotjoin_prompt: "J2 MANTEN PRESIONADO PARA UNIRTE",
     hotjoin_joined: "¡JUGADOR 2 AL RESCATE!" // o el texto que más te guste
   },
   
@@ -32,7 +32,7 @@ const textos = {
     opcion_musica: 'MUSIC',
     opcion_sonido: 'SFX',
     menu_creditos: 'CREDITS',
-    hotjoin_prompt: "P2 HOLD [W] TO JOIN",
+    hotjoin_prompt: "P2 HOLD TO JOIN",
     hotjoin_joined: "PLAYER 2 TO THE RESCUE!" // o el texto que más te guste
   }
 };
