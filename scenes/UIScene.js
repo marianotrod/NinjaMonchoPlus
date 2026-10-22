@@ -48,6 +48,14 @@ export default class UIScene extends Phaser.Scene {
     // 4. Escuchar eventos de la escena principal
     const juegoEscena = this.scene.get('NinjaMonchoScene');
 
+    // --- EL ANTÍDOTO: Limpiamos los eventos huérfanos de niveles anteriores ---
+    juegoEscena.events.off('actualizar-puntaje');
+    juegoEscena.events.off('actualizar-tiempo');
+    juegoEscena.events.off('talisman-recolectado');
+    juegoEscena.events.off('inventario-perdido');
+    juegoEscena.events.off('juego-terminado');
+    // -------------------------------------------------------------------------
+
     juegoEscena.events.on('actualizar-puntaje', (puntos) => {
       // Actualizamos con el texto dinámico del idioma actual
       this.textoPuntaje.setText(`${i18n.t('hud_puntos')}: ${puntos}`);
