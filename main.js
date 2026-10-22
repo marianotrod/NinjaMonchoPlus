@@ -25,7 +25,7 @@ const config = {
     default: "arcade",
     arcade: {
       gravity: { y: 200 },
-      debug: true,
+      debug: false,
     },
   },
   // ACÁ: Se agrega UIScene después de NinjaMonchoScene

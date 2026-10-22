@@ -1,5 +1,6 @@
 export default class ConstructorNivel {
-    static construir(scene) {
+    // Fijate que ahora recibe "matrizMapa" como segundo parámetro
+    static construir(scene, matrizMapa) {
         scene.catalogoPiezas = {
             'CR01TL': { frame: 0,  tipo: 'solido' },   
             'CR01TR': { frame: 1,  tipo: 'solido' },   
@@ -28,42 +29,15 @@ export default class ConstructorNivel {
 
         scene.bloquesFisicos = scene.physics.add.staticGroup();
 
-        const _ = '';
-        const L = 'CR01TL', R = 'CR01TR', P = 'CP01TC'; 
-        const H1 = 'CH01TC', H2 = 'CH02TC', H3 = 'CH03TC'; 
         const M1 = 'M1'; 
         const C2 = 'C2'; 
         
         let spawnMonchoX = 240; 
         let spawnCoopX = 272;   
-
-        // En el futuro, este array puede venir de un JSON externo según el nivel
-        const mapaNivel = [
-            /* -02 */ [L,_,_,_,_,M1,_,_,_,_,_,_,_,_,_,_,_,_,C2,_,_,_,_,_,_,_,_,_,_,_,_,R], 
-            /* -01 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  00 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  01 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  02 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  03 */ [L,_,_,_,_,_,_,H1,H2,H2,H3,_,_,_,_,_,_,_,_,H1,H2,H2,H3,_,_,_,_,_,_,_,_,R],
-            /*  04 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  05 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  06 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  07 */ [L,_,_,H1,H2,H3,_,_,_,_,_,_,_,H1,H2,H2,H3,_,_,_,_,_,_,_,H1,H2,H3,_,_,_,_,R],
-            /*  08 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  09 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  10 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  11 */ [L,_,_,_,_,_,H1,H2,H2,H2,H3,_,_,_,_,_,_,_,_,H1,H2,H2,H2,H3,_,_,_,_,_,_,_,R],
-            /*  12 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,_,P,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  13 */ [L,_,_,_,_,_,_,_,_,_,_,_,_,P,P,P,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  14 */ [L,_,_,_,_,_,_,_,_,_,_,_,P,P,P,P,P,_,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  15 */ [L,_,_,_,_,_,_,_,_,_,_,P,P,P,P,P,P,P,_,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  16 */ [L,_,_,_,_,_,_,_,_,_,P,P,P,P,P,P,P,P,P,_,_,_,_,_,_,_,_,_,_,_,_,R],
-            /*  17 */ [P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P]
-        ];
-
         const FILAS_OFFSCREEN = 2;
 
-        mapaNivel.forEach((fila, indiceFila) => {
+        // AHORA RECORRE EXCLUSIVAMENTE LA MATRIZ QUE LE MANDAMOS
+        matrizMapa.forEach((fila, indiceFila) => {
             fila.forEach((codigo, indiceColumna) => {
                 if (codigo === '') return; 
 
@@ -82,7 +56,6 @@ export default class ConstructorNivel {
                     bloque.body.updateFromGameObject();
 
                     if (datosPieza.tipo === 'pasarela') {
-                        // --- ETIQUETA OFICIAL DE ONE-WAY ---
                         bloque.esOneWay = true;
                         
                         bloque.body.checkCollision.up = true;
@@ -90,10 +63,8 @@ export default class ConstructorNivel {
                         bloque.body.checkCollision.left = false;
                         bloque.body.checkCollision.right = false;
                     } else if (datosPieza.tipo === 'solido') {
-                        // --- EXPLICITAMENTE NO ES ONE-WAY ---
                         bloque.esOneWay = false;
 
-                        // Colisión sólida por todos los lados sin optimización
                         bloque.body.checkCollision.up = true;
                         bloque.body.checkCollision.down = true;
                         bloque.body.checkCollision.left = true;
@@ -105,7 +76,6 @@ export default class ConstructorNivel {
             });
         });
 
-        // Devolvemos los puntos de spawn al finalizar
         return { spawnMonchoX, spawnCoopX };
     }
 }

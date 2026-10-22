@@ -3,6 +3,7 @@ import { i18n } from '../i18n.js';
 import { Bestiario } from './Bestiario.js';
 import Enemigo from './Enemigo.js';
 import ConstructorNivel from './ConstructorNivel.js';
+import { mapaInicial, mapasPool } from './Mapas.js'; 
 
 export default class NinjaMonchoScene extends Phaser.Scene {
   constructor() {
@@ -11,21 +12,27 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   init(data) {
     this.cantidadJugadores = data.jugadores || 1; 
+    this.nivelActual = data.nivel || 1;
+    this.poolRestante = data.poolRestante || [...mapasPool]; 
+
+    if (this.nivelActual === 1) {
+        this.mapaAUsar = mapaInicial;
+    } else {
+        const indiceRandom = Phaser.Math.Between(0, this.poolRestante.length - 1);
+        this.mapaAUsar = this.poolRestante.splice(indiceRandom, 1)[0];
+    }
   }
 
   preload() {
     this.load.image('fondo-cielo', 'public/assets/Cielo.webp'); 
-    
     this.load.spritesheet('MapTileSet', 'public/assets/MapTileSet.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('ninja', 'public/assets/NinjaSpriteSheet.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('ninja_coop', 'public/assets/NinjaCoopSprite.png', { frameWidth: 16, frameHeight: 16 });
-    
     this.load.spritesheet('cuadrado', 'public/assets/cuadrado.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('triangulo', 'public/assets/triangulo.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('rombo', 'public/assets/rombo.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('coin', 'public/assets/coin.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('demonio', 'public/assets/demonio.png', { frameWidth: 16, frameHeight: 16 });
-
     this.load.audio('musica-fondo', ['public/assets/GameMusic.ogg', 'public/assets/GameMusic.mp3']);
     this.load.audio('snd-salto', ['public/assets/Jump.ogg', 'public/assets/Jump.mp3']);
     this.load.audio('snd-caida', ['public/assets/fall.ogg', 'public/assets/fall.mp3']);
@@ -35,17 +42,22 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   create() {
     this.juegoTerminado = false; 
+    this.nivelSuperado = false; 
+    this.tiempoHoldTransicion = 0;
+    this.listoParaReiniciar = false; 
+
     this.MODO_TALISMANES = true; 
     this.PISOTON_INVIERTE_DEMONIO = true; 
-    this.DEBUG_DEMONIOS = true; 
+    this.DEBUG_DEMONIOS = false; 
     this.modoDiosActivo = false; 
 
-    // --- LEEMOS LA ASIGNACIÓN DE SESIÓN (O nulo si usó teclado en el menú) ---
     this.padIndexP1 = this.registry.get('padIndexP1'); 
     if (this.padIndexP1 === undefined) this.padIndexP1 = null;
     this.padIndexP2 = null;
 
     this.scene.launch('UIScene');
+    this.time.delayedCall(50, () => this.events.emit('inventario-perdido'));
+
     this.physics.world.setBounds(0, -32, 512, 320);
 
     let musicaFondo = this.sound.get('musica-fondo');
@@ -62,7 +74,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.add.image(256, 144, 'fondo-cielo').setDisplaySize(512, 288);
 
-    const spawns = ConstructorNivel.construir(this);
+    const spawns = ConstructorNivel.construir(this, this.mapaAUsar);
     this.spawnMonchoX = spawns.spawnMonchoX;
     this.spawnCoopX = spawns.spawnCoopX;
 
@@ -70,7 +82,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.enemigos = this.physics.add.group();
 
     this.jugador = new Ninja(this, this.spawnMonchoX, -32);
-    // Si ya trae el pad desde el menú, se lo asignamos
     if (this.padIndexP1 !== null) {
       this.jugador.asignarPadIndex(this.padIndexP1);
     }
@@ -105,9 +116,20 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     });
 
     this.relojJuego = this.time.addEvent({ delay: 1000, callback: this.tickReloj, callbackScope: this, loop: true });
+    
     this.teclaEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+    this.teclaEspacio = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE); 
     this.teclaSupr = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DELETE);
     this.enemigosHabilitados = true;
+
+    this.uiTransicion = this.add.container(256, 144).setDepth(300).setVisible(false);
+    const bgTransicion = this.add.rectangle(0, 0, 512, 320, 0x000000, 0.75);
+    const txtAvanzar = this.add.text(0, -20, `NIVEL ${this.nivelActual} COMPLETADO\nMANTENÉ ENTER / START`, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', fill: '#FBBF24', align: 'center', resolution: 10
+    }).setOrigin(0.5);
+    const bgBarraT = this.add.rectangle(0, 15, 150, 10, 0x333333).setOrigin(0.5);
+    this.barraTransicion = this.add.rectangle(-75, 15, 0, 10, 0x4ADE80).setOrigin(0, 0.5);
+    this.uiTransicion.add([bgTransicion, txtAvanzar, bgBarraT, this.barraTransicion]);
 
     this.anims.create({ key: 'moncho-idle', frames: [{ key: 'ninja', frame: 9 }], frameRate: 10 });
     this.anims.create({ key: 'moncho-caminar', frames: this.anims.generateFrameNumbers('ninja', { start: 0, end: 4 }), frameRate: 12, repeat: -1 });
@@ -124,12 +146,11 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   toggleModoDiosWinLose() {
     this.modoDiosActivo = !this.modoDiosActivo;
-    console.log("🛠️ MODO TEST WIN/LOSE:", this.modoDiosActivo ? "ACTIVADO (Inmune a derrota/victoria)" : "DESACTIVADO (Normal)");
   }
 
   conectarFisicasJugador(jugador) {
     this.physics.add.collider(jugador, this.bloquesFisicos, null, (j, bloque) => {
-      if (j.quiereAtravesarOneWay && bloque.body.checkCollision.up && !bloque.body.checkCollision.down) {
+      if (j.quiereAtravesarOneWay && bloque.esOneWay) {
           return false; 
       }
       return true; 
@@ -148,23 +169,17 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.hotJoinTimer = 0;
     this.hotJoinTecladoP2 = false;
 
-    this.uiHotJoin = this.add.container(496, 284);
-    this.uiHotJoin.setDepth(100);
-
+    this.uiHotJoin = this.add.container(496, 284).setDepth(100);
     const txtHotJoin = this.add.text(0, -6, i18n.t('hotjoin_prompt'), {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '8px',
-      fill: '#ffffff',
-      resolution: 10
+      fontFamily: '"Press Start 2P"', fontSize: '8px', fill: '#ffffff', resolution: 10
     }).setOrigin(1, 0.5); 
-
     const bgBarra = this.add.rectangle(0, 1, 60, 4, 0x000000, 0.5).setOrigin(1, 0.5);
     this.barraHotJoin = this.add.rectangle(-59, 1, 0, 2, 0xffffff).setOrigin(0, 0.5);
 
     this.uiHotJoin.add([txtHotJoin, bgBarra, this.barraHotJoin]);
     
     this.input.keyboard.on('keydown', (event) => {
-      if (this.cantidadJugadores === 1 && !this.juegoTerminado) {
+      if (this.cantidadJugadores === 1 && !this.juegoTerminado && !this.nivelSuperado) {
           if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space'].includes(event.code)) {
              this.hotJoinTecladoP2 = true;
           }
@@ -183,10 +198,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (this.uiHotJoin) this.uiHotJoin.destroy(); 
 
     const teclasP2 = this.input.keyboard.addKeys({
-      up: Phaser.Input.Keyboard.KeyCodes.W,
-      down: Phaser.Input.Keyboard.KeyCodes.S,
-      left: Phaser.Input.Keyboard.KeyCodes.A,
-      right: Phaser.Input.Keyboard.KeyCodes.D
+      up: Phaser.Input.Keyboard.KeyCodes.W, down: Phaser.Input.Keyboard.KeyCodes.S,
+      left: Phaser.Input.Keyboard.KeyCodes.A, right: Phaser.Input.Keyboard.KeyCodes.D
     });
 
     this.jugador2 = new Ninja(this, this.spawnCoopX, -32, 'ninja_coop', teclasP2, 'coop');
@@ -199,49 +212,88 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     if (esMidGame) {
       this.reproducirSonido('snd-salto', 1);
-      
       const cartel = this.add.text(496, 268, i18n.t('hotjoin_joined'), {
-        fontFamily: '"Press Start 2P"',
-        fontSize: '8px',
-        color: '#FBBF24',
-        resolution: 10
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#FBBF24', resolution: 10
       }).setOrigin(1, 0.5).setDepth(200);
 
       let esNaranja = true;
       this.time.addEvent({
-        delay: 100, 
-        repeat: 18, 
-        callback: () => {
-          esNaranja = !esNaranja;
-          cartel.setColor(esNaranja ? '#FBBF24' : '#FFFFFF');
-        }
+        delay: 100, repeat: 18, 
+        callback: () => { esNaranja = !esNaranja; cartel.setColor(esNaranja ? '#FBBF24' : '#FFFFFF'); }
       });
 
       this.tweens.add({
-        targets: cartel,
-        y: 230, alpha: 0, duration: 2000, ease: 'Power1',
+        targets: cartel, y: 230, alpha: 0, duration: 2000, ease: 'Power1',
         onComplete: () => cartel.destroy()
       });
     }
   }
 
   update(time, delta) {
-    if (this.juegoTerminado) return;
+    if (this.juegoTerminado) {
+        if (this.listoParaReiniciar) {
+            let presionado = this.teclaEspacio.isDown || this.teclaEnter.isDown;
+            if (this.input.gamepad && this.input.gamepad.total > 0) {
+                this.input.gamepad.gamepads.forEach(pad => {
+                    if (pad && pad.buttons.some(b => b.pressed)) presionado = true;
+                });
+            }
+            if (presionado) {
+                this.listoParaReiniciar = false; 
+                this.sound.stopAll();
+                this.scene.stop('UIScene'); 
+                this.scene.restart({ jugadores: this.cantidadJugadores });
+            }
+        }
+        return;
+    }
 
+    if (this.nivelSuperado) {
+        let apretando = this.teclaEnter.isDown;
+        
+        if (this.input.gamepad && this.input.gamepad.total > 0) {
+            this.input.gamepad.gamepads.forEach(pad => {
+                if (pad && pad.buttons.some(b => b.pressed)) apretando = true;
+            });
+        }
+
+        if (apretando) {
+            this.tiempoHoldTransicion += delta;
+            let progreso = Phaser.Math.Clamp(this.tiempoHoldTransicion / 2000, 0, 1);
+            this.barraTransicion.width = 150 * progreso;
+
+            if (this.tiempoHoldTransicion >= 2000) {
+                this.tiempoHoldTransicion = -9999; 
+                this.avanzarNivel();
+            }
+        } else {
+            this.tiempoHoldTransicion = 0;
+            this.barraTransicion.width = 0;
+        }
+        return; 
+    }
+
+    // --- FIX: CREACIÓN SEGURA DEL DEBUG GRAPHIC ---
     if (Phaser.Input.Keyboard.JustDown(this.teclaEnter)) {
       this.DEBUG_DEMONIOS = !this.DEBUG_DEMONIOS; 
-      this.physics.world.drawDebug = this.DEBUG_DEMONIOS;
-      if (!this.DEBUG_DEMONIOS) {
-        this.physics.world.debugGraphic.clear(); 
+      
+      if (this.DEBUG_DEMONIOS && !this.physics.world.debugGraphic) {
+          this.physics.world.createDebugGraphic();
       }
+
+      this.physics.world.drawDebug = this.DEBUG_DEMONIOS;
+      
+      if (!this.DEBUG_DEMONIOS && this.physics.world.debugGraphic) {
+          this.physics.world.debugGraphic.clear(); 
+      }
+
       this.enemigos.getChildren().forEach(demonio => {
         if (demonio.textoDebug) demonio.textoDebug.setVisible(this.DEBUG_DEMONIOS);
       });
     }
 
-      if (Phaser.Input.Keyboard.JustDown(this.teclaSupr)) {
+    if (Phaser.Input.Keyboard.JustDown(this.teclaSupr)) {
       this.enemigosHabilitados = !this.enemigosHabilitados;
-      
       if (!this.enemigosHabilitados) {
         this.timerDemonios.paused = true;
         const arrayEnemigos = this.enemigos.getChildren();
@@ -256,22 +308,16 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       }
     }
 
-    // --- LÓGICA UNIFICADA DE ASIGNACIÓN Y HOT JOIN ---
     let p2IntentandoEntrar = this.hotJoinTecladoP2;
-
     if (this.input.gamepad && this.input.gamepad.total > 0) {
       this.input.gamepad.gamepads.forEach(pad => {
         if (!pad) return;
         if (pad.buttons.some(b => b.pressed)) {
-          // SALVAVIDAS P1: Si P1 entró con teclado al menú y ahora agarra el pad
           if (this.padIndexP1 === null) {
             this.padIndexP1 = pad.index;
             this.registry.set('padIndexP1', pad.index); 
             this.jugador.asignarPadIndex(pad.index);
-            console.log(`Fallback: Gamepad ${pad.index} asignado al P1`);
-          } 
-          // Si el botón lo apretó un pad distinto al de P1, es P2 queriendo entrar
-          else if (pad.index !== this.padIndexP1) {
+          } else if (pad.index !== this.padIndexP1) {
             if (this.cantidadJugadores === 1) p2IntentandoEntrar = true;
             this.padIndexP2 = pad.index; 
           }
@@ -318,7 +364,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   procesarImpactoPiso(obj1, obj2) {
     const item = this.items.contains(obj1) ? obj1 : obj2; 
-    
     if (item.esTalisman) return; 
 
     if (!item.yaRestoPuntosEsteRebote) {
@@ -382,40 +427,24 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     demonio.arrancar();
 
     demonio.textoDebug = this.add.text(demonio.x, demonio.y - 18, '', {
-      fontSize: '9px',
-      fill: '#00ff00',
-      backgroundColor: '#000000AA',
-      align: 'center'
-    }).setOrigin(0.5, 1);
-    demonio.textoDebug.setDepth(10);
-    demonio.textoDebug.setVisible(this.DEBUG_DEMONIOS);
+      fontSize: '9px', fill: '#00ff00', backgroundColor: '#000000AA', align: 'center'
+    }).setOrigin(0.5, 1).setDepth(10).setVisible(this.DEBUG_DEMONIOS);
   }
 
   reproducirSonido(key, volumen = 0.5) {
     try {
       this.sound.play(key, { volume: volumen });
-    } catch (e) {
-      console.warn(`No se pudo reproducir el sonido: ${key}`);
-    }
+    } catch (e) {}
   }
 
   mostrarTextoFlotante(x, y, texto, color = '#ffffff') {
     const flotante = this.add.text(x, y, texto, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '8px',
-      fill: color,
-      resolution: 10
+      fontFamily: '"Press Start 2P"', fontSize: '8px', fill: color, resolution: 10
     }).setOrigin(0.5);
 
     this.tweens.add({
-      targets: flotante,
-      y: y - 25,
-      alpha: 0,
-      duration: 500,
-      ease: 'Power1',
-      onComplete: () => {
-        flotante.destroy();
-      }
+      targets: flotante, y: y - 25, alpha: 0, duration: 500, ease: 'Power1',
+      onComplete: () => flotante.destroy()
     });
   }
 
@@ -424,8 +453,14 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     if (item.esTalisman) {
       const tipoItem = item.texture.key; 
+      
+      const cantidadAntes = this.inventario.filter(tipo => tipo === tipoItem).length;
+      
       this.inventario.push(tipoItem); 
-      this.events.emit('talisman-recolectado', tipoItem);
+      
+      if (cantidadAntes < 3) {
+          this.events.emit('talisman-recolectado', tipoItem);
+      }
       
       if (this.MODO_TALISMANES) {
         const cuadrados = this.inventario.filter(tipo => tipo === 'cuadrado').length;
@@ -439,7 +474,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     } else {
       this.puntaje += item.valorPuntos; 
       this.events.emit('actualizar-puntaje', this.puntaje);
-      
       const colorTexto = item.valorPuntos >= 150 ? '#4ADE80' : (item.valorPuntos > 50 ? '#FBBF24' : '#EF4444');
       this.mostrarTextoFlotante(item.x, item.y, `+${item.valorPuntos}`, colorTexto);
     }
@@ -495,23 +529,51 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   finalizarJuego(ganaste) {
-    this.juegoTerminado = true; 
-    this.physics.pause(); 
-    
-    this.relojJuego.remove();
-    this.timerDemonios.remove();
-
-    this.sound.stopAll(); 
-    this.reproducirSonido(ganaste ? 'musica-win' : 'musica-lose', 0.5);
-
-    this.events.emit('juego-terminado', { ganaste: ganaste, puntos: this.puntaje });
-
-    this.time.delayedCall(1500, () => {
-      this.input.keyboard.once('keydown-SPACE', () => {
+    if (ganaste) {
+        this.nivelSuperado = true; 
+        this.physics.pause(); 
+        this.relojJuego.remove();
+        this.timerDemonios.remove();
+        
         this.sound.stopAll(); 
+        this.reproducirSonido('musica-win', 0.5);
+        this.uiTransicion.setVisible(true);
+    } else {
+        this.juegoTerminado = true; 
+        this.physics.pause(); 
+        this.relojJuego.remove();
+        this.timerDemonios.remove();
+
+        this.sound.stopAll(); 
+        this.reproducirSonido('musica-lose', 0.5);
+        this.events.emit('juego-terminado', { ganaste: false, puntos: this.puntaje });
+
+        this.time.delayedCall(1500, () => {
+            this.listoParaReiniciar = true; 
+        });
+    }
+  }
+
+  avanzarNivel() {
+    if (this.nivelActual >= 5) {
+        console.log("¡JUEGO TERMINADO! GANASTE.");
+        this.juegoTerminado = true;
+        this.uiTransicion.setVisible(false);
+        this.events.emit('juego-terminado', { ganaste: true, puntos: this.puntaje });
+
+        this.time.delayedCall(1500, () => {
+            this.listoParaReiniciar = true; 
+        });
+    } else {
+        this.sound.stopAll();
+        
         this.scene.stop('UIScene'); 
-        this.scene.restart({ jugadores: this.cantidadJugadores }); 
-      });
-    });
+        
+        this.scene.restart({ 
+            jugadores: this.cantidadJugadores,
+            nivel: this.nivelActual + 1, 
+            poolRestante: this.poolRestante 
+        });
+    }
   }
 }
