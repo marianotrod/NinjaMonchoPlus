@@ -1,5 +1,7 @@
 import { i18n } from '../i18n.js';
-import MenuInputManager from './MenuInputManager.js'; // Importamos el gestor unificado
+import MenuInputManager, { barraVolumen } from './MenuInputManager.js'; // Importamos el gestor unificado
+import { Sonido } from './Sonido.js';
+import { Guardado } from './Guardado.js';
 
 export default class OptionsScene extends Phaser.Scene {
   constructor() {
@@ -14,38 +16,38 @@ export default class OptionsScene extends Phaser.Scene {
       fontSize: '16px',
       color: '#4ADE80',
       resolution: 10
-    }).setOrigin(0.5); 
+    }).setOrigin(0.5);
 
     if (this.registry.get('volMusica') === undefined) this.registry.set('volMusica', 5);
     if (this.registry.get('volSonido') === undefined) this.registry.set('volSonido', 5);
 
     this.opciones = [
-      { 
-        getTexto: () => `${i18n.t('opcion_idioma').padEnd(10, ' ')} < ${i18n.getIdioma().toUpperCase().padEnd(10, ' ')} >`, 
+      {
+        getTexto: () => `${i18n.t('opcion_idioma').padEnd(10, ' ')} < ${i18n.getIdioma().toUpperCase().padEnd(10, ' ')} >`,
         accion: () => this.cambiarIdioma(),
-        modificar: () => this.cambiarIdioma() 
+        modificar: () => this.cambiarIdioma()
       },
-      { 
-        getTexto: () => this.generarBarraTexto(i18n.t('opcion_musica'), this.registry.get('volMusica')), 
-        accion: () => {}, 
-        modificar: (dir) => this.cambiarVolumen('volMusica', dir) 
+      {
+        getTexto: () => barraVolumen(i18n.t('opcion_musica'), this.registry.get('volMusica')),
+        accion: () => {},
+        modificar: (dir) => Sonido.cambiarVolumen(this, 'volMusica', dir)
       },
-      { 
-        getTexto: () => this.generarBarraTexto(i18n.t('opcion_sonido'), this.registry.get('volSonido')), 
-        accion: () => { console.log("Sonido de prueba boop!") }, 
-        modificar: (dir) => this.cambiarVolumen('volSonido', dir) 
+      {
+        getTexto: () => barraVolumen(i18n.t('opcion_sonido'), this.registry.get('volSonido')),
+        accion: () => Sonido.beep(this, 660, 0.08, 0.12),
+        modificar: (dir) => Sonido.cambiarVolumen(this, 'volSonido', dir)
       },
-      { 
-        getTexto: () => i18n.t('volver'), 
+      {
+        getTexto: () => i18n.t('volver'),
         accion: () => this.volver(),
-        modificar: () => {} 
+        modificar: () => {}
       }
     ];
 
     this.textosOpciones = [];
     this.indiceSeleccionado = 0;
-    
-    const startX = 160; 
+
+    const startX = 160;
     const startY = 110;
     const espaciado = 30;
 
@@ -55,8 +57,8 @@ export default class OptionsScene extends Phaser.Scene {
         fontSize: '8px',
         color: '#FFFFFF',
         resolution: 10
-      }).setOrigin(0, 0.5); 
-      
+      }).setOrigin(0, 0.5);
+
       this.textosOpciones.push(txt);
     });
 
@@ -66,6 +68,9 @@ export default class OptionsScene extends Phaser.Scene {
       color: '#FBBF24',
       resolution: 10
     }).setOrigin(0.5);
+
+    // Música de fondo para poder escuchar el volumen mientras se ajusta
+    Sonido.musica(this, 'musica-fondo', 0.4);
 
     // INSTANCIAMOS EL MÓDULO DE INPUT GLOBAL
     this.menuInput = new MenuInputManager(this);
@@ -83,39 +88,17 @@ export default class OptionsScene extends Phaser.Scene {
     }
     if (input.left) {
       this.opciones[this.indiceSeleccionado].modificar(-1);
+      this.actualizarTextos();
     }
     if (input.right) {
       this.opciones[this.indiceSeleccionado].modificar(1);
+      this.actualizarTextos();
     }
     if (input.confirm) {
       this.opciones[this.indiceSeleccionado].accion();
     }
     if (input.cancel) {
       this.volver(); // Salir rápidamente con B o Esc
-    }
-  }
-
-  generarBarraTexto(etiqueta, valor) {
-    const palitos = '|'.repeat(valor);
-    const puntos = '.'.repeat(10 - valor);
-    return `${etiqueta.padEnd(10, ' ')} < ${palitos}${puntos} >`;
-  }
-
-  cambiarVolumen(claveRegistry, direccion) {
-    let valorActual = this.registry.get(claveRegistry);
-    valorActual += direccion;
-    
-    if (valorActual < 0) valorActual = 0;
-    if (valorActual > 10) valorActual = 10;
-    
-    this.registry.set(claveRegistry, valorActual);
-    this.actualizarTextos();
-
-    const volumenPhaser = valorActual / 10;
-    if (claveRegistry === 'volMusica') {
-      console.log(`Música seteada a: ${volumenPhaser}`);
-    } else {
-      console.log(`SFX seteado a: ${volumenPhaser}`);
     }
   }
 
@@ -128,7 +111,8 @@ export default class OptionsScene extends Phaser.Scene {
 
   cambiarIdioma() {
     i18n.alternarIdioma();
-    this.scene.restart(); 
+    Guardado.escribir('idioma', i18n.getIdioma());
+    this.scene.restart();
   }
 
   actualizarTextos() {
@@ -138,6 +122,7 @@ export default class OptionsScene extends Phaser.Scene {
   }
 
   volver() {
+    Sonido.detenerMusica();
     this.scene.start('TitleScene');
   }
 }

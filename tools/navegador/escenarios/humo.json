@@ -1,0 +1,18 @@
+[
+  {"wait": 2500, "shot": "01_titulo"},
+  {"press": "Enter"},
+  {"wait": 3000, "shot": "02_intro"},
+  {"wait": 2000},
+  {"down": "ArrowRight"}, {"wait": 400}, {"press": "ArrowUp", "delay": 300}, {"wait": 300}, {"up": "ArrowRight"},
+  {"press": "x"}, {"wait": 2000},
+  {"eval": "(() => { const s = game.scene.getScene('NinjaMonchoScene'); return { fase: s.fase, tiempo: s.tiempoRestante, enemigos: s.enemigos.countActive(true), vidas: s.partida.vidas }; })()"},
+  {"shot": "03_juego"},
+  {"eval": "(() => { const s = game.scene.getScene('NinjaMonchoScene'); s.inventario = ['cuadrado','cuadrado','cuadrado','triangulo','triangulo','triangulo','rombo','rombo']; const t = s.items.getChildren().find(i => i.esTalisman && i.texture.key === 'rombo'); if (t) s.recolectarItem(s.jugador, t); return s.fase; })()"},
+  {"wait": 3500, "shot": "04_caceria"},
+  {"eval": "(() => { const s = game.scene.getScene('NinjaMonchoScene'); s.enemigos.getChildren().slice().forEach(e => s.matarEnemigo(e, s.jugador)); s.enemigosPorAparecer = 0; s.finCaceria(true); return s.fase; })()"},
+  {"wait": 1500, "shot": "05_nivel_completado"},
+  {"press": "Enter"}, {"wait": 1000, "shot": "06_pergaminos"},
+  {"press": "Enter"}, {"wait": 2500},
+  {"eval": "(() => { const s = game.scene.getScene('NinjaMonchoScene'); return { nivel: s.partida.nivel, puntajes: s.partida.puntajes }; })()"},
+  {"shot": "07_nivel2"}
+]

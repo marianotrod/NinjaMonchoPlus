@@ -1,0 +1,11 @@
+{
+  "name": "ninja-moncho-pruebas",
+  "private": true,
+  "description": "Banco de pruebas en navegador sin ventana para Ninja Moncho Plus (no es parte del juego)",
+  "scripts": {
+    "humo": "node probar.js http://127.0.0.1:5501/index.html escenarios/humo.json capturas"
+  },
+  "dependencies": {
+    "puppeteer-core": "^23.11.1"
+  }
+}

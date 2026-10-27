@@ -1,0 +1,24 @@
+NINJA MONCHO PLUS - CAMBIOS PARA APLICAR SOBRE main (094cf86 "solucion bug talsimanes duplicados")
+
+1. Descomprimir este zip en la raiz del proyecto, reemplazando los archivos existentes.
+   (Este LEEME.txt no hace falta copiarlo.)
+
+2. Borrar estos dos archivos vacios de la raiz del proyecto, que ya no se usan:
+     tipo
+     {
+
+3. Revisar y hacer el commit:
+     git status
+     git add -A
+     git commit
+
+Que trae (detalle en Docs/Roadmap.md y Docs/Bitacora.md):
+- Bugs resueltos, sensacion de juego, HUD, pantallas Como jugar y Pausa, record guardado.
+- Contenido del GDD: vidas, fantasma, katana, Caceria, enemigos y armas nuevos, cooperativo, pactos, jefe.
+- config.js para calibrar fisica y tiempos; Phaser 3.80.1 local en lib/.
+- Creditos actualizados (pantalla de creditos y README).
+- Correccion de musica superpuesta al pasar de pantalla.
+- tools/ con scripts de soporte y un banco de pruebas en navegador (no son parte del juego).
+- CLAUDE.md, Docs/Roadmap.md y Docs/Bitacora.md.
+
+Para correr el juego hace falta un servidor estatico (ver README.md).

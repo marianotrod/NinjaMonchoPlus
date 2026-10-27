@@ -1,8 +1,13 @@
+import BootScene from './scenes/BootScene.js';
 import TitleScene from './scenes/TitleScene.js';
 import OptionsScene from './scenes/OptionsScene.js'; 
+import HowToPlayScene from './scenes/HowToPlayScene.js';
 import NinjaMonchoScene from './scenes/NinjaMonchoScene.js';
 import UIScene from './scenes/UIScene.js';
+import PauseScene from './scenes/PauseScene.js';
+import PactSelectionScene from './scenes/PactSelectionScene.js';
 import CreditsScene from './scenes/CreditsScene.js';
+import { FISICA } from './config.js';
 
 
 const GAME_WIDTH = 512;
@@ -24,12 +29,12 @@ const config = {
   physics: {
     default: "arcade",
     arcade: {
-      gravity: { y: 200 },
+      gravity: { y: FISICA.gravedadMundo },
       debug: false,
     },
   },
-  // ACÁ: Se agrega UIScene después de NinjaMonchoScene
-  scene: [TitleScene, OptionsScene, CreditsScene, NinjaMonchoScene, UIScene],
+  // BootScene carga todo y arranca el título. UIScene y PauseScene se dibujan encima de NinjaMonchoScene.
+  scene: [BootScene, TitleScene, OptionsScene, HowToPlayScene, CreditsScene, NinjaMonchoScene, UIScene, PauseScene, PactSelectionScene],
 };
 
 // Función para calcular y aplicar el multiplicador entero exacto (1x, 2x, 3x, 4x...)

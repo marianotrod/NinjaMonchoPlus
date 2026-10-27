@@ -1,5 +1,13 @@
+import { DEBUG, FISICA, PAD } from '../config.js';
+import { MODS_JUGADOR_BASE } from './Pactos.js';
+import { ARMAS, dispararArma } from './Armas.js';
+import { Sonido } from './Sonido.js';
+
+// Lectura segura de un botón del joystick (algunos mandos no reportan todos los botones)
+const boton = (pad, indice) => !!(pad && pad.buttons[indice] && pad.buttons[indice].pressed);
+
 export default class Ninja extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y, textura = 'ninja', configTeclado = null, animPrefix = 'moncho') {
+  constructor(scene, x, y, textura = 'ninja', configTeclado = null, animPrefix = 'moncho', indice = 0) {
     super(scene, x, y, textura);
 
     scene.add.existing(this);
@@ -7,30 +15,46 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     this.sceneRef = scene;
     this.animPrefix = animPrefix;
+    this.indice = indice; // 0 = Jugador 1, 1 = Jugador 2
 
-    this.setGravityY(600);
+    // Modificadores de los Pergaminos de Pacto elegidos para este nivel
+    const pactos = scene.partida ? scene.partida.pactos.jugadores[indice] : {};
+    this.mods = { ...MODS_JUGADOR_BASE, ...pactos };
+    this.factorSalto = Math.sqrt(this.mods.salto); // +25 % de altura = velocidad * raíz(1,25)
+
+    this.setGravityY(FISICA.gravedadJugador);
     this.setCollideWorldBounds(true);
     this.body.setSize(10, 16);
     this.body.setOffset(3, 0);
+    this.setDepth(10);
 
     this.isStunned = false;
     this.isInvul = false;
-    this.isSpawning = true; 
-    
+    this.isSpawning = true;
+
     // --- VARIABLES DE HABILIDADES Y CONTROL ---
     this.isWallJumping = false;
     this.isDashing = false;
-    this.tieneControlAereo = true; 
-    this.bufferSaltoTimer = 0; 
-    this.coyoteTimer = 0; 
-    this.dropThroughTimer = 0; 
+    this.tieneControlAereo = true;
+    this.bufferSaltoTimer = 0;
+    this.coyoteTimer = 0;
+    this.dropThroughTimer = 0;
     this.tiempoUltimoTap = { left: 0, right: 0 };
-    this.delayDobleTap = 250; 
+    this.delayDobleTap = FISICA.dobleToque;
+    this.saltoCortable = false;
 
     // --- NUEVO: SISTEMA DE DOBLE CANDADO PARA EL DASH ---
-    this.dashDisponible = true; 
-    this.ultimoDashTimer = 0; 
-    this.dashCooldown = 500; // 500ms de tiempo mínimo entre dashes
+    this.dashDisponible = true;
+    this.ultimoDashTimer = 0;
+    this.dashCooldown = FISICA.dashCooldown; // Tiempo mínimo entre dashes
+
+    // --- COMBATE ---
+    this.katana = null;
+    this.katanaGolpeados = new Set();
+    this.ultimoAtaque = -9999;
+    this.arma = null;
+    this.municion = 0;
+    this.bumeranActivo = null;
 
     // Banderas para interactuar con plataformas
     this.quiereAtravesarOneWay = false;
@@ -40,12 +64,14 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       this.teclas = configTeclado;
     } else {
       this.teclas = scene.input.keyboard.createCursorKeys();
+      this.teclas.ataque = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+      this.teclas.especial = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
     }
 
     // --- SISTEMA DE HABILIDADES MODULARES ---
     this.habilidades = {
-      dobleSalto: true, 
-      dash: true, 
+      dobleSalto: true,
+      dash: true,
       wallJump: true,
       caidaPesada: true
     };
@@ -53,13 +79,14 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     // ÍNDICE DEL GAMEPAD ASIGNADO DINÁMICAMENTE POR LA ESCENA
     this.assignedPadIndex = null;
 
-    this.prevPadState = { left: false, right: false, down: false, A: false, R1: false };
+    this.prevPadState = { left: false, right: false, down: false, A: false, R1: false, X: false, Y: false };
 
-    this.estadoDebugHabilidades = 0; 
+    this.estadoDebugHabilidades = 0;
     this.saltoExtraDisponible = false;
-    this.teclaDebug = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACKSPACE);
-    
-    this.teclaAvPag = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PAGE_DOWN);
+    if (DEBUG) {
+      this.teclaDebug = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACKSPACE);
+      this.teclaAvPag = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PAGE_DOWN);
+    }
   }
 
   // MÉTODO PARA ASIGNAR EL PAD DESDE LA ESCENA
@@ -73,11 +100,14 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     return this.habilidades[nombre];
   }
 
+  obtenerPad() {
+    const gamepad = this.sceneRef.input.gamepad;
+    if (this.assignedPadIndex === null || !gamepad || gamepad.total === 0) return null;
+    return gamepad.getPad(this.assignedPadIndex) || null;
+  }
+
   obtenerInputs() {
-    let pad = null;
-    if (this.assignedPadIndex !== null && this.sceneRef.input.gamepad && this.sceneRef.input.gamepad.total > this.assignedPadIndex) {
-      pad = this.sceneRef.input.gamepad.getPad(this.assignedPadIndex);
-    }
+    const pad = this.obtenerPad();
 
     const stickIzqX = (pad && pad.leftStick) ? pad.leftStick.x : 0;
     const stickIzqY = (pad && pad.leftStick) ? pad.leftStick.y : 0;
@@ -87,32 +117,38 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     const padLeft = pad ? (pad.left || stickIzqX < -0.5 || stickDerX < -0.5) : false;
     const padRight = pad ? (pad.right || stickIzqX > 0.5 || stickDerX > 0.5) : false;
     const padDown = pad ? (pad.down || stickIzqY > 0.5 || stickDerY > 0.5) : false;
-    
-    const padA = pad ? pad.A : false; 
-    const padR1 = pad ? pad.R1 : false; 
+
+    const padA = boton(pad, PAD.A);
+    const padR1 = boton(pad, PAD.R1);
+    const padX = boton(pad, PAD.X);
+    const padY = boton(pad, PAD.Y);
 
     const padLeftJustDown = padLeft && !this.prevPadState.left;
     const padRightJustDown = padRight && !this.prevPadState.right;
     const padAJustDown = padA && !this.prevPadState.A;
     const padR1JustDown = padR1 && !this.prevPadState.R1;
+    const padXJustDown = padX && !this.prevPadState.X;
+    const padYJustDown = padY && !this.prevPadState.Y;
 
-    this.prevPadState = { left: padLeft, right: padRight, down: padDown, A: padA, R1: padR1 };
+    this.prevPadState = { left: padLeft, right: padRight, down: padDown, A: padA, R1: padR1, X: padX, Y: padY };
 
     return {
       leftIsDown: this.teclas.left.isDown || padLeft,
       rightIsDown: this.teclas.right.isDown || padRight,
       downIsDown: this.teclas.down.isDown || padDown,
-      upIsDown: this.teclas.up.isDown || padA, 
-      
+      upIsDown: this.teclas.up.isDown || padA,
+
       leftJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.left) || padLeftJustDown,
       rightJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.right) || padRightJustDown,
-      upJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.up) || padAJustDown, 
-      
-      dashJustDown: padR1JustDown 
+      upJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.up) || padAJustDown,
+
+      dashJustDown: padR1JustDown,
+      ataqueJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.ataque) || padXJustDown,
+      especialJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.especial) || padYJustDown
     };
   }
 
-  update() {
+  actualizarDebug() {
     if (Phaser.Input.Keyboard.JustDown(this.teclaDebug)) {
       this.estadoDebugHabilidades = (this.estadoDebugHabilidades + 1) % 3;
       let colorVisual;
@@ -131,25 +167,31 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.teclaAvPag)) {
-      if (typeof this.sceneRef.toggleModoDiosWinLose === 'function') {
-        this.sceneRef.toggleModoDiosWinLose();
-      } else {
-        this.sceneRef.modoDiosActivo = !this.sceneRef.modoDiosActivo;
-        console.log("Modo Test Win/Lose:", this.sceneRef.modoDiosActivo ? "ACTIVADO (Inmune a derrota/victoria)" : "DESACTIVADO (Normal)");
-      }
+      this.sceneRef.modoDiosActivo = !this.sceneRef.modoDiosActivo;
+      console.log("Modo Test Win/Lose:", this.sceneRef.modoDiosActivo ? "ACTIVADO (Inmune a derrota/victoria)" : "DESACTIVADO (Normal)");
       this.setTint(this.sceneRef.modoDiosActivo ? 0x00FFFF : 0xFFFFFF);
       this.sceneRef.time.delayedCall(400, () => this.clearTint());
     }
+  }
+
+  update() {
+    if (DEBUG) this.actualizarDebug();
 
     const input = this.obtenerInputs();
 
+    if (this.katana) {
+      const direccion = this.flipX ? -1 : 1;
+      this.katana.setPosition(this.x + direccion * 12, this.y).setFlipX(direccion < 0);
+      this.sceneRef.procesarKatana(this);
+    }
+
     if (this.isSpawning) {
-      this.setVelocityX(0); 
+      this.setVelocityX(0);
       this.anims.play(`${this.animPrefix}-caer`, true);
       if (this.body.touching.down || this.body.blocked.down) {
-        this.isSpawning = false; 
+        this.isSpawning = false;
       } else {
-        return; 
+        return;
       }
     }
 
@@ -159,15 +201,25 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.isDashing) {
-        return; 
+        return;
     }
+
+    if (input.ataqueJustDown) this.atacar();
+    if (input.especialJustDown) this.usarEspecial();
 
     const tiempoActual = this.sceneRef.time.now;
 
     if (input.upJustDown) {
-      this.bufferSaltoTimer = tiempoActual + 150; 
+      this.bufferSaltoTimer = tiempoActual + FISICA.bufferSalto;
     }
     let quiereSaltar = tiempoActual < this.bufferSaltoTimer;
+
+    // --- SALTO VARIABLE: soltar el botón en plena subida corta el salto ---
+    if (this.body.velocity.y >= 0) this.saltoCortable = false;
+    if (this.saltoCortable && !input.upIsDown) {
+      this.setVelocityY(this.body.velocity.y * FISICA.corteSalto);
+      this.saltoCortable = false;
+    }
 
     // --- DETECCIÓN DE ENTORNO ---
     let enElPiso = this.body.touching.down || this.body.blocked.down;
@@ -215,7 +267,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (enElPiso) {
       this.tieneControlAereo = true;
       this.body.allowGravity = true;
-      this.coyoteTimer = tiempoActual + 100; 
+      this.coyoteTimer = tiempoActual + FISICA.coyote;
       if (this.tieneHabilidad('dobleSalto')) {
         this.saltoExtraDisponible = true;
       }
@@ -223,7 +275,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     const puedeUsarCoyote = tiempoActual < this.coyoteTimer;
 
     if (enElPiso && input.downIsDown) {
-      this.dropThroughTimer = tiempoActual + 200; 
+      this.dropThroughTimer = tiempoActual + 200;
     }
     this.quiereAtravesarOneWay = (tiempoActual < this.dropThroughTimer);
 
@@ -231,21 +283,22 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     const wallJumpDerecha = tocandoParedDerecha && quiereSaltar;
 
     if (!enElPiso && (wallJumpIzquierda || wallJumpDerecha) && this.tieneHabilidad('wallJump')) {
-      this.isWallJumping = true; 
-      this.tieneControlAereo = false; 
-      this.bufferSaltoTimer = 0; 
-      quiereSaltar = false; 
-      this.setVelocityY(-330); 
-      
+      this.isWallJumping = true;
+      this.tieneControlAereo = false;
+      this.bufferSaltoTimer = 0;
+      quiereSaltar = false;
+      this.setVelocityY(FISICA.saltoPared * this.factorSalto);
+      this.saltoCortable = true;
+
       if (tocandoParedIzquierda) {
-        this.setVelocityX(280); 
+        this.setVelocityX(FISICA.empujePared);
         this.setFlipX(false);
       } else {
-        this.setVelocityX(-280); 
+        this.setVelocityX(-FISICA.empujePared);
         this.setFlipX(true);
       }
-      
-      this.sceneRef.reproducirSonido('snd-salto', 1.2);
+
+      Sonido.efecto(this.sceneRef, 'snd-salto', 1.2);
     }
 
     if (this.isWallJumping && !this.bloqueoWallJumpConfigurado) {
@@ -257,16 +310,17 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     }
 
     if ((enElPiso || puedeUsarCoyote) && quiereSaltar) {
-      this.setVelocityY(-420);
-      enElPiso = false; 
-      this.bufferSaltoTimer = 0; 
-      this.coyoteTimer = 0; 
-      quiereSaltar = false; 
-      this.sceneRef.reproducirSonido('snd-salto', 1);
+      this.setVelocityY(FISICA.salto * this.factorSalto);
+      enElPiso = false;
+      this.bufferSaltoTimer = 0;
+      this.coyoteTimer = 0;
+      quiereSaltar = false;
+      this.saltoCortable = true;
+      Sonido.efecto(this.sceneRef, 'snd-salto', 1);
     }
 
     if (!enElPiso && input.downIsDown && !this.bloquearCaidaPesada && this.tieneHabilidad('caidaPesada')) {
-      this.setVelocityY(480);
+      this.setVelocityY(FISICA.caidaRapida);
     }
 
     if (!enElPiso && !this.tieneControlAereo) {
@@ -277,25 +331,26 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     if (!this.isWallJumping) {
       if (enElPiso || this.tieneControlAereo) {
-        let velocidadObjetivo = 0; 
+        const velocidadMaxima = FISICA.velocidadCarrera * this.mods.velocidad;
+        let velocidadObjetivo = 0;
         let tocandoDireccion = false;
 
         if (input.leftIsDown) {
-          velocidadObjetivo = -140;
+          velocidadObjetivo = -velocidadMaxima;
           this.setFlipX(true);
           tocandoDireccion = true;
         } else if (input.rightIsDown) {
-          velocidadObjetivo = 140;
+          velocidadObjetivo = velocidadMaxima;
           this.setFlipX(false);
           tocandoDireccion = true;
         }
 
         if (tocandoDireccion) {
-          const nuevaVelocidadX = Phaser.Math.Linear(this.body.velocity.x, velocidadObjetivo, 0.3);
+          const nuevaVelocidadX = Phaser.Math.Linear(this.body.velocity.x, velocidadObjetivo, FISICA.suavizado);
           this.setVelocityX(nuevaVelocidadX);
         } else {
           if (enElPiso) {
-            const nuevaVelocidadX = Phaser.Math.Linear(this.body.velocity.x, 0, 0.3);
+            const nuevaVelocidadX = Phaser.Math.Linear(this.body.velocity.x, 0, FISICA.suavizado);
             if (Math.abs(nuevaVelocidadX) < 5) {
               this.setVelocityX(0);
             } else {
@@ -308,15 +363,16 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     if (!enElPiso && !this.isWallJumping) {
       if (quiereSaltar && this.saltoExtraDisponible && this.tieneHabilidad('dobleSalto')) {
-        this.setVelocityY(-350); 
-        this.saltoExtraDisponible = false; 
-        this.bufferSaltoTimer = 0; 
-        quiereSaltar = false; 
-        this.sceneRef.reproducirSonido('snd-salto', 1.2); 
+        this.setVelocityY(FISICA.dobleSalto * this.factorSalto);
+        this.saltoExtraDisponible = false;
+        this.bufferSaltoTimer = 0;
+        quiereSaltar = false;
+        this.saltoCortable = true;
+        Sonido.efecto(this.sceneRef, 'snd-salto', 1.2);
         this.setAlpha(0.5);
         this.sceneRef.time.delayedCall(150, () => this.setAlpha(1));
       }
-      
+
       if (tocandoPared && this.body.velocity.y > 0) {
         this.setVelocityY(this.body.velocity.y * 0.8);
       }
@@ -325,7 +381,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (this.isDashing) {
       this.anims.play(`${this.animPrefix}-saltar`, true);
     } else if (this.isWallJumping) {
-      this.anims.play(`${this.animPrefix}-saltar`, true); 
+      this.anims.play(`${this.animPrefix}-saltar`, true);
     } else if (tocandoPared && !enElPiso && this.body.velocity.y > 0) {
       this.anims.play(`${this.animPrefix}-caer`, true);
     } else if (!enElPiso) {
@@ -347,52 +403,105 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.isDashing = true;
     this.dashDisponible = false; // Consumimos la recarga
     this.ultimoDashTimer = this.sceneRef.time.now + this.dashCooldown; // Arrancamos el cooldown
+    this.saltoCortable = false;
 
-    this.body.allowGravity = false; 
-    this.setVelocityY(0); 
-    
-    this.setVelocityX(direccion * 350); 
+    this.body.allowGravity = false;
+    this.setVelocityY(0);
+
+    this.setVelocityX(direccion * FISICA.dash * this.mods.velocidad);
     this.setFlipX(direccion === -1);
     this.setAlpha(0.6);
 
-    this.sceneRef.time.delayedCall(200, () => {
+    this.sceneRef.time.delayedCall(FISICA.dashDuracion, () => {
         this.isDashing = false;
-        this.body.allowGravity = true; 
+        this.body.allowGravity = true;
         this.setAlpha(1);
-        this.setVelocityX(this.body.velocity.x * 0.4); 
+        this.setVelocityX(this.body.velocity.x * 0.4);
     });
   }
 
-  aplicarDaño(demonioX) {
-    if (this.sceneRef.modoDiosActivo) return;
-    if (this.isInvul || this.isSpawning) return; 
+  // --- KATANA: tajo corto delante del ninja. Lo que toca lo resuelve la escena en procesarKatana() ---
+  atacar() {
+    const ahora = this.sceneRef.time.now;
+    if (ahora < this.ultimoAtaque + FISICA.katanaCooldown) return;
+    this.ultimoAtaque = ahora;
+
+    const direccion = this.flipX ? -1 : 1;
+    this.katanaGolpeados = new Set();
+    this.katana = this.sceneRef.add.image(this.x + direccion * 12, this.y, 'katana-corte').setFlipX(direccion < 0).setDepth(15);
+    Sonido.ruido(this.sceneRef, 0.06, 0.12);
+
+    this.sceneRef.time.delayedCall(FISICA.katanaDuracion, () => {
+      if (this.katana) {
+        this.katana.destroy();
+        this.katana = null;
+      }
+    });
+  }
+
+  usarEspecial() {
+    if (!this.arma) {
+      Sonido.beep(this.sceneRef, 140, 0.08, 0.08);
+      return;
+    }
+    if (dispararArma(this.sceneRef, this)) {
+      this.sceneRef.events.emit('arma-cambiada', this.indice, this.arma, this.municion);
+    }
+  }
+
+  equiparArma(tipo) {
+    this.arma = tipo;
+    this.municion = ARMAS[tipo].municion;
+    this.sceneRef.events.emit('arma-cambiada', this.indice, this.arma, this.municion);
+  }
+
+  municionInfinita() {
+    return this.sceneRef.fase === 'caceria' && this.mods.municionInfinitaCaceria;
+  }
+
+  aplicarDaño(demonioX, parpadeos = 5) {
+    if (this.sceneRef.modoDiosActivo) return false;
+    if (this.isInvul || this.isSpawning) return false;
 
     this.isStunned = true;
     this.isInvul = true;
-    this.setVelocity(this.x < demonioX ? -180 : 180, -220);
+    this.saltoCortable = false;
+    const knockback = this.mods.knockback;
+    this.setVelocity((this.x < demonioX ? -FISICA.knockbackX : FISICA.knockbackX) * knockback, FISICA.knockbackY * knockback);
+    Sonido.efecto(this.sceneRef, 'snd-stun', 0.5);
 
-    this.sceneRef.time.delayedCall(500, () => {
+    this.sceneRef.time.delayedCall(FISICA.duracionStun, () => {
       this.isStunned = false;
       this.sceneRef.tweens.add({
         targets: this,
         alpha: 0.2,
         duration: 100,
         yoyo: true,
-        repeat: 5,
+        repeat: parpadeos,
         onComplete: () => {
           this.isInvul = false;
           this.setAlpha(1);
         }
       });
     });
+    return true;
+  }
+
+  // Empujón sin daño (explosiones y katanazos del compañero: "fuego amigo cinético")
+  empujar(vx, vy) {
+    if (this.isSpawning) return;
+    this.setVelocity(vx, vy);
+    this.saltoCortable = false;
   }
 
   hacerPisoton() {
     this.dashDisponible = true; // El combate aéreo recarga el dash
     this.ultimoDashTimer = 0; // Premia al jugador reseteando también el cooldown
+    this.saltoExtraDisponible = this.tieneHabilidad('dobleSalto');
+    this.saltoCortable = false;
 
-    this.setVelocityY(-450);
-    this.sceneRef.reproducirSonido('snd-salto', 1);
+    this.setVelocityY(FISICA.pisoton * this.factorSalto);
+    Sonido.efecto(this.sceneRef, 'snd-salto', 1);
 
     this.isInvul = true;
     this.sceneRef.tweens.add({
@@ -406,5 +515,11 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
         this.setAlpha(1);
       }
     });
+  }
+
+  destroy(fromScene) {
+    if (this.katana) this.katana.destroy();
+    this.katana = null;
+    super.destroy(fromScene);
   }
 }

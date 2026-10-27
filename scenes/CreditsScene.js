@@ -17,22 +17,25 @@ export default class CreditsScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     const creditosTexto = [
-      "DISEÑO Y PROGRAMACIÓN",
-      "Mariano",
+      i18n.t('credito_musica'),
+      "Ninja Kid 2 · UPL 1987",
       "",
-      "ARTE Y ANIMACIÓN",
-      "Mariano",
+      i18n.t('credito_graficos'),
+      "Ninja Kid 2 · UPL 1987 · Mariano Trod",
       "",
-      "MÚSICA Y SFX",
-      "Mariano"
+      i18n.t('credito_diseno'),
+      "Mariano Trod · Santiago Tornau",
+      "",
+      i18n.t('credito_programacion'),
+      "Gemini · Claude · Mariano Trod · Santiago Tornau"
     ];
 
-    this.add.text(256, 130, creditosTexto, {
+    this.add.text(256, 145, creditosTexto, {
       fontFamily: '"Press Start 2P"',
       fontSize: '8px',
       color: '#FFFFFF',
       align: 'center',
-      lineSpacing: 8,
+      lineSpacing: 6,
       resolution: 10
     }).setOrigin(0.5);
 
