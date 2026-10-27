@@ -1,24 +1,23 @@
-NINJA MONCHO PLUS - CAMBIOS PARA APLICAR SOBRE main (094cf86 "solucion bug talsimanes duplicados")
+NINJA MONCHO PLUS - CAMBIOS PARA APLICAR SOBRE main (632c3fa "Version 1.0")
 
 1. Descomprimir este zip en la raiz del proyecto, reemplazando los archivos existentes.
-   (Este LEEME.txt no hace falta copiarlo.)
 
-2. Borrar estos dos archivos vacios de la raiz del proyecto, que ya no se usan:
-     tipo
-     {
+2. Borrar LEEME.txt de la raiz del proyecto (es este archivo; no es parte del juego).
+   Si ya estaba commiteado, git lo va a marcar como borrado: esta bien.
 
 3. Revisar y hacer el commit:
      git status
      git add -A
      git commit
 
-Que trae (detalle en Docs/Roadmap.md y Docs/Bitacora.md):
-- Bugs resueltos, sensacion de juego, HUD, pantallas Como jugar y Pausa, record guardado.
-- Contenido del GDD: vidas, fantasma, katana, Caceria, enemigos y armas nuevos, cooperativo, pactos, jefe.
-- config.js para calibrar fisica y tiempos; Phaser 3.80.1 local en lib/.
-- Creditos actualizados (pantalla de creditos y README).
-- Correccion de musica superpuesta al pasar de pantalla.
-- tools/ con scripts de soporte y un banco de pruebas en navegador (no son parte del juego).
-- CLAUDE.md, Docs/Roadmap.md y Docs/Bitacora.md.
+Que trae (detalle en Docs/Bitacora.md):
+- Vidas por jugador (los corazones del J2 en verde). Perder una vida ya no reinicia el nivel: el ninja
+  sale despedido, cae fuera del escenario y reaparece arriba con invulnerabilidad. Un jugador sin vidas
+  queda afuera; game over cuando no queda nadie.
+- Invulnerables durante el cartel de "Sello roto".
+- Los ninjas ya no chocan entre si; caer sobre la cabeza del companero sigue siendo trampolin.
+- Armas arrojadas de 16x16 (dibujo provisorio ampliado; area de impacto 10x10). El shuriken cae un poco.
+- Tiempos nuevos para calibrar en config.js: ESPERA_RESPAWN, INVUL_RESPAWN y FISICA.caidaShuriken.
+- Nuevo escenario de prueba: tools/navegador/escenarios/vidas_y_coop.json.
 
-Para correr el juego hace falta un servidor estatico (ver README.md).
+Pendiente: sprites definitivos de las armas (16x16) y calibrar la caida del shuriken y el respawn jugando.

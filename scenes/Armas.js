@@ -1,8 +1,9 @@
 // Armas.js
 // Armas secundarias (GDD §6): una sola ranura por jugador; recoger otra caja reemplaza el arma y su munición.
-//   shuriken: proyectil recto y rápido.
+//   shuriken: proyectil rápido que cae muy poco (FISICA.caidaShuriken).
 //   bumeran:  va y vuelve; arrastra talismanes y monedas hacia el jugador y golpea varias veces.
 //   bomba:    tiro con rebote corto que explota y empuja todo lo que esté cerca.
+import { FISICA } from '../config.js';
 import { Sonido } from './Sonido.js';
 
 export const ARMAS = {
@@ -17,7 +18,8 @@ export function dispararArma(scene, ninja) {
   if (ninja.arma === 'bumeran' && ninja.bumeranActivo && ninja.bumeranActivo.active) return false;
 
   const direccion = ninja.flipX ? -1 : 1;
-  const proyectil = scene.proyectilesJugador.create(ninja.x + direccion * 8, ninja.y, ninja.arma);
+  const proyectil = scene.proyectilesJugador.create(ninja.x + direccion * 8, ninja.y - 2, ninja.arma);
+  proyectil.body.setSize(10, 10); // El dibujo es de 16x16 pero el área de impacto es más chica (si no, roza el piso al tirar)
   proyectil.tipo = ninja.arma;
   proyectil.duenio = ninja;
   proyectil.golpeados = new Set();
@@ -25,6 +27,7 @@ export function dispararArma(scene, ninja) {
 
   if (ninja.arma === 'shuriken') {
     proyectil.body.setAllowGravity(false);
+    proyectil.body.setAccelerationY(FISICA.caidaShuriken);
     proyectil.setVelocityX(direccion * 300);
     proyectil.setAngularVelocity(900);
     Sonido.efecto(scene, 'snd-shuriken', 0.4);

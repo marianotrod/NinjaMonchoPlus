@@ -12,7 +12,8 @@ Una arena por pantalla: juntá los talismanes, rompé el sello y cazá a los dem
    Acá cada golpe cuesta una vida.
 3. **Pergaminos de Pacto.** Entre niveles elegís un pergamino: una ventaja y una desventaja para el nivel siguiente.
 
-- Hay 3 vidas. Si el reloj llega a 0 aparece **el fantasma**: si te toca, perdés una vida y se repite el nivel.
+- Cada ninja tiene 3 vidas. Al perder una, sale despedido, cae fuera de la pantalla y reaparece arriba a los pocos segundos
+  (el nivel sigue). Si el reloj llega a 0 aparece **el fantasma**: si te toca, perdés una vida.
 - El tiempo que sobra en cada fase se cobra como bono.
 - Son 10 niveles: el 5 es un jefe intermedio (ogro, oni o espectro, al azar) y el 10 es el Rey Demonio.
 - El segundo jugador puede sumarse en cualquier momento manteniendo WASD o un botón de su joystick.

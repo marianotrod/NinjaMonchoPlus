@@ -1,4 +1,4 @@
-import { DEBUG, FISICA, PAD } from '../config.js';
+import { CONFIG, DEBUG, FISICA, PAD } from '../config.js';
 import { MODS_JUGADOR_BASE } from './Pactos.js';
 import { ARMAS, dispararArma } from './Armas.js';
 import { Sonido } from './Sonido.js';
@@ -31,6 +31,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.isStunned = false;
     this.isInvul = false;
     this.isSpawning = true;
+    this.muerto = false;     // Golpe que costó una vida: cae fuera de la pantalla atravesando el escenario
+    this.eliminado = false;  // Sin vidas: queda fuera de la partida
 
     // --- VARIABLES DE HABILIDADES Y CONTROL ---
     this.isWallJumping = false;
@@ -175,7 +177,17 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   update() {
+    if (this.eliminado) return;
     if (DEBUG) this.actualizarDebug();
+
+    if (this.muerto) {
+      this.anims.play(`${this.animPrefix}-stun`, true);
+      if (!this.caidaAvisada && this.body.top > this.sceneRef.scale.height + 8) {
+        this.caidaAvisada = true;
+        this.sceneRef.jugadorCayoFuera(this);
+      }
+      return;
+    }
 
     const input = this.obtenerInputs();
 
@@ -487,9 +499,79 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
+  // Golpe que cuesta una vida: mismo empujón que un golpe común, pero sin chocar con el escenario ni con los
+  // bordes del mundo, así cae fuera de la pantalla. La escena descuenta la vida cuando termina de caer.
+  morir(fuenteX) {
+    this.muerto = true;
+    this.caidaAvisada = false;
+    this.isStunned = true;
+    this.isInvul = true;
+    this.isDashing = false;
+    this.saltoCortable = false;
+    if (this.katana) {
+      this.katana.destroy();
+      this.katana = null;
+    }
+    this.sceneRef.tweens.killTweensOf(this);
+    this.setAlpha(1).setDepth(60);
+    this.setCollideWorldBounds(false);
+    this.body.allowGravity = true;
+    const knockback = this.mods.knockback;
+    this.setVelocity((this.x < fuenteX ? -FISICA.knockbackX : FISICA.knockbackX) * knockback, FISICA.knockbackY * knockback);
+    Sonido.efecto(this.sceneRef, 'snd-stun', 0.5);
+  }
+
+  // Vuelve a caer desde arriba como al empezar el nivel, y titila invulnerable un rato después de tocar el piso
+  respawnear(x) {
+    this.muerto = false;
+    this.isStunned = false;
+    this.isDashing = false;
+    this.isWallJumping = false;
+    this.setDepth(10).setAlpha(1);
+    this.setCollideWorldBounds(true);
+    this.body.reset(x, -32);
+    this.isSpawning = true;
+    this.isInvul = true;
+    this.dashDisponible = true;
+    this.sceneRef.tweens.add({
+      targets: this,
+      alpha: 0.2,
+      duration: 100,
+      yoyo: true,
+      repeat: -1
+    });
+    const esperarPiso = () => {
+      if (!this.active || this.muerto) return;
+      if (this.isSpawning) {
+        this.sceneRef.time.delayedCall(100, esperarPiso);
+        return;
+      }
+      this.sceneRef.time.delayedCall(CONFIG.INVUL_RESPAWN, () => {
+        if (!this.active || this.muerto) return;
+        this.sceneRef.tweens.killTweensOf(this);
+        this.setAlpha(1);
+        this.isInvul = false;
+      });
+    };
+    esperarPiso();
+  }
+
+  // Sin vidas: deja de jugar y de ocupar lugar en la física
+  retirar() {
+    this.eliminado = true;
+    this.muerto = false;
+    if (this.katana) {
+      this.katana.destroy();
+      this.katana = null;
+    }
+    this.sceneRef.tweens.killTweensOf(this);
+    this.body.enable = false;
+    this.setActive(false).setVisible(false);
+  }
+
   // Empujón sin daño (explosiones y katanazos del compañero: "fuego amigo cinético")
   empujar(vx, vy) {
-    if (this.isSpawning) return;
+    if (this.isSpawning || this.muerto || this.eliminado) return;
     this.setVelocity(vx, vy);
     this.saltoCortable = false;
   }

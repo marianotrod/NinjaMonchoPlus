@@ -41,8 +41,9 @@ export default class UIScene extends Phaser.Scene {
     // Texto central alternativo (Cacería: demonios restantes · Jefe: nombre)
     this.textoCentro = this.add.text(256, 4, '', estilo(8, '#EF4444')).setOrigin(0.5, 0).setVisible(false);
 
-    // 4. Vidas y tiempo
+    // 4. Vidas (un grupo de corazones por jugador; los del J2 en verde) y tiempo
     this.corazones = [];
+    this.vidasPrevias = [...partida.vidas];
     this.mostrarVidas(partida.vidas);
     this.textoTiempo = this.add.text(508, 4, '', estilo(8)).setOrigin(1, 0);
     this.actualizarTiempo(juegoEscena.tiempoRestante);
@@ -70,6 +71,7 @@ export default class UIScene extends Phaser.Scene {
     this.escuchar('jugadores', (cantidad) => {
       this.cantidadJugadores = cantidad;
       this.actualizarPuntajes(juegoEscena.partida.puntajes);
+      this.mostrarVidas(juegoEscena.partida.vidas);
     });
     this.escuchar('actualizar-tiempo', (tiempo) => this.actualizarTiempo(tiempo));
     this.escuchar('inventario', (conteo) => this.mostrarInventario(conteo));
@@ -139,14 +141,19 @@ export default class UIScene extends Phaser.Scene {
 
   mostrarVidas(vidas) {
     this.corazones.forEach(c => c.destroy());
-    const total = Math.max(CONFIG.VIDAS_INICIALES, vidas);
     this.corazones = [];
-    for (let i = 0; i < total; i++) {
-      const corazon = this.add.image(350 + i * 10, 8, i < vidas ? 'corazon' : 'corazon-vacio');
-      this.corazones.push(corazon);
+    for (let j = 0; j < this.cantidadJugadores; j++) {
+      const lleno = j === 0 ? 'corazon' : 'corazon-coop';
+      const grupo = [];
+      for (let i = 0; i < Math.max(CONFIG.VIDAS_INICIALES, vidas[j]); i++) {
+        grupo.push(this.add.image(344 + j * 40 + i * 10, 8, i < vidas[j] ? lleno : 'corazon-vacio'));
+      }
+      // Late el corazón que se acaba de perder
+      const perdido = vidas[j] < this.vidasPrevias[j] ? grupo[vidas[j]] : null;
+      if (perdido) this.tweens.add({ targets: perdido, scale: { from: 2, to: 1 }, duration: 300 });
+      this.corazones.push(...grupo);
     }
-    const ultimo = this.corazones[vidas];
-    if (ultimo) this.tweens.add({ targets: ultimo, scale: { from: 2, to: 1 }, duration: 300 });
+    this.vidasPrevias = [...vidas];
   }
 
   cambiarFase(fase) {
@@ -209,9 +216,11 @@ export default class UIScene extends Phaser.Scene {
       contenedor.add(this.add.text(0, yTitulo + 22, subtitulo, { ...estilo(8), align: 'center' }).setOrigin(0.5));
     }
     if (iconos) {
+      // Cada grupo (talismán + "x3") ocupa unos 42 px; se separan cada 64 para que no se toquen
       TIPOS.forEach((tipo, i) => {
-        contenedor.add(this.add.image(-36 + i * 36, 24, tipo).setScale(1.5));
-        contenedor.add(this.add.text(-36 + i * 36 + 12, 24, 'x3', estilo(8)).setOrigin(0, 0.5));
+        const x = (i - 1) * 64;
+        contenedor.add(this.add.image(x - 10, 24, tipo).setScale(1.5));
+        contenedor.add(this.add.text(x + 4, 24, 'x3', estilo(8)).setOrigin(0, 0.5));
       });
     }
 

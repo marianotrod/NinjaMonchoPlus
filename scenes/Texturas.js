@@ -38,6 +38,23 @@ function texturaPixel(scene, key, filas, paleta) {
   crearCanvas(scene, key, filas[0].length, filas.length, ctx => dibujarFilas(ctx, filas, paleta));
 }
 
+// Dibujo ampliado al doble y centrado en un cuadro de 16x16 (tamaño de las armas arrojadas)
+function texturaPixel16(scene, key, filas, paleta) {
+  const dx = Math.floor((16 - filas[0].length * 2) / 2);
+  const dy = Math.floor((16 - filas.length * 2) / 2);
+  crearCanvas(scene, key, 16, 16, ctx => {
+    filas.forEach((fila, y) => {
+      [...fila].forEach((caracter, x) => {
+        const color = paleta[caracter];
+        if (color) {
+          ctx.fillStyle = color;
+          ctx.fillRect(dx + x * 2, dy + y * 2, 2, 2);
+        }
+      });
+    });
+  });
+}
+
 function texturaProcedural(scene, key, ancho, alto, fn) {
   crearCanvas(scene, key, ancho, alto, ctx => dibujarFuncion(ctx, ancho, alto, fn));
 }
@@ -221,15 +238,17 @@ export const Texturas = {
       return d > 12.5 ? '#7dd3fc' : '#ffffff';
     });
 
-    texturaPixel(scene, 'shuriken', SHURIKEN, { a: '#e5e7eb', b: '#6b7280' });
-    texturaPixel(scene, 'bumeran', BUMERAN, { a: '#7c2d12', b: '#f59e0b' });
-    texturaPixel(scene, 'bomba', BOMBA, { a: '#1f2937', b: '#9ca3af', c: '#f97316' });
+    // Armas arrojadas: 16x16 (provisorio, hasta que lleguen los sprites)
+    texturaPixel16(scene, 'shuriken', SHURIKEN, { a: '#e5e7eb', b: '#6b7280' });
+    texturaPixel16(scene, 'bumeran', BUMERAN, { a: '#7c2d12', b: '#f59e0b' });
+    texturaPixel16(scene, 'bomba', BOMBA, { a: '#1f2937', b: '#9ca3af', c: '#f97316' });
     texturaPixel(scene, 'fantasma', FANTASMA, { a: '#e5e7eb', b: '#111827', c: '#7f1d1d' });
     texturaPixel(scene, 'volador', VOLADOR, { a: '#a855f7', b: '#fde047', c: '#6b21a8', d: '#3b0764' });
     texturaPixel(scene, 'lanzador', LANZADOR, { a: '#16a34a', b: '#fef3c7', c: '#fde047', d: '#14532d', e: '#f97316', f: '#14532d' });
     texturaPixel(scene, 'proyectil', PROYECTIL, { a: '#b91c1c', b: '#f97316', c: '#fde047' });
     texturaPixel(scene, 'corazon', CORAZON, { a: '#ef4444', b: '#fecaca' });
     texturaPixel(scene, 'corazon-vacio', CORAZON, { a: '#4b5563', b: '#4b5563' });
+    texturaPixel(scene, 'corazon-coop', CORAZON, { a: '#4ade80', b: '#dcfce7' }); // Vidas del J2, con su color
     texturaPixel(scene, 'mano', MANO, { a: '#111827', b: '#fde68a' });
     texturaPixel(scene, 'estrella', ESTRELLA, { a: '#fde047' });
     texturaProcedural(scene, 'chispa', 2, 2, () => '#ffffff');

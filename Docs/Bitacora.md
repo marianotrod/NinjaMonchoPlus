@@ -5,6 +5,24 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-10-27 — Claude: vidas por jugador, respawn y ajustes de armas y cooperativo
+
+- Durante el cartel de "¡Sello roto!" los ninjas son invulnerables.
+- Los ninjas ya no chocan entre sí; caer sobre la cabeza del compañero sigue siendo trampolín.
+- Armas arrojadas de 16x16 (el dibujo provisorio ampliado al doble; el área de impacto es de 10x10). El shuriken cae un poco
+  (`FISICA.caidaShuriken`).
+- Vidas por jugador (`partida.vidas` es un arreglo; corazones del J2 en verde). Perder una vida ya no reinicia el nivel:
+  el ninja sale despedido, atraviesa el escenario, cae fuera y reaparece arriba (`CONFIG.ESPERA_RESPAWN`, `INVUL_RESPAWN`).
+  Vale para Cacería, jefe y fantasma; si es en Recolección también se le cae un talismán. El fantasma no se va al matar a alguien.
+- Un jugador sin vidas queda afuera el resto de la partida; game over cuando no queda nadie.
+- Nuevo escenario de prueba: `tools/navegador/escenarios/vidas_y_coop.json` (con `?debug&nivel=1&jugadores=2`).
+
+**Pendientes**
+- Sprites definitivos de las armas arrojadas (16x16).
+- Calibrar la caída del shuriken y los tiempos de respawn jugando.
+
+---
+
 ## 2026-10-27 — Claude: créditos actualizados
 
 - Pantalla de créditos y README con los créditos definitivos: Música y SFX, Gráficos, Diseño y Programación.

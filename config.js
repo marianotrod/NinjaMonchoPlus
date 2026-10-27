@@ -15,7 +15,9 @@ export const ARRANQUE_DEBUG = {
 };
 
 export const CONFIG = {
-  VIDAS_INICIALES: 3,
+  VIDAS_INICIALES: 3,          // Por jugador: las vidas no se comparten
+  ESPERA_RESPAWN: 2000,         // Tras caer fuera de la pantalla, el ninja reaparece arriba después de esto (ms)
+  INVUL_RESPAWN: 1500,          // Invulnerabilidad al reaparecer, desde que toca el piso (ms)
   TOTAL_NIVELES: 10,
   NIVELES_POR_BLOQUE: 5,        // Cada 5 niveles hay jefe: el 5 es intermedio y el 10 es el final
 
@@ -71,6 +73,8 @@ export const FISICA = {
   knockbackX: 180,
   knockbackY: -220,
   duracionStun: 500,
+
+  caidaShuriken: 40,            // Gravedad propia del shuriken (px/s²): cae muy poco en su recorrido
 
   katanaDuracion: 150,
   katanaCooldown: 320

@@ -12,9 +12,8 @@ export function nuevaPartida(jugadores, nivel = 1) {
   return {
     jugadores,
     nivel,
-    vidas: CONFIG.VIDAS_INICIALES,
+    vidas: [CONFIG.VIDAS_INICIALES, CONFIG.VIDAS_INICIALES], // Cada jugador tiene las suyas
     puntajes: [0, 0],
-    puntajesInicioNivel: [0, 0],
     pool: [...mapasPool],
     mapa: null,
     jefe: null,

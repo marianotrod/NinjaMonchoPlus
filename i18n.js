@@ -27,7 +27,6 @@ const textos = {
     continuar: 'ENTER / A: CONTINUAR',
     objetivo_recoleccion: 'JUNTÁ 3 TALISMANES DE CADA FORMA',
     objetivo_caceria: '¡ELIMINÁ A TODOS LOS DEMONIOS!',
-    reintento: 'REINTENTO',
     ya: '¡YA!',
     diez_segundos: '¡10 SEGUNDOS!',
     sello_roto: '¡SELLO ROTO!',
@@ -41,6 +40,7 @@ const textos = {
     fantasma_corto: '¡HUÍ!',
     vida_perdida: '-1 VIDA',
     vidas: 'VIDAS',
+    eliminado: 'SIN VIDAS',
     total: 'TOTAL',
     record: 'RÉCORD',
     nuevo_record: '¡NUEVO RÉCORD!',
@@ -91,7 +91,7 @@ const textos = {
     ayuda_caceria_titulo: 'CACERÍA',
     ayuda_caceria:
       'CON LOS 9 TALISMANES SE ROMPE EL SELLO: LOS DEMONIOS SE ENFURECEN, PERO AHORA SE PUEDEN ELIMINAR. CADA BAJA SUMA PUNTOS.\n\n' +
-      'EN LA CACERÍA CADA GOLPE CUESTA UNA VIDA. EMPEZÁS CON 3.\n\n' +
+      'EN LA CACERÍA CADA GOLPE CUESTA UNA VIDA. CADA NINJA TIENE 3.\n\n' +
       'EL TIEMPO QUE SOBRA EN CADA FASE ES BONO. CADA 5 NIVELES HAY UN JEFE.\n\n' +
       'ENTRE NIVELES ELEGÍS UN PERGAMINO DE PACTO: UNA VENTAJA Y UNA DESVENTAJA PARA EL NIVEL SIGUIENTE.',
     ayuda_controles_titulo: 'CONTROLES',
@@ -136,7 +136,6 @@ const textos = {
     continuar: 'ENTER / A: CONTINUE',
     objetivo_recoleccion: 'COLLECT 3 TALISMANS OF EACH SHAPE',
     objetivo_caceria: 'DEFEAT ALL THE DEMONS!',
-    reintento: 'RETRY',
     ya: 'GO!',
     diez_segundos: '10 SECONDS!',
     sello_roto: 'SEAL BROKEN!',
@@ -150,6 +149,7 @@ const textos = {
     fantasma_corto: 'RUN!',
     vida_perdida: '-1 LIFE',
     vidas: 'LIVES',
+    eliminado: 'OUT OF LIVES',
     total: 'TOTAL',
     record: 'HIGH SCORE',
     nuevo_record: 'NEW HIGH SCORE!',
@@ -200,7 +200,7 @@ const textos = {
     ayuda_caceria_titulo: 'THE HUNT',
     ayuda_caceria:
       'WITH ALL 9 TALISMANS THE SEAL BREAKS: DEMONS GET ANGRY, BUT NOW THEY CAN BE DEFEATED. EVERY KILL SCORES.\n\n' +
-      'DURING THE HUNT EVERY HIT COSTS A LIFE. YOU START WITH 3.\n\n' +
+      'DURING THE HUNT EVERY HIT COSTS A LIFE. EACH NINJA HAS 3.\n\n' +
       'LEFTOVER TIME IN EACH PHASE IS A BONUS. THERE IS A BOSS EVERY 5 LEVELS.\n\n' +
       'BETWEEN LEVELS YOU PICK A PACT SCROLL: ONE ADVANTAGE AND ONE DRAWBACK FOR THE NEXT LEVEL.',
     ayuda_controles_titulo: 'CONTROLS',

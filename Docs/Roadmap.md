@@ -5,7 +5,7 @@ Análisis inicial del 2026-10-27 y estado de cada punto. Esfuerzo: **S** = menos
 
 ## Estado actual en una línea
 10 niveles de una pantalla. En cada uno: **Recolección** (3 talismanes de cada forma) → **Cacería** (los demonios se enfurecen
-y se pueden eliminar) → **Pergaminos de Pacto**. Hay 3 vidas, un fantasma cuando se acaba el tiempo, katana, 3 armas especiales,
+y se pueden eliminar) → **Pergaminos de Pacto**. Hay 3 vidas por jugador, un fantasma cuando se acaba el tiempo, katana, 3 armas especiales,
 4 tipos de enemigos y 4 jefes (3 intermedios al azar en el nivel 5, y el Rey Demonio en el 10). Hasta 2 jugadores, con hot-join.
 
 ---
@@ -49,17 +49,18 @@ y se pueden eliminar) → **Pergaminos de Pacto**. Hay 3 vidas, un fantasma cuan
 
 ## Fase 3 — Contenido del GDD
 
-1. [x] **Vidas** (3). Al perder una se reinicia el nivel y se descartan los puntos de ese intento.
+1. [x] **Vidas** (3 por jugador, no se comparten). Al perder una el nivel sigue: el ninja cae fuera de la pantalla y reaparece.
+       Sin vidas queda afuera hasta el final de la partida; si se quedan sin vidas todos, game over.
 2. [x] **Fantasma perseguidor** al llegar el tiempo a 0 (invencible, atraviesa muros y acelera).
 3. [x] **Katana** (X / J / botón X): aturde y empuja en Recolección, mata en Cacería, desvía talismanes y bolas de fuego, empuja al compañero.
 4. [x] **Fase de Cacería** con temporizador propio, cupo de demonios según el nivel y bono si se limpia la sala.
 5. [x] **Enemigos**: patrullero (da la vuelta en bordes), espíritu volador (ondula y busca tu altura) y lanzador (tiros en parábola).
        Aparecen desde los niveles 2, 3 y 4 respectivamente.
 6. [x] **Armas especiales** en cajas doradas: shuriken, bumerán (arrastra talismanes y monedas) y bombas. Una sola ranura.
-7. [x] **Cooperativo**: colisión entre ninjas, trampolín humano, fuego amigo sin daño y puntaje por jugador.
+7. [x] **Cooperativo**: los ninjas se atraviesan, salvo al caer sobre la cabeza del otro (trampolín humano), fuego amigo sin daño y puntaje por jugador.
 8. [x] **Pergaminos de Pacto** con mano oscilante, 8 s, selección forzada y "robo" de pergamino en cooperativo. Duran un nivel.
 9. [x] **Jefes**: Ogro (embestida y mareo), Oni (saltos con ondas), Espectro (ráfagas e invoca voladores) y Rey Demonio (los tres).
-       En la pelea, cada golpe cuesta una vida pero no reinicia el combate.
+       En la pelea, cada golpe cuesta una vida (como en la Cacería) y el combate sigue.
 10. [x] **Progresión**: niveles 1 y 2 fijos (se sumó un mapa de aprendizaje), resto al azar del pool, arena propia para jefes.
 
 ## Fase 4 — Técnico

@@ -1,6 +1,6 @@
 // Fantasma.js
 // Fantasma Perseguidor (GDD §5.1): aparece cuando el reloj llega a 0. Es invencible, atraviesa muros
-// y persigue al jugador más cercano, cada vez más rápido. Si toca a un ninja, se pierde una vida.
+// y persigue al jugador más cercano, cada vez más rápido. Si toca a un ninja, ese ninja pierde una vida.
 
 export default class Fantasma extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
