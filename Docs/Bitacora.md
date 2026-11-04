@@ -5,6 +5,19 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-02 / 03 — Mariano y Claude: análisis del proyecto y diseño de la v2
+
+- Se analizó la arquitectura de la v1.01: está ordenada, pero `NinjaMonchoScene` concentra demasiado y las reglas por fase están desparramadas.
+- La v1.01 quedó congelada en la etiqueta `v1.01-entrega`. La v2 se trabaja en la rama `v2`; `main` y Pages no se tocan mientras dura la evaluación.
+- Diseño completo en `Docs/DisenoV2.md`: niveles en JSON con editor propio, mundo de 34×20 con wrap en los dos ejes,
+  tiles de trampa y fuego, golpe y bando únicos, pergaminos permanentes con positivo y negativo, y rescate con llave y vórtice.
+
+**Pendientes**
+- Mariano: lista de pergaminos revisada y lista de habilidades desbloqueables.
+- Empezar por la etapa 0 del plan (escenarios de prueba que fijen el comportamiento actual).
+
+---
+
 ## 2026-10-27 — Claude: vidas por jugador, respawn y ajustes de armas y cooperativo
 
 - Durante el cartel de "¡Sello roto!" los ninjas son invulnerables.
