@@ -1,0 +1,253 @@
+{
+ "descripcion": "Golpes en cada fase, vidas, respawn, protección y game over (1 jugador)",
+ "query": "?debug&nivel=1",
+ "pasos": [
+  {
+   "hasta": "window.prueba && prueba.enJuego()",
+   "timeout": 8000,
+   "nombre": "arranca el nivel"
+  },
+  {
+   "verificar": "al empezar el nivel, J1 aparece cayendo y protegido",
+   "eval": "prueba.jugador(1)",
+   "espera": {
+    "apareciendo": true
+   }
+  },
+  {
+   "hasta": "prueba.estado().fase === 'recoleccion'",
+   "timeout": 4000,
+   "nombre": "arranca la Recolección"
+  },
+  {
+   "eval": "prueba.sinEnemigos() && prueba.sinCajasArmas()"
+  },
+  {
+   "hasta": "prueba.listo(1)",
+   "timeout": 4000,
+   "nombre": "J1 en el piso"
+  },
+  {
+   "verificar": "v1: al tocar el piso en el arranque ya no está protegido (en el respawn sí, 1,5 s más)",
+   "eval": "prueba.jugador(1)",
+   "espera": {
+    "apareciendo": false,
+    "invulnerable": false
+   }
+  },
+  {
+   "eval": "prueba.juntarTalismanes({cuadrado: 1, triangulo: 1})"
+  },
+  {
+   "verificar": "un golpe en la Recolección aturde y no quita vidas",
+   "eval": "(prueba.golpear(1), { ...prueba.jugador(1), vidas: prueba.estado().vidas })",
+   "espera": {
+    "aturdido": true,
+    "invulnerable": true,
+    "muerto": false,
+    "vidas": [
+     3,
+     3
+    ]
+   }
+  },
+  {
+   "verificar": "y se pierde el último talismán juntado",
+   "eval": "prueba.estado()",
+   "espera": {
+    "talismanes": {
+     "cuadrado": 1,
+     "triangulo": 0,
+     "rombo": 0
+    }
+   }
+  },
+  {
+   "verificar": "otro golpe enseguida no hace nada (invulnerable)",
+   "eval": "(prueba.golpear(1), prueba.estado())",
+   "espera": {
+    "talismanes": {
+     "cuadrado": 1,
+     "triangulo": 0,
+     "rombo": 0
+    },
+    "vidas": [
+     3,
+     3
+    ]
+   }
+  },
+  {
+   "wait": 700
+  },
+  {
+   "verificar": "el aturdimiento dura medio segundo",
+   "eval": "prueba.jugador(1)",
+   "espera": {
+    "aturdido": false,
+    "invulnerable": true
+   }
+  },
+  {
+   "hasta": "!prueba.jugador(1).invulnerable",
+   "timeout": 2500,
+   "nombre": "termina el titileo de invulnerabilidad"
+  },
+  {
+   "verificar": "un golpe sin talismanes no rompe nada",
+   "eval": "(prueba.juntarTalismanes({}), window.prueba.estado().talismanes.cuadrado === 1)"
+  },
+  {
+   "eval": "prueba.completarRecoleccion()"
+  },
+  {
+   "hasta": "prueba.estado().fase === 'caceria'",
+   "timeout": 3000,
+   "nombre": "empieza la Cacería"
+  },
+  {
+   "hasta": "!prueba.jugador(1).aturdido",
+   "timeout": 2000
+  },
+  {
+   "verificar": "en la Cacería un golpe mata: el ninja sale despedido",
+   "eval": "(prueba.quitarProteccion(1), prueba.golpear(1, 1), prueba.jugador(1))",
+   "espera": {
+    "muerto": true,
+    "vx": {
+     "max": -1
+    }
+   }
+  },
+  {
+   "verificar": "la vida se descuenta recién al caer fuera de la pantalla",
+   "eval": "prueba.estado()",
+   "espera": {
+    "vidas": [
+     3,
+     3
+    ]
+   }
+  },
+  {
+   "hasta": "prueba.estado().vidas[0] === 2",
+   "timeout": 3000,
+   "nombre": "cae fuera y pierde la vida"
+  },
+  {
+   "verificar": "perder una vida no reinicia el nivel",
+   "eval": "prueba.estado()",
+   "espera": {
+    "fase": "caceria",
+    "vidas": [
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "hasta": "!prueba.jugador(1).muerto",
+   "timeout": 3500,
+   "nombre": "reaparece"
+  },
+  {
+   "verificar": "reaparece arriba, cayendo y protegido",
+   "eval": "prueba.jugador(1)",
+   "espera": {
+    "apareciendo": true,
+    "invulnerable": true,
+    "y": {
+     "max": 40
+    }
+   }
+  },
+  {
+   "verificar": "mientras aparece no lo afectan los golpes",
+   "eval": "(prueba.golpear(1), prueba.jugador(1))",
+   "espera": {
+    "muerto": false
+   }
+  },
+  {
+   "hasta": "prueba.listo(1)",
+   "timeout": 4000,
+   "nombre": "toca el piso"
+  },
+  {
+   "wait": 1000
+  },
+  {
+   "verificar": "sigue invulnerable un rato después de tocar el piso",
+   "eval": "prueba.jugador(1)",
+   "espera": {
+    "invulnerable": true
+   }
+  },
+  {
+   "hasta": "!prueba.jugador(1).invulnerable",
+   "timeout": 2000,
+   "nombre": "termina la protección del respawn"
+  },
+  {
+   "eval": "(prueba.ponerVidas(1, 1), prueba.golpear(1, -1))"
+  },
+  {
+   "verificar": "golpeado desde la izquierda sale despedido a la derecha",
+   "eval": "prueba.jugador(1)",
+   "espera": {
+    "muerto": true,
+    "vx": {
+     "min": 1
+    }
+   }
+  },
+  {
+   "hasta": "prueba.estado().fase === 'fin'",
+   "timeout": 4000,
+   "nombre": "game over"
+  },
+  {
+   "verificar": "sin vidas en 1 jugador: game over",
+   "eval": "({ ...prueba.estado(), eliminado: prueba.jugador(1).eliminado })",
+   "espera": {
+    "fase": "fin",
+    "vidas": [
+     0,
+     3
+    ],
+    "eliminado": true
+   }
+  },
+  {
+   "shot": "game_over"
+  },
+  {
+   "hasta": "prueba.estado().listoParaContinuar",
+   "timeout": 3000,
+   "nombre": "se puede reintentar"
+  },
+  {
+   "press": "Enter"
+  },
+  {
+   "hasta": "prueba.enJuego() && prueba.estado().fase === 'recoleccion'",
+   "timeout": 6000,
+   "nombre": "arranca de nuevo"
+  },
+  {
+   "verificar": "reintentar arranca una partida nueva",
+   "eval": "prueba.estado()",
+   "espera": {
+    "nivel": 1,
+    "vidas": [
+     3,
+     3
+    ],
+    "puntajes": [
+     0,
+     0
+    ]
+   }
+  }
+ ]
+}

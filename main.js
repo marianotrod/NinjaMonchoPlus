@@ -7,7 +7,8 @@ import UIScene from './scenes/UIScene.js';
 import PauseScene from './scenes/PauseScene.js';
 import PactSelectionScene from './scenes/PactSelectionScene.js';
 import CreditsScene from './scenes/CreditsScene.js';
-import { FISICA } from './config.js';
+import { DEBUG, FISICA } from './config.js';
+import { instalarPuertaPruebas } from './scenes/PuertaPruebas.js';
 
 
 const GAME_WIDTH = 512;
@@ -62,6 +63,7 @@ async function initGame() {
   }
 
   window.game = new Phaser.Game(config);
+  if (DEBUG) instalarPuertaPruebas(window.game); // Para el banco de pruebas (tools/navegador)
   setTimeout(applyIntegerScaling, 50);
 }
 
