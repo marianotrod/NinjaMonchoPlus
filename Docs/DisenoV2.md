@@ -160,6 +160,7 @@ Cada fase es una **tabla de reglas**. El resto del código consulta la tabla y n
 
 - **Al aparecer** (inicio, respawn o rescate), el ninja es **intocable** un rato.
 - **En la Recolección nadie muere:** trampa, fuego y enemigos tienen el mismo efecto que un golpe común.
+- **La excepción es el fantasma:** aparece cuando se acaba el tiempo de la Recolección. Si se completan los talismanes antes de que mate a alguien, desaparece y se pasa a la Cacería. Si mata a un ninja, ese ninja pierde una vida y **el nivel recomienza**, y se pierden los puntos obtenidos en el nivel, para que morir y recomenzar no se pueda explotar. (En la v1 el nivel sigue y el fantasma se queda.) **[Pendiente]** Qué pasa en cooperativo y si los pergaminos o el "sobrevivir a la muerte" cambian algo.
 
 ### 5.3 Enemigos
 - **Enfurecido** = rojo, más rápido y más agresivo (por ejemplo, dispara más seguido). **Nada más.**
