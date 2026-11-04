@@ -1,0 +1,188 @@
+{
+ "descripcion": "Cajas de armas, munición, shuriken, bumerán y bomba",
+ "query": "?debug&nivel=1",
+ "pasos": [
+  {
+   "hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'",
+   "timeout": 8000,
+   "nombre": "arranca la Recolección"
+  },
+  {
+   "wait": 2000,
+   "eval": "prueba.sinEnemigos() && prueba.sinCajasArmas() && prueba.sinItems()"
+  },
+  {
+   "hasta": "prueba.listo(1)",
+   "timeout": 4000,
+   "nombre": "J1 en el piso"
+  },
+  {
+   "eval": "(prueba.ponerJugador(1, 60, 264), prueba.proteger(1))"
+  },
+  {
+   "wait": 300
+  },
+  {
+   "verificar": "sin arma, el botón especial no dispara nada",
+   "eval": "(prueba.disparar(1), prueba.proyectiles().jugador.length === 0)"
+  },
+  {
+   "eval": "prueba.crearCajaArma('shuriken', 60, 262)"
+  },
+  {
+   "wait": 150
+  },
+  {
+   "verificar": "tocar una caja da el arma con su munición y la caja desaparece",
+   "eval": "({ ...prueba.jugador(1), cajas: prueba.cajasArmas() })",
+   "espera": {
+    "arma": "shuriken",
+    "municion": 12,
+    "cajas": 0
+   }
+  },
+  {
+   "eval": "(prueba.mirar(1, -1), prueba.disparar(1))"
+  },
+  {
+   "verificar": "disparar gasta un tiro y crea un shuriken",
+   "eval": "({ municion: prueba.jugador(1).municion, shurikens: prueba.proyectiles().jugador.filter(p => p.tipo === 'shuriken').length })",
+   "espera": {
+    "municion": 11,
+    "shurikens": 1
+   }
+  },
+  {
+   "wait": 400
+  },
+  {
+   "verificar": "el shuriken se rompe contra la pared",
+   "eval": "prueba.proyectiles().jugador.length === 0"
+  },
+  {
+   "eval": "(prueba.crearEnemigo('demonio_caminante', 110, 264), prueba.mirar(1, 1), prueba.disparar(1))"
+  },
+  {
+   "wait": 250
+  },
+  {
+   "verificar": "Recolección: el shuriken aturde al demonio y se rompe",
+   "eval": "({ ...prueba.enemigo(0), shurikens: prueba.proyectiles().jugador.length })",
+   "espera": {
+    "aturdido": true,
+    "muerto": false,
+    "shurikens": 0
+   }
+  },
+  {
+   "eval": "prueba.sinEnemigos()"
+  },
+  {
+   "eval": "(window.p0 = prueba.estado().puntajes[0], prueba.equipar(1, 'bumeran'), prueba.mirar(1, 1), prueba.crearItem('coin', 110, 262), prueba.disparar(1), prueba.disparar(1))"
+  },
+  {
+   "verificar": "bumerán: 6 tiros, pero no se puede tirar otro mientras vuela",
+   "eval": "({ municion: prueba.jugador(1).municion, bumeranes: prueba.proyectiles().jugador.length })",
+   "espera": {
+    "municion": 5,
+    "bumeranes": 1
+   }
+  },
+  {
+   "hasta": "prueba.proyectiles().jugador.length === 0",
+   "timeout": 3000,
+   "nombre": "el bumerán vuelve"
+  },
+  {
+   "verificar": "el bumerán trae la moneda y el ninja la agarra",
+   "eval": "({ puntos: prueba.estado().puntajes[0] - p0 })",
+   "espera": {
+    "puntos": {
+     "min": 1
+    }
+   }
+  },
+  {
+   "eval": "prueba.sinItems()"
+  },
+  {
+   "eval": "(prueba.equipar(1, 'bomba'), prueba.mirar(1, 1), prueba.crearEnemigo('demonio_caminante', 78, 264), prueba.disparar(1))"
+  },
+  {
+   "verificar": "bomba: 4 tiros",
+   "eval": "prueba.jugador(1)",
+   "espera": {
+    "municion": 3
+   }
+  },
+  {
+   "hasta": "prueba.proyectiles().jugador.length === 0",
+   "timeout": 2000,
+   "nombre": "la bomba explota"
+  },
+  {
+   "verificar": "Recolección: la explosión aturde al demonio cercano y no lo mata",
+   "eval": "prueba.enemigo(0)",
+   "espera": {
+    "aturdido": true,
+    "muerto": false
+   }
+  },
+  {
+   "eval": "prueba.sinEnemigos()"
+  },
+  {
+   "wait": 300
+  },
+  {
+   "verificar": "una bomba tirada hacia la pared",
+   "eval": "(prueba.mirar(1, -1), prueba.disparar(1), prueba.proyectiles().jugador.length === 1)"
+  },
+  {
+   "wait": 1400
+  },
+  {
+   "verificar": "  → explota sola al rato",
+   "eval": "prueba.proyectiles().jugador.length === 0"
+  },
+  {
+   "verificar": "al gastar el último tiro se pierde el arma",
+   "eval": "(prueba.disparar(1), prueba.disparar(1), prueba.jugador(1))",
+   "espera": {
+    "arma": null,
+    "municion": 0
+   }
+  },
+  {
+   "wait": 1500
+  },
+  {
+   "eval": "(prueba.conEnemigos(), prueba.completarRecoleccion())"
+  },
+  {
+   "hasta": "prueba.estado().fase === 'caceria'",
+   "timeout": 3000,
+   "nombre": "empieza la Cacería"
+  },
+  {
+   "eval": "prueba.sinEnemigos()"
+  },
+  {
+   "wait": 1600
+  },
+  {
+   "eval": "(prueba.sinEnemigos(), prueba.ponerJugador(1, 60, 264), prueba.proteger(1), prueba.crearEnemigo('demonio_caminante', 440, 264), prueba.crearEnemigo('demonio_caminante', 110, 264), prueba.enfurecerEnemigos(), window.p0 = prueba.estado().puntajes[0], prueba.equipar(1, 'shuriken'), prueba.mirar(1, 1), prueba.disparar(1))"
+  },
+  {
+   "wait": 250
+  },
+  {
+   "verificar": "Cacería: el shuriken mata al demonio enfurecido y da 100",
+   "eval": "({ enemigos: prueba.estado().enemigos, puntos: prueba.estado().puntajes[0] - p0 })",
+   "espera": {
+    "enemigos": 1,
+    "puntos": 100
+   }
+  }
+ ]
+}

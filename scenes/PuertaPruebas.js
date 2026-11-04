@@ -4,6 +4,7 @@
 // Así, cuando se reorganiza el código, se adapta este archivo y los escenarios siguen sirviendo para verificar
 // que el juego se comporte igual. Los jugadores se numeran 1 y 2, como en pantalla.
 import { Bestiario } from './Bestiario.js';
+import { ARMAS } from './Armas.js';
 
 export function instalarPuertaPruebas(game) {
   const juego = () => game.scene.getScene('NinjaMonchoScene');
@@ -112,6 +113,11 @@ export function instalarPuertaPruebas(game) {
       item.setVelocity(0, 0);
       return s.items.getChildren().length - 1;
     },
+    crearCajaArma(tipo, x, y) {
+      const caja = juego().cajasArmas.create(x, y, ARMAS[tipo].icono);
+      caja.tipoArma = tipo;
+      return true;
+    },
     ponerTiempo(t) {
       juego().tiempoRestante = t;
       return true;
@@ -187,6 +193,10 @@ export function instalarPuertaPruebas(game) {
       const s = juego();
       s.inventario = ['cuadrado', 'cuadrado', 'cuadrado', 'triangulo', 'triangulo', 'triangulo', 'rombo', 'rombo'];
       return window.prueba.tocarTalisman(1, 'rombo');
+    },
+    enfurecerEnemigos() {
+      juego().enemigos.getChildren().forEach(e => e.enfurecer());
+      return true;
     },
     matarEnemigos(n = 1) {
       const s = juego();
