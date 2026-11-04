@@ -18,7 +18,7 @@ export const ARRANQUE_DEBUG = {
 // el juego usa la última copia guardada o los textos de i18n.js. Con ?debug se puede cambiar: ?debug&api=...&proyecto=...
 export const TRADUCCIONES = {
   api: (DEBUG && parametros.get('api')) || 'https://traducila.vercel.app',
-  proyecto: (DEBUG && parametros.get('proyecto')) || '',
+  proyecto: (DEBUG && parametros.get('proyecto')) || '3ed44ceb-d294-4cfb-9cfa-6a5509745628',
   espera: 3000                 // Tiempo máximo para arrancar sin respuesta de la API (ms)
 };
 
