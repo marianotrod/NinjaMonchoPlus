@@ -1,214 +1,52 @@
 {
- "descripcion": "Katana, pisotones, parry y empujones en Recolección y en Cacería",
- "query": "?debug&nivel=1",
- "pasos": [
-  {
-   "hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'",
-   "timeout": 8000,
-   "nombre": "arranca la Recolección"
-  },
-  {
-   "wait": 2000,
-   "eval": "prueba.sinEnemigos() && prueba.sinCajasArmas() && prueba.sinItems()"
-  },
-  {
-   "hasta": "prueba.listo(1)",
-   "timeout": 4000,
-   "nombre": "J1 en el piso"
-  },
-  {
-   "eval": "(prueba.ponerJugador(1, 60, 264), prueba.mirar(1, 1), prueba.proteger(1))"
-  },
-  {
-   "wait": 300
-  },
-  {
-   "eval": "(prueba.crearEnemigo('demonio_caminante', 76, 264), prueba.atacar(1))"
-  },
-  {
-   "wait": 120
-  },
-  {
-   "verificar": "Recolección: la katana aturde al demonio y no lo mata",
-   "eval": "({ ...prueba.enemigo(0), puntaje: prueba.estado().puntajes[0] })",
-   "espera": {
-    "aturdido": true,
-    "muerto": false,
-    "puntaje": 0
-   }
-  },
-  {
-   "eval": "prueba.sinEnemigos()"
-  },
-  {
-   "eval": "(prueba.crearEnemigo('demonio_caminante', 120, 264), prueba.quitarProteccion(1), prueba.ponerJugador(1, 120, 236, 0, 200))"
-  },
-  {
-   "wait": 150
-  },
-  {
-   "verificar": "Recolección: pisotón hace rebotar al ninja y no mata al demonio",
-   "eval": "({ vy: prueba.jugador(1).vy, muerto: prueba.enemigo(0) ? prueba.enemigo(0).muerto : true, enemigos: prueba.estado().enemigos })",
-   "espera": {
-    "vy": {
-     "max": -100
-    },
-    "muerto": false,
-    "enemigos": 1
-   }
-  },
-  {
-   "wait": 800
-  },
-  {
-   "eval": "prueba.sinEnemigos()"
-  },
-  {
-   "eval": "(prueba.ponerJugador(1, 60, 264), prueba.mirar(1, 1), prueba.crearItem('coin', 76, 262), prueba.atacar(1))"
-  },
-  {
-   "wait": 120
-  },
-  {
-   "verificar": "la katana lanza las monedas hacia adelante y arriba",
-   "eval": "(() => { const m = prueba.items().find(i => !i.talisman); return { vx: m.vx, sube: m.y < 262 || m.vy < 0 }; })()",
-   "espera": {
-    "vx": {
-     "min": 50
-    },
-    "sube": true
-   }
-  },
-  {
-   "eval": "prueba.sinItems()"
-  },
-  {
-   "wait": 400
-  },
-  {
-   "eval": "(prueba.ponerJugador(1, 60, 264), prueba.mirar(1, 1), prueba.proyectilEnemigo(90, 262, -60, 0))"
-  },
-  {
-   "wait": 100
-  },
-  {
-   "eval": "prueba.atacar(1)"
-  },
-  {
-   "wait": 150
-  },
-  {
-   "verificar": "parry: la katana destruye la bola de fuego y no hay golpe",
-   "eval": "({ bolas: prueba.proyectiles().enemigos, aturdido: prueba.jugador(1).aturdido })",
-   "espera": {
-    "bolas": 0,
-    "aturdido": false
-   }
-  },
-  {
-   "eval": "(prueba.quitarProteccion(1), prueba.ponerJugador(1, 60, 264), prueba.proyectilEnemigo(110, 262, -150, 0))"
-  },
-  {
-   "wait": 500
-  },
-  {
-   "verificar": "una bola de fuego que toca al ninja en la Recolección lo aturde y desaparece",
-   "eval": "({ bolas: prueba.proyectiles().enemigos, ...prueba.jugador(1), vidas: prueba.estado().vidas })",
-   "espera": {
-    "bolas": 0,
-    "aturdido": true,
-    "muerto": false,
-    "vidas": [
-     3,
-     3
-    ]
-   }
-  },
-  {
-   "hasta": "!prueba.jugador(1).invulnerable",
-   "timeout": 2500
-  },
-  {
-   "eval": "(prueba.crearEnemigo('demonio_caminante', 140, 264), prueba.quitarProteccion(1), prueba.ponerJugador(1, 140, 264))"
-  },
-  {
-   "wait": 200
-  },
-  {
-   "verificar": "tocar a un demonio de costado aturde al ninja",
-   "eval": "prueba.jugador(1)",
-   "espera": {
-    "aturdido": true,
-    "muerto": false
-   }
-  },
-  {
-   "eval": "prueba.sinEnemigos()"
-  },
-  {
-   "hasta": "!prueba.jugador(1).invulnerable",
-   "timeout": 2500
-  },
-  {
-   "eval": "(prueba.conEnemigos(), prueba.proteger(1), prueba.completarRecoleccion())"
-  },
-  {
-   "hasta": "prueba.estado().fase === 'caceria'",
-   "timeout": 3000,
-   "nombre": "empieza la Cacería"
-  },
-  {
-   "eval": "prueba.sinEnemigos()"
-  },
-  {
-   "wait": 1600
-  },
-  {
-   "eval": "(prueba.sinEnemigos(), prueba.ponerJugador(1, 60, 264), prueba.mirar(1, 1), prueba.proteger(1), prueba.crearEnemigo('demonio_caminante', 440, 264))",
-   "nota": "un demonio lejos, para que la Cacería no termine al matar al otro"
-  },
-  {
-   "wait": 200
-  },
-  {
-   "eval": "(window.p0 = prueba.estado().puntajes[0], prueba.crearEnemigo('demonio_caminante', 76, 264), prueba.enfurecerEnemigos(), prueba.atacar(1))"
-  },
-  {
-   "wait": 120
-  },
-  {
-   "verificar": "Cacería: la katana mata al demonio enfurecido y da 100",
-   "eval": "({ enemigos: prueba.estado().enemigos, puntos: prueba.estado().puntajes[0] - p0, fase: prueba.estado().fase })",
-   "espera": {
-    "enemigos": 1,
-    "puntos": 100,
-    "fase": "caceria"
-   }
-  },
-  {
-   "eval": "(window.p0 = prueba.estado().puntajes[0], prueba.crearEnemigo('demonio_caminante', 120, 264), prueba.enfurecerEnemigos(), prueba.quitarProteccion(1), prueba.ponerJugador(1, 120, 236, 0, 200))"
-  },
-  {
-   "wait": 150
-  },
-  {
-   "verificar": "Cacería: el pisotón mata al demonio enfurecido",
-   "eval": "({ enemigos: prueba.estado().enemigos, puntos: prueba.estado().puntajes[0] - p0, vy: prueba.jugador(1).vy })",
-   "espera": {
-    "enemigos": 1,
-    "puntos": 100,
-    "vy": {
-     "max": -100
-    }
-   }
-  },
-  {
-   "verificar": "al morir el último demonio se completa el nivel",
-   "eval": "(prueba.matarEnemigos(1), prueba.estado())",
-   "espera": {
-    "fase": "nivelCompletado",
-    "enemigos": 0
-   }
-  }
- ]
+  "descripcion": "Katana, pisotones, parry y empujones en Recolección y en Cacería",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 2000, "eval": "prueba.sinEnemigos() && prueba.sinCajasArmas() && prueba.sinItems()"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"eval": "(prueba.ponerJugador(1, 60, 264), prueba.mirar(1, 1), prueba.proteger(1))"},
+    {"wait": 300},
+    {"eval": "(prueba.crearEnemigo('demonio_caminante', 76, 264), prueba.atacar(1))"},
+    {"wait": 120},
+    {"verificar": "Recolección: la katana aturde al demonio y no lo mata", "eval": "({ ...prueba.enemigo(0), puntaje: prueba.estado().puntajes[0] })", "espera": {"aturdido": true, "muerto": false, "puntaje": 0}},
+    {"eval": "prueba.sinEnemigos()"},
+    {"eval": "(prueba.crearEnemigo('demonio_caminante', 120, 264), prueba.quitarProteccion(1), prueba.ponerJugador(1, 120, 236, 0, 200))"},
+    {"wait": 150},
+    {"verificar": "Recolección: pisotón hace rebotar al ninja y no mata al demonio", "eval": "({ vy: prueba.jugador(1).vy, muerto: prueba.enemigo(0) ? prueba.enemigo(0).muerto : true, enemigos: prueba.estado().enemigos })", "espera": {"vy": {"max": -100}, "muerto": false, "enemigos": 1}},
+    {"wait": 800},
+    {"eval": "prueba.sinEnemigos()"},
+    {"eval": "(prueba.ponerJugador(1, 60, 264), prueba.mirar(1, 1), prueba.crearItem('coin', 76, 262), prueba.atacar(1))"},
+    {"wait": 120},
+    {"verificar": "la katana lanza las monedas hacia adelante y arriba", "eval": "(() => { const m = prueba.items().find(i => !i.talisman); return { vx: m.vx, sube: m.y < 262 || m.vy < 0 }; })()", "espera": {"vx": {"min": 50}, "sube": true}},
+    {"eval": "prueba.sinItems()"},
+    {"wait": 400},
+    {"eval": "(prueba.ponerJugador(1, 60, 264), prueba.mirar(1, 1), prueba.proyectilEnemigo(90, 262, -60, 0))"},
+    {"wait": 100},
+    {"eval": "prueba.atacar(1)"},
+    {"wait": 150},
+    {"verificar": "parry: la katana destruye la bola de fuego y no hay golpe", "eval": "({ bolas: prueba.proyectiles().enemigos, aturdido: prueba.jugador(1).aturdido })", "espera": {"bolas": 0, "aturdido": false}},
+    {"eval": "(prueba.quitarProteccion(1), prueba.ponerJugador(1, 60, 264), prueba.proyectilEnemigo(110, 262, -150, 0))"},
+    {"wait": 500},
+    {"verificar": "una bola de fuego que toca al ninja en la Recolección lo aturde y desaparece", "eval": "({ bolas: prueba.proyectiles().enemigos, ...prueba.jugador(1), vidas: prueba.estado().vidas })", "espera": {"bolas": 0, "aturdido": true, "muerto": false, "vidas": [3, 3]}},
+    {"hasta": "!prueba.jugador(1).invulnerable", "timeout": 2500},
+    {"eval": "(prueba.crearEnemigo('demonio_caminante', 140, 264), prueba.quitarProteccion(1), prueba.ponerJugador(1, 140, 264))"},
+    {"wait": 200},
+    {"verificar": "tocar a un demonio de costado aturde al ninja", "eval": "prueba.jugador(1)", "espera": {"aturdido": true, "muerto": false}},
+    {"eval": "prueba.sinEnemigos()"},
+    {"hasta": "!prueba.jugador(1).invulnerable", "timeout": 2500},
+    {"eval": "(prueba.conEnemigos(), prueba.proteger(1), prueba.completarRecoleccion())"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"eval": "prueba.sinEnemigos()"},
+    {"wait": 1600},
+    {"eval": "(prueba.sinEnemigos(), prueba.ponerJugador(1, 60, 264), prueba.mirar(1, 1), prueba.proteger(1), prueba.crearEnemigo('demonio_caminante', 440, 264))", "nota": "un demonio lejos, para que la Cacería no termine al matar al otro"},
+    {"wait": 200},
+    {"eval": "(window.p0 = prueba.estado().puntajes[0], prueba.crearEnemigo('demonio_caminante', 76, 264), prueba.enfurecerEnemigos(), prueba.atacar(1))"},
+    {"wait": 120},
+    {"verificar": "Cacería: la katana mata al demonio enfurecido y da 100", "eval": "({ enemigos: prueba.estado().enemigos, puntos: prueba.estado().puntajes[0] - p0, fase: prueba.estado().fase })", "espera": {"enemigos": 1, "puntos": 100, "fase": "caceria"}},
+    {"eval": "(window.p0 = prueba.estado().puntajes[0], prueba.crearEnemigo('demonio_caminante', 120, 264), prueba.enfurecerEnemigos(), prueba.quitarProteccion(1), prueba.ponerJugador(1, 120, 236, 0, 200))"},
+    {"wait": 150},
+    {"verificar": "Cacería: el pisotón mata al demonio enfurecido", "eval": "({ enemigos: prueba.estado().enemigos, puntos: prueba.estado().puntajes[0] - p0, vy: prueba.jugador(1).vy })", "espera": {"enemigos": 1, "puntos": 100, "vy": {"max": -100}}},
+    {"verificar": "al morir el último demonio se completa el nivel", "eval": "(prueba.matarEnemigos(1), prueba.estado())", "espera": {"fase": "nivelCompletado", "enemigos": 0}}
+  ]
 }

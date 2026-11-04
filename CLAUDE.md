@@ -25,9 +25,12 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - `tools/`: scripts de soporte (no son parte del juego). `.venv/` y `node_modules/` no se versionan.
 
 ## Para ahorrar tokens
-- Probar cambios sin abrir el juego: servir el repo y correr `node tools/navegador/probar.js <url> <escenario.json> <carpeta>`
-  (usa Edge sin ventana, reporta errores de consola, permite `eval` del estado y capturas). En esta PC hay que correrlo
-  desde **PowerShell**: desde Git Bash Edge no arranca. Escenario base: `tools/navegador/escenarios/humo.json`.
+- Probar cambios sin abrir el juego: desde **PowerShell** (desde Git Bash Edge no arranca), `.\tools\navegador\probar.ps1`
+  corre todos los escenarios de `tools/navegador/escenarios/` (o `probar.ps1 golpes` uno solo). Levanta el servidor si
+  hace falta, usa Edge sin ventana, verifica resultados y termina con ✔/✘ por verificación y un total. Si no hay Node
+  instalado, usa el portable de `%LOCALAPPDATA%\node-portable`. **Correrlo antes y después de cada cambio.**
+- Los escenarios hablan con el juego a través de `window.prueba` (`scenes/PuertaPruebas.js`, solo con `?debug`), no con
+  las variables internas. Al reorganizar código se adapta la puerta, no los escenarios. Formato de los pasos: ver `probar.js`.
 - Revisar sintaxis rápido: copiar el `.js` a un `.mjs` temporal y `node --check`.
 - Inventario de assets en lugar de abrir imágenes: `.venv/Scripts/python tools/assets_info.py`
 - Documentos docx/pdf/pptx/xlsx: dejarlos en `Docs/fuentes/` y correr `.venv/Scripts/python tools/convertir_docs.py`;

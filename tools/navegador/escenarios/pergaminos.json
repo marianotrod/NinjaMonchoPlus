@@ -1,0 +1,27 @@
+{
+  "descripcion": "Pantalla de pergaminos en cooperativo y efecto del pacto en el nivel siguiente",
+  "query": "?debug&nivel=1&jugadores=2",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 2000, "eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000},
+    {"eval": "(prueba.proteger(1), prueba.proteger(2), prueba.completarRecoleccion())"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"wait": 300, "eval": "prueba.terminarCaceria(false)"},
+    {"hasta": "prueba.estado().listoParaContinuar", "timeout": 3000, "nombre": "se puede continuar"},
+    {"press": "Enter"},
+    {"hasta": "prueba.escenas().includes('PactSelectionScene')", "timeout": 3000, "nombre": "pantalla de pergaminos"},
+    {"wait": 700},
+    {"shot": "eleccion"},
+    {"press": "Enter"},
+    {"wait": 300},
+    {"verificar": "J1 fija un pergamino y J2 todavía no", "eval": "(() => { const e = prueba.eleccionesPergaminos(); return e[0] !== null && e[1] === null; })()"},
+    {"wait": 500},
+    {"press": "KeyJ"},
+    {"wait": 200},
+    {"verificar": "J2 se queda con un pergamino distinto", "eval": "(() => { const e = prueba.eleccionesPergaminos(); return e[1] !== null && e[1] !== e[0]; })()"},
+    {"hasta": "prueba.enJuego() && prueba.estado().nivel === 2", "timeout": 5000, "nombre": "arranca el nivel 2"},
+    {"verificar": "cada ninja tiene los modificadores de su pergamino", "eval": "(() => { const p = prueba.pactos(); return JSON.stringify(prueba.modsJugador(1)) === JSON.stringify(p.jugadores[0]) && JSON.stringify(prueba.modsJugador(2)) === JSON.stringify(p.jugadores[1]); })()"},
+    {"verificar": "el tiempo del nivel refleja el pacto global (60 + tiempo extra)", "eval": "(() => { const g = prueba.modsGlobal(); const t = prueba.estado().tiempo; return t <= 60 + g.tiempoExtra && t >= 60 + g.tiempoExtra - 4; })()"}
+  ]
+}

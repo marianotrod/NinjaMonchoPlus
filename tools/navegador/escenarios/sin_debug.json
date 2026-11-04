@@ -1,0 +1,8 @@
+{
+  "descripcion": "Sin ?debug (como en GitHub Pages) el juego arranca normal y la puerta de pruebas no existe",
+  "query": "",
+  "pasos": [
+    {"hasta": "window.game && game.scene.isActive('TitleScene')", "timeout": 8000, "nombre": "pantalla de título"},
+    {"verificar": "la puerta de pruebas no está instalada", "eval": "typeof window.prueba === 'undefined'"}
+  ]
+}

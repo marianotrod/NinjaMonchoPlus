@@ -1,0 +1,26 @@
+{
+  "descripcion": "Fantasma al llegar el reloj a 0, y fin de la Cacería por tiempo",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 2000, "eval": "prueba.sinEnemigos() && prueba.sinCajasArmas() && prueba.sinItems()"},
+    {"eval": "(prueba.ponerJugador(1, 60, 264), prueba.vaciarTalismanes(), prueba.juntarTalismanes({rombo: 1}), prueba.ponerTiempo(1))"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "aparece el fantasma"},
+    {"verificar": "con el reloj en 0 aparece el fantasma", "eval": "prueba.estado()", "espera": {"fase": "recoleccion", "tiempo": 0, "fantasma": true}},
+    {"wait": 1500},
+    {"verificar": "mientras está el fantasma el reloj no sigue", "eval": "prueba.estado()", "espera": {"tiempo": 0}},
+    {"hasta": "prueba.jugador(1).muerto || prueba.estado().vidas[0] < 3", "timeout": 12000, "nombre": "el fantasma alcanza a J1"},
+    {"verificar": "v1: el fantasma cuesta una vida incluso en la Recolección (y hace perder un talismán)", "eval": "prueba.estado()", "espera": {"talismanes": {"cuadrado": 0, "triangulo": 0, "rombo": 0}}},
+    {"hasta": "prueba.estado().vidas[0] === 2", "timeout": 3000, "nombre": "pierde la vida al caer"},
+    {"hasta": "!prueba.jugador(1).muerto", "timeout": 3500, "nombre": "reaparece"},
+    {"verificar": "el fantasma no se va al matar a alguien", "eval": "prueba.estado().fantasma"},
+    {"verificar": "mientras reaparece no puede agarrar talismanes", "eval": "(() => { const antes = prueba.estado().talismanes.cuadrado; prueba.tocarTalisman(1, 'cuadrado'); return prueba.jugador(1).apareciendo ? prueba.estado().talismanes.cuadrado === antes : true; })()"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso (mientras aparece no puede agarrar talismanes)"},
+    {"verificar": "completar la Recolección hace desaparecer al fantasma", "eval": "(prueba.proteger(1), prueba.completarRecoleccion(), prueba.estado())", "espera": {"fase": "transicion", "fantasma": false}},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"wait": 1600, "eval": "(prueba.sinEnemigos(), prueba.crearEnemigo('demonio_caminante', 440, 264), prueba.proteger(1), window.p0 = prueba.estado().puntajes[0], prueba.ponerTiempo(1))"},
+    {"hasta": "prueba.estado().fase === 'nivelCompletado'", "timeout": 2500, "nombre": "se termina el tiempo de la Cacería"},
+    {"verificar": "en la Cacería no hay fantasma: al acabarse el tiempo se completa el nivel sin bono", "eval": "({ ...prueba.estado(), puntos: prueba.estado().puntajes[0] - p0 })", "espera": {"fase": "nivelCompletado", "fantasma": false, "puntos": 0, "enemigos": 0}},
+    {"shot": "caceria_incompleta"}
+  ]
+}

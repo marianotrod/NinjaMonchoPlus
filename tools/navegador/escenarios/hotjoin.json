@@ -1,0 +1,21 @@
+{
+  "descripcion": "Hot-join: el J2 se suma en medio del nivel manteniendo una tecla",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"eval": "prueba.sinEnemigos()"},
+    {"verificar": "arranca con un jugador", "eval": "({ jugadores: prueba.estado().jugadores, j2: !!prueba.jugador(2) })", "espera": {"jugadores": 1, "j2": false}},
+    {"down": "KeyW"},
+    {"wait": 400},
+    {"up": "KeyW"},
+    {"wait": 300},
+    {"verificar": "un toque corto no lo hace entrar", "eval": "prueba.estado().jugadores === 1"},
+    {"down": "KeyW"},
+    {"wait": 1300},
+    {"up": "KeyW"},
+    {"wait": 200},
+    {"verificar": "mantener una tecla del J2 un segundo lo suma a la partida", "eval": "({ jugadores: prueba.estado().jugadores, j2: !!prueba.jugador(2) })", "espera": {"jugadores": 2, "j2": true}},
+    {"hasta": "prueba.listo(2)", "timeout": 4000, "nombre": "el J2 cae al nivel"},
+    {"verificar": "el J2 entra con sus 3 vidas", "eval": "prueba.estado().vidas[1] === 3"}
+  ]
+}

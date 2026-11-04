@@ -135,9 +135,16 @@ async function correrEscenario(browser, archivo, totales) {
   // Se lanza el navegador a mano y puppeteer se conecta por el puerto de depuración
   // (en algunas PCs con Windows, puppeteer.launch no logra arrancar Edge).
   const puerto = 9300 + Math.floor(Math.random() * 500);
+  // Perfil descartable del navegador: se borra al terminar (cada uno ocupa ~100 MB)
+  const perfil = path.join(os.tmpdir(), `ninja-moncho-perfil-${puerto}`);
   const navegador = spawn(NAVEGADOR, ['--headless=new', '--no-sandbox', '--no-first-run', '--mute-audio',
-    '--autoplay-policy=no-user-gesture-required', `--user-data-dir=${path.join(os.tmpdir(), `ninja-moncho-perfil-${puerto}`)}`,
+    '--autoplay-policy=no-user-gesture-required', `--user-data-dir=${perfil}`,
     `--remote-debugging-port=${puerto}`, 'about:blank'], { stdio: 'ignore' });
+  const borrarPerfil = async () => {
+    for (let i = 0; i < 10; i++) {
+      try { fs.rmSync(perfil, { recursive: true, force: true }); return; } catch (e) { await esperar(300); }
+    }
+  };
 
   let browser = null;
   for (let i = 0; i < 40 && !browser; i++) {
@@ -147,18 +154,25 @@ async function correrEscenario(browser, archivo, totales) {
   if (!browser) {
     console.log('NO SE PUDO CONECTAR AL NAVEGADOR');
     navegador.kill();
+    await borrarPerfil();
     process.exit(1);
   }
 
   const totales = { ok: 0, fallas: [] };
-  for (const archivo of listarEscenarios(objetivo)) {
-    await correrEscenario(browser, archivo, totales);
+  try {
+    for (const archivo of listarEscenarios(objetivo)) {
+      await correrEscenario(browser, archivo, totales);
+    }
+  } catch (e) {
+    totales.fallas.push(`el banco de pruebas se cortó: ${e.message}`);
   }
 
   const total = totales.ok + totales.fallas.length;
   console.log(`\n${totales.fallas.length ? '✘' : '✔'} ${totales.ok} de ${total} verificaciones bien`);
   totales.fallas.forEach(f => console.log(`  ✘ ${f}`));
-  await browser.close();
+  await browser.close().catch(() => {});
   navegador.kill();
+  await esperar(500);
+  await borrarPerfil();
   process.exit(totales.fallas.length ? 1 : 0);
 })();

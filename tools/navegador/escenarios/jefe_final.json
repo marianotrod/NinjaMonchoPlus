@@ -1,0 +1,13 @@
+{
+  "descripcion": "Nivel 10: el Rey Demonio, y ganar la partida",
+  "query": "?debug&nivel=10",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'jefe'", "timeout": 9000, "nombre": "empieza la pelea final"},
+    {"verificar": "el nivel 10 es siempre el Rey Demonio, con 45 de vida", "eval": "prueba.estado().jefe", "espera": {"tipo": "rey", "hp": 45, "hpMax": 45}},
+    {"hasta": "prueba.estado().jefe.estado !== 'entrando'", "timeout": 5000, "nombre": "el jefe terminó de entrar"},
+    {"eval": "(prueba.sinCajasArmas(), prueba.proteger(1), prueba.danarJefe(100))"},
+    {"hasta": "prueba.estado().fase === 'fin'", "timeout": 5000, "nombre": "fin de la partida"},
+    {"verificar": "vencer al Rey Demonio gana la partida", "eval": "prueba.estado()", "espera": {"fase": "fin", "nivel": 10}},
+    {"shot": "ganaste"}
+  ]
+}

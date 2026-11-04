@@ -63,6 +63,10 @@ export function instalarPuertaPruebas(game) {
     })),
     cajasArmas: () => juego().cajasArmas.countActive(true),
     pactos: () => JSON.parse(JSON.stringify(juego().partida.pactos)),
+    modsJugador: (n = 1) => ({ ...jugador(n).mods }),
+    modsGlobal: () => ({ ...juego().modsGlobal }),
+    // En la pantalla de pergaminos: qué pergamino (0, 1 o 2) fijó cada jugador
+    eleccionesPergaminos: () => [...game.scene.getScene('PactSelectionScene').elecciones],
 
     // El jugador terminó de aparecer y está parado en el piso
     listo: (n = 1) => {
@@ -171,6 +175,12 @@ export function instalarPuertaPruebas(game) {
     },
     disparar(n = 1) {
       jugador(n).usarEspecial();
+      return true;
+    },
+    vaciarTalismanes() {
+      const s = juego();
+      s.inventario = [];
+      s.events.emit('inventario', s.contarInventario());
       return true;
     },
     juntarTalismanes(conteo) {

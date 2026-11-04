@@ -1,0 +1,19 @@
+{
+  "descripcion": "Pelea con el jefe oni (nivel 5)",
+  "query": "?debug&nivel=5&jefe=oni",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'jefe'", "timeout": 9000, "nombre": "empieza la pelea"},
+    {"verificar": "el nivel 5 es de jefe: aparece oni con 24 de vida y 99 s", "eval": "(() => { const e = prueba.estado(); return { jefe: e.jefe && e.jefe.tipo, hp: e.jefe && e.jefe.hp, tiempo: e.tiempo, talismanes: prueba.items().filter(i => i.talisman).length }; })()", "espera": {"jefe": "oni", "hp": 24, "tiempo": {"min": 97, "max": 99}, "talismanes": 0}},
+    {"hasta": "prueba.estado().jefe.estado !== 'entrando'", "timeout": 5000, "nombre": "el jefe terminó de entrar"},
+    {"eval": "(prueba.sinCajasArmas(), prueba.proteger(1))"},
+    {"verificar": "el jefe recibe daño", "eval": "(prueba.danarJefe(4), prueba.estado().jefe.hp === 20)"},
+    {"wait": 300},
+    {"verificar": "en la pelea un golpe cuesta una vida", "eval": "(prueba.quitarProteccion(1), prueba.golpear(1), prueba.jugador(1).muerto)"},
+    {"hasta": "prueba.estado().vidas[0] === 2", "timeout": 4000, "nombre": "pierde la vida"},
+    {"hasta": "!prueba.jugador(1).muerto", "timeout": 3500, "nombre": "reaparece"},
+    {"eval": "(prueba.proteger(1), window.p0 = prueba.estado().puntajes[0], window.t0 = prueba.estado().tiempo, prueba.danarJefe(100))"},
+    {"hasta": "prueba.estado().fase === 'nivelCompletado'", "timeout": 4000, "nombre": "el jefe muere"},
+    {"verificar": "vencer al jefe da 5000 más el bono de tiempo", "eval": "(() => { const p = prueba.estado().puntajes[0] - p0; return p >= 5000 + (t0 - 2) * 100 && p <= 5000 + t0 * 100; })()"},
+    {"shot": "jefe_vencido"}
+  ]
+}

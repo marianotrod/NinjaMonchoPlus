@@ -5,6 +5,30 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-03 / 04 — Claude (sin supervisión): etapa 0, red de seguridad de pruebas
+
+- `probar.js` verifica resultados (`verificar` + `espera`), espera condiciones (`hasta`), corre una carpeta entera,
+  da un total ✔/✘ y termina con error si algo falla. Borra al terminar el perfil temporal de Edge que usa.
+- `probar.ps1`: un solo comando desde PowerShell (levanta el servidor si hace falta y usa Node portable si no está instalado).
+- Puerta de pruebas `window.prueba` (`scenes/PuertaPruebas.js`), solo con `?debug`: los escenarios no tocan variables internas.
+- 17 escenarios y **109 verificaciones** sobre la v1.01: fases, golpes y vidas, combate, armas, enemigos, fantasma,
+  los 4 jefes, cooperativo, hot-join, pausa, pergaminos, recorrido desde el título y que sin `?debug` no exista la puerta.
+  Pasaron 5 corridas completas seguidas sin fallas.
+- **No se cambió el comportamiento del juego** (solo se agregó la puerta, que no se instala sin `?debug`).
+
+**Cosas que aparecieron y quedan para decidir (Mariano)**
+- Al empezar un nivel, el ninja está protegido solo mientras cae: al tocar el piso ya se lo puede golpear.
+  En el respawn, en cambio, sigue protegido 1,5 s más. El diseño de la v2 dice "al aparecer, intocable un rato" en los dos casos.
+- En la v1 el fantasma quita una vida **también en la Recolección**. El diseño de la v2 dice "en la Recolección nadie muere":
+  ¿el fantasma es la excepción o pasa a aturdir como el resto?
+- El bumerán trae las monedas hasta el ninja, que las cobra solo (funciona bien; lo anoto porque en la v2 el bumerán cambia).
+
+**Pendientes**
+- Mariano: lista de pergaminos revisada, lista de habilidades y las dos decisiones de arriba.
+- Siguiente: etapa 1 del plan (reordenar carpetas y limpieza), corriendo `probar.ps1` antes y después.
+
+---
+
 ## 2026-11-02 / 03 — Mariano y Claude: análisis del proyecto y diseño de la v2
 
 - Se analizó la arquitectura de la v1.01: está ordenada, pero `NinjaMonchoScene` concentra demasiado y las reglas por fase están desparramadas.

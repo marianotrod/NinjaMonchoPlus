@@ -1,0 +1,8 @@
+{
+  "descripcion": "Sin forzar el jefe, el del nivel 5 sale al azar entre los intermedios",
+  "query": "?debug&nivel=5",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().jefe", "timeout": 9000, "nombre": "aparece el jefe"},
+    {"verificar": "el jefe intermedio es ogro, oni o espectro", "eval": "['ogro', 'oni', 'espectro'].includes(prueba.estado().jefe.tipo)"}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "descripcion": "Pausa con ESC: el juego se detiene y se puede continuar",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"press": "Escape"},
+    {"wait": 300},
+    {"verificar": "ESC abre la pausa", "eval": "prueba.escenas().includes('PauseScene')"},
+    {"eval": "window.t0 = prueba.estado().tiempo"},
+    {"wait": 2200},
+    {"verificar": "en pausa el reloj no corre", "eval": "prueba.estado().tiempo === t0"},
+    {"shot": "pausa"},
+    {"press": "Enter"},
+    {"wait": 400},
+    {"verificar": "continuar vuelve al juego", "eval": "!prueba.escenas().includes('PauseScene') && prueba.escenas().includes('NinjaMonchoScene')"},
+    {"wait": 2200},
+    {"verificar": "el reloj vuelve a correr", "eval": "prueba.estado().tiempo < t0"}
+  ]
+}
