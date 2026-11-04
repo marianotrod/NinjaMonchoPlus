@@ -145,8 +145,8 @@ Cada fase es una **tabla de reglas**. El resto del código consulta la tabla y n
 | Regla | Recolección | Transición | Cacería | Jefe | Pergaminos |
 |---|---|---|---|---|---|
 | Los enemigos son vulnerables | no | — | sí | sí | — |
-| Un golpe al ninja | aturde y quita un talismán | nada | cuesta una vida | cuesta una vida | **[Pendiente]** |
-| Corre el reloj | sí | no | sí | sí | **[Pendiente]** |
+| Un golpe al ninja | aturde y quita un talismán | nada | cuesta una vida | cuesta una vida | no hay peligros |
+| Corre el reloj | sí | no | sí | sí | sí, corto (≈5 s) |
 | Aparecen enemigos | sí | no | cupo | los del jefe | no |
 | Pergaminos activos | sí | sí | sí | sí | no |
 
@@ -179,6 +179,18 @@ Cada fase es una **tabla de reglas**. El resto del código consulta la tabla y n
   - Al abrirse, el muerto aparece en su spawn con **1 vida**, intocable un rato.
   - El sobreviviente no está obligado a rescatarlo. Si el nivel termina sin rescate, el vórtice y la llave vuelven en el nivel siguiente.
 - El jugador muerto **no participa** del nivel de pergaminos.
+
+### 5.5 Nivel de pergaminos
+La idea es **decidir bajo presión**.
+- **Sin peligros:** ni enemigos, ni trampas, ni fuego. Más adelante puede haber variantes que pidan resolver algo de forma creativa o cooperar.
+- **Armado base:** los 3 pergaminos sobre una misma pasarela, equidistantes y más arriba. Los jugadores aparecen justo debajo, en el medio,
+  así quedan más o menos a la misma distancia de todos los pergaminos.
+- **Cuenta regresiva 3… 2… 1** antes de poder moverse.
+- **Reloj corto: unos 5 segundos** para agarrar un pergamino.
+- **Al agarrar uno, el jugador queda congelado** y no puede tomar otro (con una animación).
+- Se juega con lo básico: no funciona ninguna mejora ni desventaja.
+- **[Pendiente]** Qué pasa si se acaba el tiempo y alguien no agarró ninguno: ¿se queda sin pergamino o se le asigna uno al azar?
+- **[Pendiente]** Empate: dos jugadores tocan el mismo pergamino en el mismo instante.
 
 ---
 
@@ -345,6 +357,6 @@ Cada etapa queda jugable y probada antes de pasar a la siguiente.
 - La lista de pergaminos revisada (Mariano).
 - La lista completa de habilidades desbloqueables.
 - El presupuesto de enemigos por nivel o por tier.
-- Las reglas del nivel de pergaminos: ¿hay reloj? ¿Qué pasa si te golpean ahí?
+- Nivel de pergaminos: qué pasa si se acaba el tiempo sin agarrar ninguno, y el desempate.
 - Las variantes que se definen jugando: pisar proyectiles (normal o timeado), si los enemigos empujan la llave,
   el cooldown frente a la munición, la economía de un nivel de pergaminos por nivel y la sensación del wrap.
