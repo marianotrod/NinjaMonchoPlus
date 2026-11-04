@@ -14,6 +14,14 @@ export const ARRANQUE_DEBUG = {
   jefe: DEBUG ? parametros.get('jefe') : null   // ogro | oni | espectro (solo en niveles de jefe intermedio)
 };
 
+// Traducciones por API (Traducila: https://traducila.vercel.app). Sin proyecto cargado, o si la API falla,
+// el juego usa la última copia guardada o los textos de i18n.js. Con ?debug se puede cambiar: ?debug&api=...&proyecto=...
+export const TRADUCCIONES = {
+  api: (DEBUG && parametros.get('api')) || 'https://traducila.vercel.app',
+  proyecto: (DEBUG && parametros.get('proyecto')) || '',
+  espera: 3000                 // Tiempo máximo para arrancar sin respuesta de la API (ms)
+};
+
 export const CONFIG = {
   VIDAS_INICIALES: 3,          // Por jugador: las vidas no se comparten
   ESPERA_RESPAWN: 2000,         // Tras caer fuera de la pantalla, el ninja reaparece arriba después de esto (ms)

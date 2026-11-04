@@ -13,6 +13,7 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - `main.js`: configuración de Phaser (512x288, arcade physics, gamepad), lista de escenas y escalado entero del canvas.
 - `config.js`: `CONFIG` (vidas, tiempos, niveles, bonos), `FISICA` (salto, velocidades) y `PAD` (botones). Calibrar acá.
 - `i18n.js`: textos es/en. Todo texto visible pasa por `i18n.t()` (que quita tildes de mayúsculas: la fuente no las tiene).
+  Las traducciones se piden a la API de Traducila al arrancar (`TRADUCCIONES` en `config.js`); los textos de `i18n.js` son el respaldo. Frases nuevas: correr `node tools/traducciones/generar_frases.js` y cargarlas en el panel.
 - `scenes/`:
   - Escenas: `BootScene` (carga todo, texturas, animaciones, preferencias) → `TitleScene` → `NinjaMonchoScene` (juego)
     con `UIScene` (HUD, carteles, paneles) y `PauseScene` encima; `PactSelectionScene` entre niveles; `HowToPlayScene`, `OptionsScene`, `CreditsScene`.
