@@ -5,6 +5,18 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-04 — Claude: traducciones por API (Traducila), pedido para la entrega
+
+- Al arrancar, el juego pide el inglés a la API de Traducila (`TRADUCCIONES` en `config.js`); las claves son las frases en español.
+- Si la API falla, usa la última copia guardada en localStorage; si no hay copia, los textos de `i18n.js`. Una frase que falte también cae al texto local.
+- Las escenas no cambiaron: siguen usando `i18n.t('clave')`.
+- `Docs/traducila_frases.tsv` tiene las 80 frases para cargar (se regenera con `node tools/traducciones/generar_frases.js`).
+
+**Pendientes**
+- Crear el proyecto en Traducila, cargar las frases y poner su id en `TRADUCCIONES.proyecto`. Después, mergear a `main` con el OK de Mariano.
+
+---
+
 ## 2026-10-27 — Claude: vidas por jugador, respawn y ajustes de armas y cooperativo
 
 - Durante el cartel de "¡Sello roto!" los ninjas son invulnerables.

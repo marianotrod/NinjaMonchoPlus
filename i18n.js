@@ -1,4 +1,9 @@
 // i18n.js
+// Los textos de este archivo son el respaldo local y la referencia en español. Las traducciones se piden a la API
+// (Traducila) al arrancar: las claves de la API son las frases en español, con ' | ' en lugar de los saltos de línea.
+import { TRADUCCIONES } from './config.js';
+import { Guardado } from './scenes/Guardado.js';
+
 const textos = {
   es: {
     menu_1p: '1 JUGADOR',
@@ -220,6 +225,42 @@ const textos = {
 };
 
 let idiomaActual = 'es';
+const IDIOMA_BASE = 'es'; // Las claves de la API ya están en español: no hay nada que pedir para este idioma
+const remotas = {};       // { en: { 'frase en español': 'traducción' } }
+const origenes = {};      // De dónde salió cada idioma: 'api', 'copia' (la última guardada) o 'local'
+
+const aClaveRemota = (frase) => frase.replace(/\n/g, ' | ');
+const desdeRemota = (texto) => texto.replace(/ \| /g, '\n');
+
+async function pedirIdioma(idioma) {
+  const { api, proyecto, espera } = TRADUCCIONES;
+  const respuesta = await fetch(`${api}/api/translations/${proyecto}/${idioma}`, { signal: AbortSignal.timeout(espera) });
+  const { data, error } = await respuesta.json();
+  if (error || !data) throw new Error(error || 'respuesta vacía');
+  return Object.fromEntries(data.words.filter(p => p.translate).map(p => [p.key.trim(), p.translate.trim()]));
+}
+
+// Se llama una vez, antes de crear el juego. Nunca falla: si no hay API, quedan la copia guardada o los textos locales.
+export async function cargarTraducciones() {
+  const idiomas = Object.keys(textos).filter(idioma => idioma !== IDIOMA_BASE);
+  await Promise.all(idiomas.map(async (idioma) => {
+    origenes[idioma] = 'local';
+    if (!TRADUCCIONES.proyecto) return;
+    const claveCopia = `traducciones.${TRADUCCIONES.proyecto}.${idioma}`;
+    try {
+      remotas[idioma] = await pedirIdioma(idioma);
+      origenes[idioma] = 'api';
+      Guardado.escribir(claveCopia, remotas[idioma]);
+    } catch (e) {
+      console.warn(`Sin traducciones de la API para "${idioma}":`, e.message);
+      const copia = Guardado.leer(claveCopia, null);
+      if (copia) {
+        remotas[idioma] = copia;
+        origenes[idioma] = 'copia';
+      }
+    }
+  }));
+}
 
 // La fuente Press Start 2P no tiene mayúsculas acentuadas (dibuja "Ó" como "ó"), así que se muestran sin tilde.
 const SIN_TILDE = { 'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U' };
@@ -233,7 +274,10 @@ export const i18n = {
   alternarIdioma: () => {
     idiomaActual = idiomaActual === 'es' ? 'en' : 'es';
   },
+  getOrigenes: () => ({ ...origenes }),
   t: (clave) => {
-    return quitarTildes(textos[idiomaActual][clave] || clave);
+    const frase = textos[IDIOMA_BASE][clave];
+    const remota = frase && remotas[idiomaActual] && remotas[idiomaActual][aClaveRemota(frase)];
+    return quitarTildes(remota ? desdeRemota(remota) : textos[idiomaActual][clave] || clave);
   }
 };

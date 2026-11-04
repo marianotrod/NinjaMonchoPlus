@@ -7,7 +7,8 @@ import UIScene from './scenes/UIScene.js';
 import PauseScene from './scenes/PauseScene.js';
 import PactSelectionScene from './scenes/PactSelectionScene.js';
 import CreditsScene from './scenes/CreditsScene.js';
-import { FISICA } from './config.js';
+import { DEBUG, FISICA } from './config.js';
+import { cargarTraducciones, i18n } from './i18n.js';
 
 
 const GAME_WIDTH = 512;
@@ -60,6 +61,9 @@ async function initGame() {
   } catch (e) {
     console.warn("Aviso al precargar fuente:", e);
   }
+
+  await cargarTraducciones();
+  if (DEBUG) window.i18n = i18n; // Para el banco de pruebas
 
   window.game = new Phaser.Game(config);
   setTimeout(applyIntegerScaling, 50);
