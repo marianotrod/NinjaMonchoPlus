@@ -189,8 +189,8 @@ La idea es **decidir bajo presión**.
 - **Reloj corto: unos 5 segundos** para agarrar un pergamino.
 - **Al agarrar uno, el jugador queda congelado** y no puede tomar otro (con una animación).
 - Se juega con lo básico: no funciona ninguna mejora ni desventaja.
-- **[Pendiente]** Qué pasa si se acaba el tiempo y alguien no agarró ninguno: ¿se queda sin pergamino o se le asigna uno al azar?
-- **[Pendiente]** Empate: dos jugadores tocan el mismo pergamino en el mismo instante.
+- Si se acaba el tiempo y alguien no agarró ninguno, **se queda sin pergamino**.
+- Empate (los dos tocan el mismo pergamino en el mismo instante): se decide al azar.
 
 ---
 
@@ -357,6 +357,5 @@ Cada etapa queda jugable y probada antes de pasar a la siguiente.
 - La lista de pergaminos revisada (Mariano).
 - La lista completa de habilidades desbloqueables.
 - El presupuesto de enemigos por nivel o por tier.
-- Nivel de pergaminos: qué pasa si se acaba el tiempo sin agarrar ninguno, y el desempate.
 - Las variantes que se definen jugando: pisar proyectiles (normal o timeado), si los enemigos empujan la llave,
   el cooldown frente a la munición, la economía de un nivel de pergaminos por nivel y la sensación del wrap.
