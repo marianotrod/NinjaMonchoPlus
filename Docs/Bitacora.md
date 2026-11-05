@@ -5,6 +5,19 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-05 — Mariano y Claude: la v2 pasa a main
+
+- Mariano rediseñó el nivel `inicio` en el editor: el guardado en la carpeta real quedó confirmado.
+- El banco de pruebas usa su propio servidor en el puerto 5599: Live Server recargaba la página al guardarse cada captura.
+- Mariano jugó la `v2` con Live Server y dio el OK. `main` pasa a tener las etapas 1 a 3, sin wrap: se juega igual que la entrega, salvo por el nivel `inicio`.
+- Para volver a la versión anterior está el tag `v1.02-entrega`.
+
+**Pendientes**
+- Mariano: lista revisada de pergaminos y de habilidades.
+- Etapa 4: mundo de 34×20 con wrap, en un nivel de prueba, en la rama `v2`.
+
+---
+
 ## 2026-11-05 — Claude: etapa 3 de la v2, editor de niveles
 
 - `tools/editor/`: capas de fondo, skin, lógica y objetos sobre la grilla de 34×20; paleta con Tab, recientes y scroll propio;
