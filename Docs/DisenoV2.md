@@ -79,8 +79,8 @@ Un JSON por nivel en `public/niveles/`, más un `indice.json` que mantiene el ed
 }
 ```
 
-- **Tipos:** `inicio` (el nivel 0), `normal`, `jefe` y `pergaminos`.
-- **Capas:** `fondo` y `skin` guardan índices del tileset (−1 = vacío). `logica` guarda un tipo por celda, que puede tener propiedades.
+- **Tipos:** `inicio` (el nivel 0), `fijo` (fuera del pool, como el nivel de aprendizaje de hoy), `normal`, `jefe` y `pergaminos`.
+- **Capas:** `fondo` y `skin` guardan índices del tileset (−1 = vacío). `logica` guarda un número por celda (`LOGICA` en `config.js`: 0 vacío, 1 sólido, 2 pasarela); las propiedades de una celda, cuando hagan falta, irán en una lista aparte.
 - **Tileset:** crece solo hacia abajo y el ancho no cambia, así los índices no se mueven. Si algún día cambia el ancho,
   `columnas` permite recalcularlos.
 - **Objetos:** se colocan en la grilla de 16 px.
@@ -340,7 +340,7 @@ tools/editor/    editor de niveles
 |---|---|---|
 | 0 | ✔ Red de seguridad: escenarios de `probar.js` que fijan el comportamiento actual | Hecho: 109 verificaciones pasan sobre la v1.01 |
 | 1 | ✔ Reordenar carpetas, limpieza, constantes y catálogo de eventos | Hecho: 118 pruebas pasan y el juego sigue igual |
-| 2 | Formato de nivel + cargador + conversión de los 13 mapas | El juego sigue igual, pero lee JSON |
+| 2 | ✔ Formato de nivel + cargador + conversión de los 13 mapas | Hecho: el juego sigue igual y lee JSON |
 | 3 | Editor de niveles | Se crea un nivel, se guarda y se prueba |
 | 4 | Mundo de 34×20 + wrap + nivel de prueba | **[Probar]** la sensación del wrap |
 | 5 | Reglas por fase, golpe, bando, protección y HP de los enemigos | Comportamiento igual, código centralizado |

@@ -5,13 +5,14 @@ const parametros = new URLSearchParams(window.location.search);
 
 // Modo desarrollo: abrir el juego con ?debug en la URL.
 // Activa las teclas de prueba (ENTER = colisiones, SUPR = sin enemigos, BACKSPACE = habilidades, AV PÁG = modo dios)
-// y permite arrancar directo en un nivel: ?debug&nivel=5&jugadores=2&jefe=oni
+// y permite arrancar directo en un nivel: ?debug&nivel=5&jugadores=2&jefe=oni&mapa=n-valle
 export const DEBUG = parametros.has('debug');
 
 export const ARRANQUE_DEBUG = {
   nivel: DEBUG && parametros.get('nivel') ? parseInt(parametros.get('nivel'), 10) : null,
   jugadores: DEBUG && parametros.get('jugadores') ? parseInt(parametros.get('jugadores'), 10) : 1,
-  jefe: DEBUG ? parametros.get('jefe') : null   // ogro | oni | espectro (solo en niveles de jefe intermedio)
+  jefe: DEBUG ? parametros.get('jefe') : null,  // ogro | oni | espectro (solo en niveles de jefe intermedio)
+  mapa: DEBUG ? parametros.get('mapa') : null   // id de un nivel de public/niveles (para probarlo)
 };
 
 // Traducciones por API (Traducila: https://traducila.vercel.app). Sin proyecto cargado, o si la API falla,
@@ -22,12 +23,19 @@ export const TRADUCCIONES = {
   espera: 3000                 // Tiempo máximo para arrancar sin respuesta de la API (ms)
 };
 
+// Grilla de los niveles: 34×20 tiles, con la pantalla de 32×18 al centro abajo (2 filas ocultas arriba y 1 columna a cada lado).
+export const MUNDO = { columnas: 34, filas: 20, columnasOcultas: 1, filasOcultas: 2, tile: 16 };
+
+// Tipos de la capa "logica" de los niveles
+export const LOGICA = { VACIO: 0, SOLIDO: 1, PASARELA: 2 };
+
 export const CONFIG = {
   VIDAS_INICIALES: 3,          // Por jugador: las vidas no se comparten
   ESPERA_RESPAWN: 2000,         // Tras caer fuera de la pantalla, el ninja reaparece arriba después de esto (ms)
   INVUL_RESPAWN: 1500,          // Invulnerabilidad al reaparecer, desde que toca el piso (ms)
   TOTAL_NIVELES: 10,
   NIVELES_POR_BLOQUE: 5,        // Cada 5 niveles hay jefe: el 5 es intermedio y el 10 es el final
+  NIVELES_FIJOS: { 1: 'inicio', 2: 'aprendizaje' }, // Número de nivel → id; el resto sale del pool
 
   TIEMPO_RECOLECCION: 60,
   TIEMPO_MINIMO: 15,            // Piso del tiempo de un nivel aunque los pactos lo recorten

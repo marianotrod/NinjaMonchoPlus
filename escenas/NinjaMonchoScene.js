@@ -4,7 +4,7 @@ import { Bestiario } from '../datos/Bestiario.js';
 import Enemigo from '../entidades/Enemigo.js';
 import Fantasma from '../entidades/Fantasma.js';
 import Jefe from '../entidades/Jefe.js';
-import ConstructorNivel from '../mundo/ConstructorNivel.js';
+import { construirNivel } from '../mundo/CargadorNivel.js';
 import { CONFIG, DEBUG, FISICA, PAD } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
 import { MODS_GLOBAL_BASE, pactosVacios } from '../reglas/Pactos.js';
@@ -65,12 +65,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, -32, 512, 320);
 
-    Sonido.musica(this, musicaDelNivel(this.nivelActual), 0.4);
+    const datosNivel = partida.datosNivel;
+    Sonido.musica(this, datosNivel.musica || musicaDelNivel(this.nivelActual), 0.4);
     Sonido.ritmoMusica(1);
 
-    this.add.image(256, 144, 'fondo-cielo').setDisplaySize(512, 288);
+    this.add.image(256, 144, datosNivel.fondoImagen).setDisplaySize(512, 288);
 
-    const spawns = ConstructorNivel.construir(this, partida.mapa);
+    const spawns = construirNivel(this, datosNivel);
     this.spawnMonchoX = spawns.spawnMonchoX;
     this.spawnCoopX = spawns.spawnCoopX;
 
@@ -108,7 +109,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.physics.add.overlap(this.proyectilesJugador, this.items, (proyectil, item) => arrastrarItem(proyectil, item),
       (proyectil) => proyectil.tipo === 'bumeran', this);
 
-    const tiempoBase = this.esNivelJefe ? CONFIG.TIEMPO_JEFE : CONFIG.TIEMPO_RECOLECCION + this.modsGlobal.tiempoExtra;
+    const tiempoNivel = datosNivel.tiempo ?? (this.esNivelJefe ? CONFIG.TIEMPO_JEFE : CONFIG.TIEMPO_RECOLECCION);
+    const tiempoBase = this.esNivelJefe ? tiempoNivel : tiempoNivel + this.modsGlobal.tiempoExtra;
     this.tiempoRestante = Math.max(CONFIG.TIEMPO_MINIMO, tiempoBase);
 
     this.relojJuego = this.time.addEvent({ delay: 1000, callback: this.tickReloj, callbackScope: this, loop: true, paused: true });
@@ -311,7 +313,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   avanzarNivel() {
     const partida = this.partida;
     partida.nivel++;
-    partida.mapa = null;
+    partida.datosNivel = null;
     partida.pactos = pactosVacios(); // Los pactos duran un solo nivel
     this.scene.stop('UIScene');
     this.scene.start('PactSelectionScene');

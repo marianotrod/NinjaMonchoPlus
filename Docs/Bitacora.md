@@ -5,6 +5,20 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-05 — Claude: etapa 2 de la v2, niveles en archivos
+
+- Los 13 mapas de `datos/Mapas.js` pasaron a `public/niveles/*.json`, con `indice.json`. Una comparación tile por tile con los mapas viejos dio igual en los 13.
+- `mundo/Niveles.js` los carga y valida en `BootScene`; `mundo/CargadorNivel.js` arma el nivel. La skin es solo dibujo y la lógica crea bloques invisibles.
+- Grilla de 34×20 ya en los archivos (`MUNDO` en `config.js`); las columnas ocultas están vacías hasta la etapa del wrap.
+- `?debug&nivel=3&mapa=<id>` arranca un nivel puntual (lo va a usar el editor). `musica` y `tiempo` en `null` siguen la progresión de siempre.
+- No cambia el comportamiento: 123 de 123 pruebas.
+
+**Pendientes**
+- Etapa 3: editor de niveles en `tools/editor/`.
+- Mariano: lista revisada de pergaminos y de habilidades.
+
+---
+
 ## 2026-11-05 — Claude: etapa 1 de la v2, orden y limpieza
 
 - `scenes/` se repartió en `escenas/`, `entidades/`, `datos/`, `reglas/`, `mundo/`, `sistemas/` y `entrada/`.

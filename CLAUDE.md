@@ -7,7 +7,7 @@ con módulos ES. No usa npm ni build. Lo desarrollan Mariano Trod y Santiago Tor
 Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - VS Code Live Server (puerto 5501, ver `.vscode/settings.json`), o
 - `python -m http.server 5501` desde la raíz del repo, y abrir http://localhost:5501
-- Modo desarrollo: `?debug` (teclas de prueba) y `?debug&nivel=5&jugadores=2&jefe=oni` para arrancar en un nivel.
+- Modo desarrollo: `?debug` (teclas de prueba) y `?debug&nivel=5&jugadores=2&jefe=oni` para arrancar en un nivel (`&mapa=n-valle` elige el mapa).
 
 ## Estructura
 - `main.js`: configuración de Phaser (512x288, arcade physics, gamepad), lista de escenas y escalado entero del canvas.
@@ -17,11 +17,11 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - `escenas/`: `BootScene` (carga todo, texturas, animaciones, preferencias) → `TitleScene` → `NinjaMonchoScene` (juego)
   con `UIScene` (HUD, carteles, paneles) y `PauseScene` encima; `PactSelectionScene` entre niveles; `HowToPlayScene`, `OptionsScene`, `CreditsScene`.
 - `entidades/`: `Ninja` (jugador, katana), `Enemigo` (rasgos saltarín/caminante/volador/lanzador), `Jefe`, `Fantasma`, `Armas` (proyectiles del jugador).
-- `datos/`: `Bestiario` (enemigos), `Mapas`, `Eventos` (catálogo de eventos). `reglas/`: `Partida` (estado de la partida en el registry), `Pactos`. `mundo/`: `ConstructorNivel`.
+- `datos/`: `Bestiario` (enemigos), `Eventos` (catálogo de eventos). `reglas/`: `Partida` (estado de la partida en el registry), `Pactos`. `mundo/`: `Niveles` (carga y valida `public/niveles/`), `CargadorNivel` (arma el nivel en la escena).
 - `sistemas/`: `Texturas` (arte provisorio generado por código), `Sonido` (volúmenes, música, beeps WebAudio), `Guardado` (localStorage), `Estilo` (texto), `PuertaPruebas`. `entrada/`: `MenuInputManager`.
 - Fases de `NinjaMonchoScene`: intro → recoleccion → transicion → caceria → nivelCompletado (o intro → jefe → nivelCompletado);
   perdiendoVida y fin interrumpen. La UI se entera por eventos (`this.events.emit(...)`).
-- `public/assets/`: sprites, tiles y audio. `Docs/`: GDD, GDD técnico, lore, `Roadmap.md` y `Bitacora.md`.
+- `public/niveles/`: un JSON por nivel más `indice.json`. `public/assets/`: sprites, tiles y audio. `Docs/`: GDD, GDD técnico, lore, `Roadmap.md` y `Bitacora.md`.
 - `tools/`: scripts de soporte (no son parte del juego). `.venv/` y `node_modules/` no se versionan.
 
 ## Para ahorrar tokens

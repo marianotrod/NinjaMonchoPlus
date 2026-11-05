@@ -5,6 +5,7 @@
 // que el juego se comporte igual. Los jugadores se numeran 1 y 2, como en pantalla.
 import { Bestiario } from '../datos/Bestiario.js';
 import { ARMAS } from '../entidades/Armas.js';
+import { todosLosNiveles, validarNivel } from '../mundo/Niveles.js';
 import { EVENTOS } from '../datos/Eventos.js';
 
 export function instalarPuertaPruebas(game) {
@@ -51,6 +52,15 @@ export function instalarPuertaPruebas(game) {
       };
     },
 
+    nivel: () => {
+      const s = juego();
+      const bloques = s.bloquesFisicos.getChildren();
+      return { id: s.partida.datosNivel.id, bloques: bloques.length, pasarelas: bloques.filter(b => b.esOneWay).length };
+    },
+    validarNiveles: () => {
+      const niveles = todosLosNiveles();
+      return { cantidad: niveles.length, errores: niveles.flatMap(([id, nivel]) => validarNivel(id, nivel)) };
+    },
     jugador: (n = 1) => estadoJugador(jugador(n)),
     enemigos: () => juego().enemigos.getChildren().map(estadoEnemigo),
     enemigo: (i = 0) => { const e = juego().enemigos.getChildren()[i]; return e ? estadoEnemigo(e) : null; },

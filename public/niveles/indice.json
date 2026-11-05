@@ -1,0 +1,17 @@
+{
+  "niveles": [
+    {"id":"inicio","tipo":"inicio","tier":null},
+    {"id":"aprendizaje","tipo":"fijo","tier":null},
+    {"id":"arena-jefes","tipo":"jefe","tier":null},
+    {"id":"n-piramide","tipo":"normal","tier":1},
+    {"id":"n-foso","tipo":"normal","tier":1},
+    {"id":"n-zigzag","tipo":"normal","tier":1},
+    {"id":"n-islas","tipo":"normal","tier":1},
+    {"id":"n-bloque","tipo":"normal","tier":1},
+    {"id":"n-torres","tipo":"normal","tier":1},
+    {"id":"n-embudo","tipo":"normal","tier":1},
+    {"id":"n-jaula","tipo":"normal","tier":1},
+    {"id":"n-valle","tipo":"normal","tier":1},
+    {"id":"n-caos","tipo":"normal","tier":1}
+  ]
+}

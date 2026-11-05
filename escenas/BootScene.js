@@ -3,6 +3,7 @@ import { ARRANQUE_DEBUG } from '../config.js';
 import { Texturas } from '../sistemas/Texturas.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { nuevaPartida } from '../reglas/Partida.js';
+import { cargarNiveles, registrarNiveles } from '../mundo/Niveles.js';
 
 // Carga todos los recursos una sola vez, genera las texturas provisorias, crea las animaciones
 // y recupera las preferencias guardadas. Después pasa al título (o directo a un nivel en modo debug).
@@ -16,6 +17,8 @@ export default class BootScene extends Phaser.Scene {
     const barra = this.add.rectangle(156, 144, 0, 6, 0x4ADE80).setOrigin(0, 0.5);
     this.load.on('progress', (valor) => { barra.width = 200 * valor; });
     this.load.once('complete', () => { barraFondo.destroy(); barra.destroy(); });
+
+    cargarNiveles(this.load);
 
     const A = 'public/assets/';
     this.load.image('fondo-cielo', `${A}Cielo.webp`);
@@ -45,6 +48,7 @@ export default class BootScene extends Phaser.Scene {
   }
 
   create() {
+    registrarNiveles(this.cache);
     Texturas.generar(this);
     this.crearAnimaciones();
 
@@ -56,6 +60,7 @@ export default class BootScene extends Phaser.Scene {
     if (ARRANQUE_DEBUG.nivel) {
       const partida = nuevaPartida(ARRANQUE_DEBUG.jugadores, ARRANQUE_DEBUG.nivel);
       partida.jefeForzado = ARRANQUE_DEBUG.jefe;
+      partida.mapaForzado = ARRANQUE_DEBUG.mapa;
       this.registry.set('partida', partida);
       this.scene.start('NinjaMonchoScene');
     } else {

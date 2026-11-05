@@ -1,0 +1,9 @@
+{
+  "descripcion": "Sin mapa forzado, del nivel 3 en adelante el nivel sale del pool",
+  "query": "?debug&nivel=3",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego()", "timeout": 8000, "nombre": "arranca el nivel"},
+    {"verificar": "el nivel 3 sale del pool de niveles normales", "eval": "prueba.nivel().id.startsWith('n-')"},
+    {"verificar": "y tiene bloques", "eval": "prueba.nivel()", "espera": {"bloques": {"min": 50}}}
+  ]
+}

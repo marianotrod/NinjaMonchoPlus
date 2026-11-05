@@ -55,11 +55,12 @@ config.js               Constantes de juego y de física (para calibrar sin busc
 i18n.js                 Textos en español e inglés
 escenas/                Escenas (Boot, Title, HowToPlay, Options, Credits, NinjaMoncho, UI, Pause, PactSelection)
 entidades/              Ninja, Enemigo, Jefe, Fantasma, Armas
-datos/                  Bestiario y Mapas
+datos/                  Bestiario y catálogo de eventos
 reglas/                 Partida y Pactos
-mundo/                  ConstructorNivel
+mundo/                  Carga y armado de los niveles
 sistemas/               Texturas, Sonido, Guardado y puerta de pruebas
 entrada/                MenuInputManager
+public/niveles/         Un JSON por nivel e indice.json
 public/assets/          Sprites, tiles y audio
 lib/                    Phaser 3.80.1
 Docs/                   GDD, lore, roadmap y bitácora de trabajo

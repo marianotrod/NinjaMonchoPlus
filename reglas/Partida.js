@@ -3,7 +3,7 @@
 // para que sobreviva a los reinicios de NinjaMonchoScene y lo puedan leer la UI y la pantalla de pactos.
 
 import { CONFIG } from '../config.js';
-import { mapaInicial, mapaAprendizaje, mapaJefe, mapasPool } from '../datos/Mapas.js';
+import { idsDeTipo, nivelPorId } from '../mundo/Niveles.js';
 import { pactosVacios } from './Pactos.js';
 
 export const JEFES_INTERMEDIOS = ['ogro', 'oni', 'espectro'];
@@ -14,8 +14,8 @@ export function nuevaPartida(jugadores, nivel = 1) {
     nivel,
     vidas: [CONFIG.VIDAS_INICIALES, CONFIG.VIDAS_INICIALES], // Cada jugador tiene las suyas
     puntajes: [0, 0],
-    pool: [...mapasPool],
-    mapa: null,
+    pool: idsDeTipo('normal'),
+    datosNivel: null,
     jefe: null,
     pactos: pactosVacios()
   };
@@ -29,24 +29,24 @@ export function esNivelFinal(nivel) {
   return nivel >= CONFIG.TOTAL_NIVELES;
 }
 
-// Niveles 1 y 2: mapas fijos de aprendizaje. Jefes: arena propia. Resto: al azar del pool sin repetir.
+// Elige el id del nivel: fijo para algunos números, una arena para los jefes y, si no, al azar del pool sin repetir.
+function elegirNivel(partida) {
+  const nivel = partida.nivel;
+  if (partida.mapaForzado) return partida.mapaForzado;
+  if (esNivelJefe(nivel)) return Phaser.Utils.Array.GetRandom(idsDeTipo('jefe'));
+  if (CONFIG.NIVELES_FIJOS[nivel]) return CONFIG.NIVELES_FIJOS[nivel];
+  if (partida.pool.length === 0) partida.pool = idsDeTipo('normal');
+  return partida.pool.splice(Phaser.Math.Between(0, partida.pool.length - 1), 1)[0];
+}
+
 export function prepararNivel(partida) {
-  if (partida.mapa) return;
+  if (partida.datosNivel) return;
   const nivel = partida.nivel;
   partida.jefe = null;
-
   if (esNivelJefe(nivel)) {
-    partida.mapa = mapaJefe;
     partida.jefe = esNivelFinal(nivel) ? 'rey' : (partida.jefeForzado || Phaser.Utils.Array.GetRandom(JEFES_INTERMEDIOS));
-  } else if (nivel === 1) {
-    partida.mapa = mapaInicial;
-  } else if (nivel === 2) {
-    partida.mapa = mapaAprendizaje;
-  } else {
-    if (partida.pool.length === 0) partida.pool = [...mapasPool];
-    const indice = Phaser.Math.Between(0, partida.pool.length - 1);
-    partida.mapa = partida.pool.splice(indice, 1)[0];
   }
+  partida.datosNivel = nivelPorId(elegirNivel(partida));
 }
 
 export function musicaDelNivel(nivel) {
