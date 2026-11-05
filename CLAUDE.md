@@ -22,6 +22,7 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - Fases de `NinjaMonchoScene`: intro → recoleccion → transicion → caceria → nivelCompletado (o intro → jefe → nivelCompletado);
   perdiendoVida y fin interrumpen. La UI se entera por eventos (`this.events.emit(...)`).
 - `public/niveles/`: un JSON por nivel más `indice.json`. `public/assets/`: sprites, tiles y audio. `Docs/`: GDD, GDD técnico, lore, `Roadmap.md` y `Bitacora.md`.
+- `tools/editor/`: editor de niveles. Con el juego servido, abrir http://localhost:5501/tools/editor/ en Chrome o Edge.
 - `tools/`: scripts de soporte (no son parte del juego). `.venv/` y `node_modules/` no se versionan.
 
 ## Para ahorrar tokens

@@ -9,6 +9,7 @@
 //
 // Un escenario es una lista de pasos, o un objeto { "descripcion", "query": "?debug&nivel=1", "pasos": [...] }.
 // "query" reemplaza los parámetros de la URL (para arrancar directo en un nivel con ?debug).
+// "pagina" abre otra página del repo en lugar del juego, por ejemplo "tools/editor/index.html".
 //
 // Pasos posibles (se pueden combinar en un mismo paso; se ejecutan en este orden):
 //   {"wait": ms}                       espera fija
@@ -43,9 +44,9 @@ function leerEscenario(archivo) {
   return Array.isArray(datos) ? { pasos: datos } : datos;
 }
 
-function urlConQuery(base, query) {
-  if (query === undefined) return base;
-  return base.split('?')[0] + query;
+function urlDelEscenario(base, { pagina, query }) {
+  const direccion = pagina ? base.split('?')[0].replace(/index\.html$/, pagina) : base;
+  return query === undefined ? direccion : direccion.split('?')[0] + query;
 }
 
 function iguales(a, b) {
@@ -86,7 +87,7 @@ async function correrEscenario(browser, archivo, totales) {
     erroresPagina++;
     logs.push(`PAGEERROR: ${e.message}\n${(e.stack || '').split('\n').slice(0, 4).join('\n')}`);
   });
-  await page.goto(urlConQuery(url, escenario.query), { waitUntil: 'load' });
+  await page.goto(urlDelEscenario(url, escenario), { waitUntil: 'load' });
 
   const anotar = (ok, texto, detalle = []) => {
     if (ok) totales.ok++; else totales.fallas.push(`${nombre}: ${texto}`);

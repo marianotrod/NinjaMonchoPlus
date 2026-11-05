@@ -64,7 +64,7 @@ public/niveles/         Un JSON por nivel e indice.json
 public/assets/          Sprites, tiles y audio
 lib/                    Phaser 3.80.1
 Docs/                   GDD, lore, roadmap y bitácora de trabajo
-tools/                  Herramientas de soporte (no son parte del juego)
+tools/                  Herramientas de soporte: editor de niveles y banco de pruebas (no son parte del juego)
 ```
 
 El arte de armas, enemigos nuevos, jefes y HUD es provisorio y está generado por código en `sistemas/Texturas.js`.

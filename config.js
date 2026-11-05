@@ -27,7 +27,7 @@ export const TRADUCCIONES = {
 export const MUNDO = { columnas: 34, filas: 20, columnasOcultas: 1, filasOcultas: 2, tile: 16 };
 
 // Tipos de la capa "logica" de los niveles
-export const LOGICA = { VACIO: 0, SOLIDO: 1, PASARELA: 2 };
+export const LOGICA = { VACIO: 0, SOLIDO: 1, PASARELA: 2, TRAMPA: 3, FUEGO: 4 };
 
 export const CONFIG = {
   VIDAS_INICIALES: 3,          // Por jugador: las vidas no se comparten

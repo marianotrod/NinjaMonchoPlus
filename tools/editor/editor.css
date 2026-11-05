@@ -1,0 +1,63 @@
+:root { color-scheme: dark; }
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #111827;
+  color: #e5e7eb;
+  font: 13px system-ui, sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #1f2937;
+  border-bottom: 1px solid #374151;
+}
+
+main { flex: 1; display: flex; min-height: 0; }
+
+aside { width: 190px; flex: none; padding: 8px 10px; overflow-y: auto; background: #1f2937; }
+
+#paleta { width: 346px; display: flex; flex-direction: column; overflow: hidden; }
+#paleta.oculta { display: none; }
+#contenido-paleta { flex: 1; overflow-y: auto; }
+
+#zona-mapa { flex: 1; overflow: auto; padding: 10px; }
+#mapa { display: block; image-rendering: pixelated; cursor: crosshair; }
+
+h2 { margin: 12px 0 5px; font-size: 12px; text-transform: uppercase; color: #9ca3af; }
+h2:first-child { margin-top: 0; }
+small { font-weight: normal; text-transform: none; }
+
+button, select, input { font: inherit; color: inherit; background: #374151; border: 1px solid #4b5563; border-radius: 3px; padding: 3px 7px; }
+button { cursor: pointer; }
+button:hover { background: #4b5563; }
+button.activo { background: #2563eb; border-color: #60a5fa; }
+
+.fila { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.fila button:first-child { flex: 1; text-align: left; }
+.ayuda { color: #9ca3af; font-size: 11px; margin: 6px 0 0; }
+
+#herramientas button { width: 100%; text-align: left; margin-bottom: 3px; }
+
+#propiedades label { display: block; margin-bottom: 5px; color: #9ca3af; font-size: 12px; }
+#propiedades input, #propiedades select { display: block; width: 100%; color: #e5e7eb; }
+
+#mensaje { margin-left: 10px; color: #fbbf24; }
+#mensaje.error { color: #f87171; }
+#mensaje.ok { color: #4ade80; }
+
+#recientes { display: flex; flex-wrap: wrap; gap: 3px; min-height: 36px; margin-bottom: 6px; }
+#recientes canvas { width: 32px; height: 32px; image-rendering: pixelated; cursor: pointer; }
+
+#tileset { display: block; image-rendering: pixelated; cursor: pointer; }
+
+.opcion { display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 4px; text-align: left; }
+.muestra { width: 20px; height: 20px; border: 1px solid #000; flex: none; }

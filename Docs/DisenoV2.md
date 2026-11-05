@@ -341,7 +341,7 @@ tools/editor/    editor de niveles
 | 0 | ✔ Red de seguridad: escenarios de `probar.js` que fijan el comportamiento actual | Hecho: 109 verificaciones pasan sobre la v1.01 |
 | 1 | ✔ Reordenar carpetas, limpieza, constantes y catálogo de eventos | Hecho: 118 pruebas pasan y el juego sigue igual |
 | 2 | ✔ Formato de nivel + cargador + conversión de los 13 mapas | Hecho: el juego sigue igual y lee JSON |
-| 3 | Editor de niveles | Se crea un nivel, se guarda y se prueba |
+| 3 | ✔ Editor de niveles | Hecho: pinta, guarda y prueba (falta confirmar el guardado real en Chrome) |
 | 4 | Mundo de 34×20 + wrap + nivel de prueba | **[Probar]** la sensación del wrap |
 | 5 | Reglas por fase, golpe, bando, protección y HP de los enemigos | Comportamiento igual, código centralizado |
 | 6 | Tiles de trampa y fuego | Funcionan en un nivel de prueba |

@@ -1,15 +1,17 @@
 // Niveles.js
 // Los niveles viven en public/niveles/ (uno por archivo) y public/niveles/indice.json los enumera: el navegador
 // no puede listar carpetas. BootScene los carga todos una vez y acá quedan disponibles por id.
-import { MUNDO } from '../config.js';
+import { ARRANQUE_DEBUG, MUNDO } from '../config.js';
 
 const RUTA = 'public/niveles/';
+// Al probar un nivel desde el editor hay que leer lo recién guardado, no una copia vieja del navegador
+const VERSION = ARRANQUE_DEBUG.mapa ? `?v=${Date.now()}` : '';
 const niveles = new Map();
 
 export function cargarNiveles(load) {
-  load.json('indice-niveles', `${RUTA}indice.json`);
+  load.json('indice-niveles', `${RUTA}indice.json${VERSION}`);
   load.once('filecomplete-json-indice-niveles', (clave, tipo, indice) => {
-    indice.niveles.forEach(({ id }) => load.json(`nivel-${id}`, `${RUTA}${id}.json`));
+    indice.niveles.forEach(({ id }) => load.json(`nivel-${id}`, `${RUTA}${id}.json${VERSION}`));
   });
 }
 

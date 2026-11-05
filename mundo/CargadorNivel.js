@@ -1,6 +1,7 @@
 // CargadorNivel.js
 // Arma un nivel en la escena a partir de su JSON. Las capas "fondo" y "skin" son solo dibujo (índices del tileset);
 // la capa "logica" crea los bloques físicos, que son invisibles. La fila y la columna 0 del archivo están fuera de pantalla.
+// El tile de fuego por ahora es un bloque sólido más, y la trampa todavía no hace nada.
 import { LOGICA, MUNDO } from '../config.js';
 
 const aX = (col) => (col - MUNDO.columnasOcultas) * MUNDO.tile + MUNDO.tile / 2;
@@ -30,7 +31,7 @@ export function construirNivel(scene, nivel) {
 
   scene.bloquesFisicos = scene.physics.add.staticGroup();
   nivel.capas.logica.forEach((fila, f) => fila.forEach((tipo, c) => {
-    if (tipo !== LOGICA.VACIO) crearBloque(scene, aX(c), aY(f), tipo);
+    if (tipo === LOGICA.SOLIDO || tipo === LOGICA.PASARELA || tipo === LOGICA.FUEGO) crearBloque(scene, aX(c), aY(f), tipo);
   }));
 
   const spawnDe = (jugador) => aX(nivel.objetos.find(o => o.tipo === 'spawnJugador' && o.jugador === jugador).col);

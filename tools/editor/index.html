@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Editor de niveles — Ninja Moncho</title>
+    <link rel="icon" type="image/x-icon" href="../../public/assets/favicon.ico" />
+    <link rel="stylesheet" href="editor.css" />
+  </head>
+  <body>
+    <header>
+      <strong>Editor de niveles</strong>
+      <select id="selector-nivel" title="Abrir un nivel"></select>
+      <button id="btn-nuevo">Nuevo</button>
+      <button id="btn-duplicar">Duplicar</button>
+      <button id="btn-guardar" title="Ctrl+S">Guardar</button>
+      <button id="btn-probar">Probar</button>
+      <span id="mensaje"></span>
+    </header>
+
+    <main>
+      <aside id="panel-izquierdo">
+        <h2>Capa <small>(1-4)</small></h2>
+        <div id="capas"></div>
+
+        <h2>Herramienta</h2>
+        <div id="herramientas"></div>
+        <p class="ayuda">Clic derecho borra. Alt+clic toma el tile. Ctrl+Z deshace, Ctrl+Y rehace.</p>
+
+        <h2>Vista</h2>
+        <div class="fila">
+          <button id="btn-1a1" title="Tamaño real, para revisar las costuras">1:1</button>
+          <button id="btn-menos">−</button>
+          <span id="zoom"></span>
+          <button id="btn-mas">+</button>
+        </div>
+        <label><input type="checkbox" id="ver-grilla" checked /> Grilla</label>
+
+        <h2>Nivel</h2>
+        <form id="propiedades"></form>
+      </aside>
+
+      <section id="zona-mapa"><canvas id="mapa"></canvas></section>
+
+      <aside id="paleta">
+        <h2>Paleta <small>(Tab)</small></h2>
+        <div id="recientes"></div>
+        <div id="contenido-paleta"></div>
+      </aside>
+    </main>
+
+    <script type="module" src="editor.js"></script>
+  </body>
+</html>

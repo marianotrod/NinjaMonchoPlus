@@ -5,6 +5,21 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-05 — Claude: etapa 3 de la v2, editor de niveles
+
+- `tools/editor/`: capas de fondo, skin, lógica y objetos sobre la grilla de 34×20; paleta con Tab, recientes y scroll propio;
+  lápiz, rectángulo, borrar, cuentagotas, deshacer y rehacer; zoom y vista 1:1; propiedades del nivel; nuevo y duplicar; guardar y probar.
+- Los tiles de trampa y fuego ya se pueden pintar. En el juego, el fuego es por ahora un bloque sólido y la trampa no hace nada, hasta la etapa 6.
+- Abrir y volver a escribir los 13 niveles no cambia ni un byte. Sin los spawns de los dos jugadores el nivel no se guarda.
+- El guardado se probó con una carpeta simulada: falta confirmarlo con la carpeta real en Chrome.
+
+**Pendientes**
+- Mariano: probar el editor y guardar un nivel en la carpeta real.
+- Mariano: lista revisada de pergaminos y de habilidades.
+- Etapa 4: mundo de 34×20 con wrap, en un nivel de prueba.
+
+---
+
 ## 2026-11-05 — Claude: etapa 2 de la v2, niveles en archivos
 
 - Los 13 mapas de `datos/Mapas.js` pasaron a `public/niveles/*.json`, con `indice.json`. Una comparación tile por tile con los mapas viejos dio igual en los 13.
