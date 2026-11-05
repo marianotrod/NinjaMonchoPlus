@@ -7,9 +7,12 @@ import { FISICA } from '../config.js';
 import { Sonido } from '../sistemas/Sonido.js';
 
 export const ARMAS = {
-  shuriken: { icono: 'icono-shuriken', municion: 12 },
-  bumeran: { icono: 'icono-bumeran', municion: 6 },
-  bomba: { icono: 'icono-bomba', municion: 4 }
+  shuriken: { icono: 'icono-shuriken', municion: 12, velocidad: 300, giro: 900, duracion: 1500 },
+  bumeran: { icono: 'icono-bumeran', municion: 6, velocidad: 240, velocidadVuelta: 280, giro: 720, duracionIda: 380 },
+  bomba: {
+    icono: 'icono-bomba', municion: 4, velocidadX: 160, velocidadY: -200, rebote: 0.4, giro: 300,
+    espera: 1200, radio: 48, impulso: 300, impulsoMinimo: -150
+  }
 };
 
 export const TIPOS_ARMA = Object.keys(ARMAS);
@@ -18,6 +21,7 @@ export function dispararArma(scene, ninja) {
   if (ninja.arma === 'bumeran' && ninja.bumeranActivo && ninja.bumeranActivo.active) return false;
 
   const direccion = ninja.flipX ? -1 : 1;
+  const datos = ARMAS[ninja.arma];
   const proyectil = scene.proyectilesJugador.create(ninja.x + direccion * 8, ninja.y - 2, ninja.arma);
   proyectil.body.setSize(10, 10); // El dibujo es de 16x16 pero el área de impacto es más chica (si no, roza el piso al tirar)
   proyectil.tipo = ninja.arma;
@@ -28,23 +32,23 @@ export function dispararArma(scene, ninja) {
   if (ninja.arma === 'shuriken') {
     proyectil.body.setAllowGravity(false);
     proyectil.body.setAccelerationY(FISICA.caidaShuriken);
-    proyectil.setVelocityX(direccion * 300);
-    proyectil.setAngularVelocity(900);
+    proyectil.setVelocityX(direccion * datos.velocidad);
+    proyectil.setAngularVelocity(datos.giro);
     Sonido.efecto(scene, 'snd-shuriken', 0.4);
   } else if (ninja.arma === 'bumeran') {
     proyectil.body.setAllowGravity(false);
-    proyectil.setVelocityX(direccion * 240);
-    proyectil.setAngularVelocity(720);
+    proyectil.setVelocityX(direccion * datos.velocidad);
+    proyectil.setAngularVelocity(datos.giro);
     proyectil.vuelta = false;
     proyectil.arrastrados = [];
     ninja.bumeranActivo = proyectil;
     Sonido.efecto(scene, 'snd-shuriken', 0.3, { rate: 0.7 });
   } else {
     proyectil.body.setAllowGravity(true);
-    proyectil.setVelocity(direccion * 160, -200);
-    proyectil.setBounce(0.4);
-    proyectil.setAngularVelocity(direccion * 300);
-    scene.time.delayedCall(1200, () => { if (proyectil.active) scene.explotarBomba(proyectil); });
+    proyectil.setVelocity(direccion * datos.velocidadX, datos.velocidadY);
+    proyectil.setBounce(datos.rebote);
+    proyectil.setAngularVelocity(direccion * datos.giro);
+    scene.time.delayedCall(datos.espera, () => { if (proyectil.active) scene.explotarBomba(proyectil); });
     Sonido.beep(scene, 330, 0.1, 0.08, 'triangle');
   }
 
@@ -61,13 +65,13 @@ export function actualizarProyectiles(scene) {
     if (p.tipo === 'bumeran') {
       const duenio = p.duenio;
       if (!duenio || !duenio.active) { soltarArrastrados(p); p.destroy(); return; }
-      if (!p.vuelta && (ahora - p.nacimiento > 380 || fuera)) {
+      if (!p.vuelta && (ahora - p.nacimiento > ARMAS.bumeran.duracionIda || fuera)) {
         p.vuelta = true;
         p.golpeados.clear(); // En la vuelta puede volver a golpear a los mismos objetivos
       }
       if (p.vuelta) {
         const angulo = Math.atan2(duenio.y - p.y, duenio.x - p.x);
-        p.setVelocity(Math.cos(angulo) * 280, Math.sin(angulo) * 280);
+        p.setVelocity(Math.cos(angulo) * ARMAS.bumeran.velocidadVuelta, Math.sin(angulo) * ARMAS.bumeran.velocidadVuelta);
         if (Phaser.Math.Distance.Between(p.x, p.y, duenio.x, duenio.y) < 10) {
           soltarArrastrados(p);
           duenio.bumeranActivo = null;
@@ -80,7 +84,7 @@ export function actualizarProyectiles(scene) {
       return;
     }
 
-    if (fuera || (p.tipo === 'shuriken' && ahora - p.nacimiento > 1500)) p.destroy();
+    if (fuera || (p.tipo === 'shuriken' && ahora - p.nacimiento > ARMAS.shuriken.duracion)) p.destroy();
   });
 }
 

@@ -30,15 +30,21 @@ export const CONFIG = {
   NIVELES_POR_BLOQUE: 5,        // Cada 5 niveles hay jefe: el 5 es intermedio y el 10 es el final
 
   TIEMPO_RECOLECCION: 60,
+  TIEMPO_MINIMO: 15,            // Piso del tiempo de un nivel aunque los pactos lo recorten
   TIEMPO_CACERIA: 30,
   TIEMPO_JEFE: 99,
   ALARMA_TIEMPO: 10,            // Desde acá el reloj se pone rojo y suena el tic
   ALARMA_URGENTE: 5,
 
+  DURACION_INTRO: 2400,         // Cartel de inicio de nivel (ms)
+  DURACION_SELLO: 2000,         // Cartel de "¡Sello roto!" antes de la Cacería (ms)
+  APARICION_JEFE: 1000,         // El jefe aparece a este tiempo de empezada la intro (ms)
+
   BONO_POR_SEGUNDO: 100,
   PUNTOS_BAJA: 100,
   BONO_JEFE: 5000,
   VALOR_MONEDA: 200,
+  CAIDA_VALOR_MONEDA: 0.8,      // En cada rebote la moneda vale esto respecto de lo que valía
 
   // Qué se pierde al recibir un golpe en la Fase de Recolección:
   // 'ultimo' = el último talismán (como dice el GDD) | 'todos' = todo el inventario (versión anterior)
@@ -46,10 +52,18 @@ export const CONFIG = {
 
   TOPE_ENEMIGOS_BASE: 3,
   TOPE_ENEMIGOS_MAX: 5,
+  CUPO_CACERIA_BASE: 3,         // Demonios a cazar: base + nivel / 2, hasta el máximo
+  CUPO_CACERIA_MAX: 6,
+  INTERVALO_CACERIA: 500,
+  INTERVALO_TALISMANES: 150,
   INTERVALO_DEMONIOS: 2000,
   INTERVALO_ARMAS: 12000,
   INTERVALO_ARMAS_JEFE: 7000,
-  VIDA_PICKUP_ARMA: 10000
+  VIDA_PICKUP_ARMA: 10000,
+  PRIMERA_CAJA_ARMAS: 5000,
+
+  // Vida que le saca cada cosa a un jefe
+  DAÑO_JEFE: { katana: 1, proyectil: 1, pisoton: 2, explosion: 3 }
 };
 
 // Parámetros de movimiento del ninja. Gravedad efectiva = gravedadMundo + gravedadJugador = 800 px/s².
@@ -82,6 +96,7 @@ export const FISICA = {
   knockbackY: -220,
   duracionStun: 500,
 
+  roceItem: 0.92,               // Frenado de talismanes y monedas apoyados en el piso
   caidaShuriken: 40,            // Gravedad propia del shuriken (px/s²): cae muy poco en su recorrido
 
   katanaDuracion: 150,
@@ -89,4 +104,4 @@ export const FISICA = {
 };
 
 // Índices estándar de botones de joystick (layout Xbox / "standard gamepad")
-export const PAD = { A: 0, B: 1, X: 2, Y: 3, L1: 4, R1: 5, SELECT: 8, START: 9 };
+export const PAD = { A: 0, B: 1, X: 2, Y: 3, L1: 4, R1: 5, SELECT: 8, START: 9, ARRIBA: 12, ABAJO: 13, IZQUIERDA: 14, DERECHA: 15 };

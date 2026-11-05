@@ -108,7 +108,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       (proyectil) => proyectil.tipo === 'bumeran', this);
 
     const tiempoBase = this.esNivelJefe ? CONFIG.TIEMPO_JEFE : CONFIG.TIEMPO_RECOLECCION + this.modsGlobal.tiempoExtra;
-    this.tiempoRestante = Math.max(15, tiempoBase);
+    this.tiempoRestante = Math.max(CONFIG.TIEMPO_MINIMO, tiempoBase);
 
     this.relojJuego = this.time.addEvent({ delay: 1000, callback: this.tickReloj, callbackScope: this, loop: true, paused: true });
     this.timerDemonios = this.time.addEvent({ delay: CONFIG.INTERVALO_DEMONIOS, callback: () => this.spawnearDemonio(), loop: true, paused: true });
@@ -140,15 +140,15 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   mostrarIntro() {
     if (this.esNivelJefe) {
       this.events.emit('banner', {
-        titulo: i18n.t('jefe_aparece'), subtitulo: i18n.t(`jefe_${this.partida.jefe}`), color: '#EF4444', duracion: 2400
+        titulo: i18n.t('jefe_aparece'), subtitulo: i18n.t(`jefe_${this.partida.jefe}`), color: '#EF4444', duracion: CONFIG.DURACION_INTRO
       });
-      this.time.delayedCall(1000, () => this.spawnearJefe());
-      this.time.delayedCall(2400, () => this.iniciarFaseJefe());
+      this.time.delayedCall(CONFIG.APARICION_JEFE, () => this.spawnearJefe());
+      this.time.delayedCall(CONFIG.DURACION_INTRO, () => this.iniciarFaseJefe());
     } else {
       this.events.emit('banner', {
-        titulo: `${i18n.t('nivel')} ${this.nivelActual}`, subtitulo: i18n.t('objetivo_recoleccion'), iconos: true, duracion: 2400
+        titulo: `${i18n.t('nivel')} ${this.nivelActual}`, subtitulo: i18n.t('objetivo_recoleccion'), iconos: true, duracion: CONFIG.DURACION_INTRO
       });
-      this.time.delayedCall(2400, () => this.iniciarRecoleccion());
+      this.time.delayedCall(CONFIG.DURACION_INTRO, () => this.iniciarRecoleccion());
     }
   }
 
@@ -166,7 +166,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     Phaser.Utils.Array.Shuffle(bolsaInicial);
 
     this.time.addEvent({
-      delay: 150,
+      delay: CONFIG.INTERVALO_TALISMANES,
       repeat: 11,
       callback: () => {
         const forma = bolsaInicial.pop();
@@ -178,7 +178,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.relojJuego.paused = false;
     this.timerDemonios.paused = false;
     this.timerArmas.paused = false;
-    this.time.delayedCall(5000, () => this.spawnearCajaArma());
+    this.time.delayedCall(CONFIG.PRIMERA_CAJA_ARMAS, () => this.spawnearCajaArma());
   }
 
   finRecoleccion() {
@@ -201,11 +201,11 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     Sonido.efecto(this, 'snd-parry', 0.6);
     this.cameras.main.flash(250, 255, 255, 255);
     this.events.emit('banner', {
-      titulo: i18n.t('sello_roto'), subtitulo: `${i18n.t('bono_tiempo')} +${bono}`, color: '#EF4444', duracion: 2000
+      titulo: i18n.t('sello_roto'), subtitulo: `${i18n.t('bono_tiempo')} +${bono}`, color: '#EF4444', duracion: CONFIG.DURACION_SELLO
     });
     this.enemigos.getChildren().forEach(enemigo => enemigo.enfurecer());
 
-    this.time.delayedCall(2000, () => this.iniciarCaceria());
+    this.time.delayedCall(CONFIG.DURACION_SELLO, () => this.iniciarCaceria());
   }
 
   iniciarCaceria() {
@@ -217,11 +217,11 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.events.emit('banner', { titulo: i18n.t('caceria'), subtitulo: i18n.t('objetivo_caceria'), color: '#EF4444', duracion: 1400, chico: true });
 
     // Cupo de demonios a cazar: crece con el nivel
-    const cupo = Math.min(3 + Math.floor(this.nivelActual / 2), 6);
+    const cupo = Math.min(CONFIG.CUPO_CACERIA_BASE + Math.floor(this.nivelActual / 2), CONFIG.CUPO_CACERIA_MAX);
     this.enemigosPorAparecer = Math.max(0, cupo - this.enemigos.countActive(true));
     if (this.enemigosPorAparecer > 0) {
       this.time.addEvent({
-        delay: 500, repeat: this.enemigosPorAparecer - 1,
+        delay: CONFIG.INTERVALO_CACERIA, repeat: this.enemigosPorAparecer - 1,
         callback: () => {
           if (this.fase !== 'caceria') return;
           this.enemigosPorAparecer--;
@@ -684,7 +684,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.items.getChildren().forEach(item => {
       if (item.body.touching.down) {
-        item.setVelocityX(item.body.velocity.x * 0.92);
+        item.setVelocityX(item.body.velocity.x * FISICA.roceItem);
         if (Math.abs(item.body.velocity.x) < 1) item.setVelocityX(0);
       } else {
         if (item.body.velocity.y > 0) item.yaRestoPuntosEsteRebote = false;
@@ -748,7 +748,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (!item.yaRestoPuntosEsteRebote) {
       if (item.body.velocity.y < -10) {
         item.yaRestoPuntosEsteRebote = true;
-        item.valorPuntos = Math.max(1, Math.floor(item.valorPuntos * 0.8));
+        item.valorPuntos = Math.max(1, Math.floor(item.valorPuntos * CONFIG.CAIDA_VALOR_MONEDA));
         const porcentaje = Math.max(0, item.valorPuntos / item.valorInicial);
         const colorGB = Math.floor(255 * porcentaje);
         item.setTint(Phaser.Display.Color.GetColor(255, colorGB, colorGB));
@@ -1035,7 +1035,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.jugadores.forEach(otro => {
       if (otro !== ninja && !otro.eliminado) golpear(otro, () => otro.empujar(direccion * 220, -160));
     });
-    if (this.jefe && this.jefe.active) golpear(this.jefe, () => this.jefe.recibirDaño(1));
+    if (this.jefe && this.jefe.active) golpear(this.jefe, () => this.jefe.recibirDaño(CONFIG.DAÑO_JEFE.katana));
   }
 
   impactoProyectil(proyectil, enemigo) {
@@ -1056,7 +1056,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.explotarBomba(proyectil);
       return;
     }
-    jefe.recibirDaño(1);
+    jefe.recibirDaño(CONFIG.DAÑO_JEFE.proyectil);
     if (proyectil.tipo === 'shuriken') proyectil.destroy();
   }
 
@@ -1070,12 +1070,12 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     Sonido.ruido(this, 0.4, 0.4);
     this.cameras.main.shake(200, 0.01);
 
-    const radio = 48;
+    const { radio, impulso: fuerza, impulsoMinimo } = ARMAS.bomba;
     const impulso = (objeto) => {
       const distancia = Phaser.Math.Distance.Between(x, y, objeto.x, objeto.y);
       if (distancia > radio) return null;
       const angulo = Math.atan2(objeto.y - y, objeto.x - x);
-      return { vx: Math.cos(angulo) * 300, vy: Math.min(-150, Math.sin(angulo) * 300) };
+      return { vx: Math.cos(angulo) * fuerza, vy: Math.min(impulsoMinimo, Math.sin(angulo) * fuerza) };
     };
 
     this.enemigos.getChildren().slice().forEach(enemigo => {
@@ -1097,7 +1097,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       if (v) j.empujar(v.vx, v.vy);
     });
     if (this.jefe && this.jefe.active && Phaser.Math.Distance.Between(x, y, this.jefe.x, this.jefe.y) < radio + 16) {
-      this.jefe.recibirDaño(3);
+      this.jefe.recibirDaño(CONFIG.DAÑO_JEFE.explosion);
     }
   }
 
@@ -1131,7 +1131,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     const desdeArriba = jugador.body.velocity.y > 0 && jugador.body.bottom <= jefe.body.top + 10;
     if (desdeArriba) {
       jugador.hacerPisoton();
-      jefe.recibirDaño(2);
+      jefe.recibirDaño(CONFIG.DAÑO_JEFE.pisoton);
       this.hitStop(60);
       return;
     }

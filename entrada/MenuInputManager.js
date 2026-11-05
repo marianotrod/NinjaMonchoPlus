@@ -1,3 +1,5 @@
+import { PAD } from '../config.js';
+
 export default class MenuInputManager {
   constructor(scene) {
     this.scene = scene;
@@ -51,14 +53,14 @@ export default class MenuInputManager {
         stickY = padActivo.leftStick ? padActivo.leftStick.y : 0;
         stickX = padActivo.leftStick ? padActivo.leftStick.x : 0;
 
-        padUp = padActivo.buttons[12] && padActivo.buttons[12].pressed;
-        padDown = padActivo.buttons[13] && padActivo.buttons[13].pressed;
-        padLeft = padActivo.buttons[14] && padActivo.buttons[14].pressed;
-        padRight = padActivo.buttons[15] && padActivo.buttons[15].pressed;
+        padUp = padActivo.buttons[PAD.ARRIBA] && padActivo.buttons[PAD.ARRIBA].pressed;
+        padDown = padActivo.buttons[PAD.ABAJO] && padActivo.buttons[PAD.ABAJO].pressed;
+        padLeft = padActivo.buttons[PAD.IZQUIERDA] && padActivo.buttons[PAD.IZQUIERDA].pressed;
+        padRight = padActivo.buttons[PAD.DERECHA] && padActivo.buttons[PAD.DERECHA].pressed;
 
-        padA = padActivo.buttons[0] && padActivo.buttons[0].pressed;
-        padB = padActivo.buttons[1] && padActivo.buttons[1].pressed;
-        padStart = padActivo.buttons[9] && padActivo.buttons[9].pressed;
+        padA = padActivo.buttons[PAD.A] && padActivo.buttons[PAD.A].pressed;
+        padB = padActivo.buttons[PAD.B] && padActivo.buttons[PAD.B].pressed;
+        padStart = padActivo.buttons[PAD.START] && padActivo.buttons[PAD.START].pressed;
     }
 
     const isUp = this.cursors.up.isDown || padUp || stickY < -0.5;
