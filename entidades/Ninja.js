@@ -1,7 +1,7 @@
 import { CONFIG, DEBUG, FISICA, PAD } from '../config.js';
-import { MODS_JUGADOR_BASE } from './Pactos.js';
+import { MODS_JUGADOR_BASE } from '../reglas/Pactos.js';
 import { ARMAS, dispararArma } from './Armas.js';
-import { Sonido } from './Sonido.js';
+import { Sonido } from '../sistemas/Sonido.js';
 
 // Lectura segura de un botón del joystick (algunos mandos no reportan todos los botones)
 const boton = (pad, indice) => !!(pad && pad.buttons[indice] && pad.buttons[indice].pressed);

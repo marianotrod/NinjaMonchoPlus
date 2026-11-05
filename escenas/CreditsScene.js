@@ -1,5 +1,5 @@
 import { i18n } from '../i18n.js';
-import MenuInputManager from './MenuInputManager.js';
+import MenuInputManager from '../entrada/MenuInputManager.js';
 
 export default class CreditsScene extends Phaser.Scene {
   constructor() {

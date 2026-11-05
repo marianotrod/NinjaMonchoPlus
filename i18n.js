@@ -2,7 +2,7 @@
 // Los textos de este archivo son el respaldo local y la referencia en español. Las traducciones se piden a la API
 // (Traducila) al arrancar: las claves de la API son las frases en español, con ' | ' en lugar de los saltos de línea.
 import { TRADUCCIONES } from './config.js';
-import { Guardado } from './scenes/Guardado.js';
+import { Guardado } from './sistemas/Guardado.js';
 
 const textos = {
   es: {

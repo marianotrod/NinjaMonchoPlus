@@ -3,7 +3,7 @@
 //   embestida: avisa titilando, carga en línea recta y queda mareado al chocar la pared (recibe daño doble).
 //   salto:     salta hacia el jugador y al caer larga ondas de fuego por el piso.
 //   rafaga:    dispara abanicos de bolas de fuego apuntadas al jugador.
-import { Sonido } from './Sonido.js';
+import { Sonido } from '../sistemas/Sonido.js';
 
 export const JEFES = {
   ogro: { textura: 'jefe-ogro', hp: 24, patrones: ['embestida'], vuela: false, velocidad: 240 },

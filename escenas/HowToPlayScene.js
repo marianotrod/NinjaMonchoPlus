@@ -1,6 +1,6 @@
 import { i18n } from '../i18n.js';
-import MenuInputManager from './MenuInputManager.js';
-import { Sonido } from './Sonido.js';
+import MenuInputManager from '../entrada/MenuInputManager.js';
+import { Sonido } from '../sistemas/Sonido.js';
 
 // Pantalla "CÓMO JUGAR": tres páginas (objetivo, cacería y progresión, controles).
 export default class HowToPlayScene extends Phaser.Scene {

@@ -3,8 +3,8 @@
 // (tools/navegador/escenarios) hablan con el juego a través de window.prueba y no tocan las variables internas.
 // Así, cuando se reorganiza el código, se adapta este archivo y los escenarios siguen sirviendo para verificar
 // que el juego se comporte igual. Los jugadores se numeran 1 y 2, como en pantalla.
-import { Bestiario } from './Bestiario.js';
-import { ARMAS } from './Armas.js';
+import { Bestiario } from '../datos/Bestiario.js';
+import { ARMAS } from '../entidades/Armas.js';
 
 export function instalarPuertaPruebas(game) {
   const juego = () => game.scene.getScene('NinjaMonchoScene');

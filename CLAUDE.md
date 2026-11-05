@@ -14,12 +14,11 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - `config.js`: `CONFIG` (vidas, tiempos, niveles, bonos), `FISICA` (salto, velocidades) y `PAD` (botones). Calibrar acá.
 - `i18n.js`: textos es/en. Todo texto visible pasa por `i18n.t()` (que quita tildes de mayúsculas: la fuente no las tiene).
   Las traducciones se piden a la API de Traducila al arrancar (`TRADUCCIONES` en `config.js`); los textos de `i18n.js` son el respaldo. Frases nuevas: correr `node tools/traducciones/generar_frases.js` y cargarlas en el panel.
-- `scenes/`:
-  - Escenas: `BootScene` (carga todo, texturas, animaciones, preferencias) → `TitleScene` → `NinjaMonchoScene` (juego)
-    con `UIScene` (HUD, carteles, paneles) y `PauseScene` encima; `PactSelectionScene` entre niveles; `HowToPlayScene`, `OptionsScene`, `CreditsScene`.
-  - Juego: `Ninja` (jugador, katana, armas), `Enemigo` + `Bestiario` (rasgos saltarín/caminante/volador/lanzador),
-    `Jefe`, `Fantasma`, `Armas`, `Pactos`, `Partida` (estado de la partida en el registry), `Mapas` + `ConstructorNivel`.
-  - Soporte: `Texturas` (arte provisorio generado por código), `Sonido` (volúmenes, música, beeps WebAudio), `Guardado` (localStorage), `MenuInputManager`.
+- `escenas/`: `BootScene` (carga todo, texturas, animaciones, preferencias) → `TitleScene` → `NinjaMonchoScene` (juego)
+  con `UIScene` (HUD, carteles, paneles) y `PauseScene` encima; `PactSelectionScene` entre niveles; `HowToPlayScene`, `OptionsScene`, `CreditsScene`.
+- `entidades/`: `Ninja` (jugador, katana), `Enemigo` (rasgos saltarín/caminante/volador/lanzador), `Jefe`, `Fantasma`, `Armas` (proyectiles del jugador).
+- `datos/`: `Bestiario` (enemigos), `Mapas`. `reglas/`: `Partida` (estado de la partida en el registry), `Pactos`. `mundo/`: `ConstructorNivel`.
+- `sistemas/`: `Texturas` (arte provisorio generado por código), `Sonido` (volúmenes, música, beeps WebAudio), `Guardado` (localStorage), `PuertaPruebas`. `entrada/`: `MenuInputManager`.
 - Fases de `NinjaMonchoScene`: intro → recoleccion → transicion → caceria → nivelCompletado (o intro → jefe → nivelCompletado);
   perdiendoVida y fin interrumpen. La UI se entera por eventos (`this.events.emit(...)`).
 - `public/assets/`: sprites, tiles y audio. `Docs/`: GDD, GDD técnico, lore, `Roadmap.md` y `Bitacora.md`.
@@ -30,7 +29,7 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
   corre todos los escenarios de `tools/navegador/escenarios/` (o `probar.ps1 golpes` uno solo). Levanta el servidor si
   hace falta, usa Edge sin ventana, verifica resultados y termina con ✔/✘ por verificación y un total. Si no hay Node
   instalado, usa el portable de `%LOCALAPPDATA%\node-portable`. **Correrlo antes y después de cada cambio.**
-- Los escenarios hablan con el juego a través de `window.prueba` (`scenes/PuertaPruebas.js`, solo con `?debug`), no con
+- Los escenarios hablan con el juego a través de `window.prueba` (`sistemas/PuertaPruebas.js`, solo con `?debug`), no con
   las variables internas. Al reorganizar código se adapta la puerta, no los escenarios. Formato de los pasos: ver `probar.js`.
 - Revisar sintaxis rápido: copiar el `.js` a un `.mjs` temporal y `node --check`.
 - Inventario de assets en lugar de abrir imágenes: `.venv/Scripts/python tools/assets_info.py`

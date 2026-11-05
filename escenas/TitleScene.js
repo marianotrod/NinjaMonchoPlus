@@ -1,7 +1,7 @@
 import { i18n } from '../i18n.js';
-import MenuInputManager from './MenuInputManager.js';
-import { nuevaPartida } from './Partida.js';
-import { Sonido } from './Sonido.js';
+import MenuInputManager from '../entrada/MenuInputManager.js';
+import { nuevaPartida } from '../reglas/Partida.js';
+import { Sonido } from '../sistemas/Sonido.js';
 
 export default class TitleScene extends Phaser.Scene {
   constructor() {

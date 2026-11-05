@@ -3,7 +3,7 @@
 // para que sobreviva a los reinicios de NinjaMonchoScene y lo puedan leer la UI y la pantalla de pactos.
 
 import { CONFIG } from '../config.js';
-import { mapaInicial, mapaAprendizaje, mapaJefe, mapasPool } from './Mapas.js';
+import { mapaInicial, mapaAprendizaje, mapaJefe, mapasPool } from '../datos/Mapas.js';
 import { pactosVacios } from './Pactos.js';
 
 export const JEFES_INTERMEDIOS = ['ogro', 'oni', 'espectro'];

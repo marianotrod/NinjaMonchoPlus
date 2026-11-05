@@ -1,6 +1,6 @@
 import { i18n } from '../i18n.js';
-import MenuInputManager, { barraVolumen } from './MenuInputManager.js';
-import { Sonido } from './Sonido.js';
+import MenuInputManager, { barraVolumen } from '../entrada/MenuInputManager.js';
+import { Sonido } from '../sistemas/Sonido.js';
 
 // Menú de pausa encima del juego (ESC / START): continuar, volúmenes y salir al título.
 export default class PauseScene extends Phaser.Scene {

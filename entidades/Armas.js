@@ -4,7 +4,7 @@
 //   bumeran:  va y vuelve; arrastra talismanes y monedas hacia el jugador y golpea varias veces.
 //   bomba:    tiro con rebote corto que explota y empuja todo lo que esté cerca.
 import { FISICA } from '../config.js';
-import { Sonido } from './Sonido.js';
+import { Sonido } from '../sistemas/Sonido.js';
 
 export const ARMAS = {
   shuriken: { icono: 'icono-shuriken', municion: 12 },

@@ -53,16 +53,20 @@ Agregá `?debug` a la URL para activar las teclas de prueba y los atajos:
 index.html, main.js     Página y configuración de Phaser
 config.js               Constantes de juego y de física (para calibrar sin buscar números sueltos)
 i18n.js                 Textos en español e inglés
-scenes/                 Escenas (Boot, Title, HowToPlay, Options, Credits, NinjaMoncho, UI, Pause, PactSelection)
-                        y módulos de juego (Ninja, Enemigo, Bestiario, Jefe, Fantasma, Armas, Pactos, Partida,
-                        Mapas, ConstructorNivel, Texturas, Sonido, Guardado, MenuInputManager)
+escenas/                Escenas (Boot, Title, HowToPlay, Options, Credits, NinjaMoncho, UI, Pause, PactSelection)
+entidades/              Ninja, Enemigo, Jefe, Fantasma, Armas
+datos/                  Bestiario y Mapas
+reglas/                 Partida y Pactos
+mundo/                  ConstructorNivel
+sistemas/               Texturas, Sonido, Guardado y puerta de pruebas
+entrada/                MenuInputManager
 public/assets/          Sprites, tiles y audio
 lib/                    Phaser 3.80.1
 Docs/                   GDD, lore, roadmap y bitácora de trabajo
 tools/                  Herramientas de soporte (no son parte del juego)
 ```
 
-El arte de armas, enemigos nuevos, jefes y HUD es provisorio y está generado por código en `scenes/Texturas.js`.
+El arte de armas, enemigos nuevos, jefes y HUD es provisorio y está generado por código en `sistemas/Texturas.js`.
 Para reemplazarlo alcanza con cargar un PNG con la misma key en `BootScene` y borrar el dibujo.
 
 ## Herramientas

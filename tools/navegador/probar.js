@@ -20,7 +20,7 @@
 //        un valor común se compara exacto; {"min": a}, {"max": b}, {"distinto": c} comparan con márgenes.
 //   {"shot": "nombre-captura"}
 // Dejar ~100 ms entre teclas: si se aprietan pegadas, los menús las toman como una sola.
-// Las expresiones pueden usar window.prueba (puerta de pruebas, solo con ?debug: ver scenes/PuertaPruebas.js).
+// Las expresiones pueden usar window.prueba (puerta de pruebas, solo con ?debug: ver sistemas/PuertaPruebas.js).
 const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 const os = require('os');

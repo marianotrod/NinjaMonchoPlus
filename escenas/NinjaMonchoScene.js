@@ -1,16 +1,16 @@
-import Ninja from './Ninja.js';
+import Ninja from '../entidades/Ninja.js';
 import { i18n } from '../i18n.js';
-import { Bestiario } from './Bestiario.js';
-import Enemigo from './Enemigo.js';
-import Fantasma from './Fantasma.js';
-import Jefe from './Jefe.js';
-import ConstructorNivel from './ConstructorNivel.js';
+import { Bestiario } from '../datos/Bestiario.js';
+import Enemigo from '../entidades/Enemigo.js';
+import Fantasma from '../entidades/Fantasma.js';
+import Jefe from '../entidades/Jefe.js';
+import ConstructorNivel from '../mundo/ConstructorNivel.js';
 import { CONFIG, DEBUG, FISICA, PAD } from '../config.js';
-import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from './Partida.js';
-import { MODS_GLOBAL_BASE, pactosVacios } from './Pactos.js';
-import { ARMAS, TIPOS_ARMA, actualizarProyectiles, arrastrarItem } from './Armas.js';
-import { Sonido } from './Sonido.js';
-import { Guardado } from './Guardado.js';
+import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
+import { MODS_GLOBAL_BASE, pactosVacios } from '../reglas/Pactos.js';
+import { ARMAS, TIPOS_ARMA, actualizarProyectiles, arrastrarItem } from '../entidades/Armas.js';
+import { Sonido } from '../sistemas/Sonido.js';
+import { Guardado } from '../sistemas/Guardado.js';
 
 // Fases del nivel:
 //   intro -> recoleccion -> transicion -> caceria -> nivelCompletado   (niveles normales)

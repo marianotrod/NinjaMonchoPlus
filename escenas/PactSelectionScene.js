@@ -1,8 +1,8 @@
 import { i18n } from '../i18n.js';
 import { PAD } from '../config.js';
-import { PACTOS, aplicarPacto } from './Pactos.js';
-import { esNivelJefe } from './Partida.js';
-import { Sonido } from './Sonido.js';
+import { PACTOS, aplicarPacto } from '../reglas/Pactos.js';
+import { esNivelJefe } from '../reglas/Partida.js';
+import { Sonido } from '../sistemas/Sonido.js';
 
 const TIEMPO_ELECCION = 8;
 const POSICIONES_X = [128, 256, 384];

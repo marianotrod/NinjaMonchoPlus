@@ -1,14 +1,14 @@
-import BootScene from './scenes/BootScene.js';
-import TitleScene from './scenes/TitleScene.js';
-import OptionsScene from './scenes/OptionsScene.js'; 
-import HowToPlayScene from './scenes/HowToPlayScene.js';
-import NinjaMonchoScene from './scenes/NinjaMonchoScene.js';
-import UIScene from './scenes/UIScene.js';
-import PauseScene from './scenes/PauseScene.js';
-import PactSelectionScene from './scenes/PactSelectionScene.js';
-import CreditsScene from './scenes/CreditsScene.js';
+import BootScene from './escenas/BootScene.js';
+import TitleScene from './escenas/TitleScene.js';
+import OptionsScene from './escenas/OptionsScene.js'; 
+import HowToPlayScene from './escenas/HowToPlayScene.js';
+import NinjaMonchoScene from './escenas/NinjaMonchoScene.js';
+import UIScene from './escenas/UIScene.js';
+import PauseScene from './escenas/PauseScene.js';
+import PactSelectionScene from './escenas/PactSelectionScene.js';
+import CreditsScene from './escenas/CreditsScene.js';
 import { DEBUG, FISICA } from './config.js';
-import { instalarPuertaPruebas } from './scenes/PuertaPruebas.js';
+import { instalarPuertaPruebas } from './sistemas/PuertaPruebas.js';
 import { cargarTraducciones, i18n } from './i18n.js';
 
 

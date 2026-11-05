@@ -1,8 +1,8 @@
 import { i18n } from '../i18n.js';
 import { ARRANQUE_DEBUG } from '../config.js';
-import { Texturas } from './Texturas.js';
-import { Guardado } from './Guardado.js';
-import { nuevaPartida } from './Partida.js';
+import { Texturas } from '../sistemas/Texturas.js';
+import { Guardado } from '../sistemas/Guardado.js';
+import { nuevaPartida } from '../reglas/Partida.js';
 
 // Carga todos los recursos una sola vez, genera las texturas provisorias, crea las animaciones
 // y recupera las preferencias guardadas. Después pasa al título (o directo a un nivel en modo debug).

@@ -1,6 +1,6 @@
 import { i18n } from '../i18n.js';
 import { CONFIG } from '../config.js';
-import { ARMAS } from './Armas.js';
+import { ARMAS } from '../entidades/Armas.js';
 
 const TIPOS = ['cuadrado', 'triangulo', 'rombo'];
 const estilo = (tamaño, color = '#FFFFFF') => ({

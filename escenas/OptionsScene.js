@@ -1,7 +1,7 @@
 import { i18n } from '../i18n.js';
-import MenuInputManager, { barraVolumen } from './MenuInputManager.js'; // Importamos el gestor unificado
-import { Sonido } from './Sonido.js';
-import { Guardado } from './Guardado.js';
+import MenuInputManager, { barraVolumen } from '../entrada/MenuInputManager.js'; // Importamos el gestor unificado
+import { Sonido } from '../sistemas/Sonido.js';
+import { Guardado } from '../sistemas/Guardado.js';
 
 export default class OptionsScene extends Phaser.Scene {
   constructor() {
