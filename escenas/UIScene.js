@@ -2,6 +2,7 @@ import { i18n } from '../i18n.js';
 import { CONFIG } from '../config.js';
 import { ARMAS } from '../entidades/Armas.js';
 import { estilo } from '../sistemas/Estilo.js';
+import { EVENTOS } from '../datos/Eventos.js';
 
 const TIPOS = ['cuadrado', 'triangulo', 'rombo'];
 
@@ -65,42 +66,42 @@ export default class UIScene extends Phaser.Scene {
 
     // 8. Escuchar eventos de la escena principal. Se desuscriben al cerrar la UI para no acumular listeners entre niveles.
     this.listeners = [];
-    this.escuchar('actualizar-puntaje', (puntajes) => this.actualizarPuntajes(puntajes));
-    this.escuchar('jugadores', (cantidad) => {
+    this.escuchar(EVENTOS.PUNTAJE, (puntajes) => this.actualizarPuntajes(puntajes));
+    this.escuchar(EVENTOS.JUGADORES, (cantidad) => {
       this.cantidadJugadores = cantidad;
       this.actualizarPuntajes(juegoEscena.partida.puntajes);
       this.mostrarVidas(juegoEscena.partida.vidas);
     });
-    this.escuchar('actualizar-tiempo', (tiempo) => this.actualizarTiempo(tiempo));
-    this.escuchar('inventario', (conteo) => this.mostrarInventario(conteo));
-    this.escuchar('vidas', (vidas) => this.mostrarVidas(vidas));
-    this.escuchar('fase', (fase) => this.cambiarFase(fase));
-    this.escuchar('enemigos-restantes', (cantidad) => this.textoCentro.setText(`${i18n.t('caceria')} · ${i18n.t('quedan')} ${cantidad}`));
-    this.escuchar('banner', (datos) => this.mostrarBanner(datos));
-    this.escuchar('fantasma', () => {
+    this.escuchar(EVENTOS.TIEMPO, (tiempo) => this.actualizarTiempo(tiempo));
+    this.escuchar(EVENTOS.INVENTARIO, (conteo) => this.mostrarInventario(conteo));
+    this.escuchar(EVENTOS.VIDAS, (vidas) => this.mostrarVidas(vidas));
+    this.escuchar(EVENTOS.FASE, (fase) => this.cambiarFase(fase));
+    this.escuchar(EVENTOS.ENEMIGOS_RESTANTES, (cantidad) => this.textoCentro.setText(`${i18n.t('caceria')} · ${i18n.t('quedan')} ${cantidad}`));
+    this.escuchar(EVENTOS.BANNER, (datos) => this.mostrarBanner(datos));
+    this.escuchar(EVENTOS.FANTASMA, () => {
       this.mostrarBanner({ titulo: i18n.t('fantasma'), subtitulo: i18n.t('fantasma_sub'), color: '#E5E7EB', duracion: 1800 });
       this.textoTiempo.setText(i18n.t('fantasma_corto')).setColor('#E5E7EB');
       this.vineta.setAlpha(0.5);
     });
-    this.escuchar('arma-cambiada', (indice, arma, municion) => this.mostrarArma(indice, arma, municion));
-    this.escuchar('jefe-aparece', (nombre) => {
+    this.escuchar(EVENTOS.ARMA, (indice, arma, municion) => this.mostrarArma(indice, arma, municion));
+    this.escuchar(EVENTOS.JEFE_APARECE, (nombre) => {
       this.textoCentro.setText(nombre).setVisible(true);
       this.barraJefe.setVisible(true);
       this.rellenoJefe.width = 200;
     });
-    this.escuchar('jefe-vida', (hp, hpMax) => {
+    this.escuchar(EVENTOS.JEFE_VIDA, (hp, hpMax) => {
       this.rellenoJefe.width = 200 * Math.max(0, hp / hpMax);
       this.tweens.add({ targets: this.barraJefe, scaleY: 1.6, duration: 60, yoyo: true });
     });
-    this.escuchar('nivel-completado', (datos) => this.mostrarNivelCompletado(datos));
-    this.escuchar('juego-terminado', (datos) => this.mostrarFinDePartida(datos));
+    this.escuchar(EVENTOS.NIVEL_COMPLETADO, (datos) => this.mostrarNivelCompletado(datos));
+    this.escuchar(EVENTOS.JUEGO_TERMINADO, (datos) => this.mostrarFinDePartida(datos));
 
     this.events.once('shutdown', () => {
       this.listeners.forEach(([evento, fn]) => juegoEscena.events.off(evento, fn));
       this.listeners = [];
     });
 
-    juegoEscena.events.emit('ui-lista');
+    juegoEscena.events.emit(EVENTOS.UI_LISTA);
   }
 
   escuchar(evento, fn) {

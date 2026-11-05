@@ -12,6 +12,7 @@ import { ARMAS, TIPOS_ARMA, actualizarProyectiles, arrastrarItem } from '../enti
 import { Sonido } from '../sistemas/Sonido.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { estilo } from '../sistemas/Estilo.js';
+import { EVENTOS } from '../datos/Eventos.js';
 
 // Fases del nivel:
 //   intro -> recoleccion -> transicion -> caceria -> nivelCompletado   (niveles normales)
@@ -130,7 +131,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.events.on('resume', alReanudar);
     this.events.once('shutdown', () => this.events.off('resume', alReanudar));
 
-    this.events.once('ui-lista', () => this.mostrarIntro());
+    this.events.once(EVENTOS.UI_LISTA, () => this.mostrarIntro());
     this.scene.launch('UIScene');
   }
 
@@ -139,13 +140,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // ==========================================
   mostrarIntro() {
     if (this.esNivelJefe) {
-      this.events.emit('banner', {
+      this.events.emit(EVENTOS.BANNER, {
         titulo: i18n.t('jefe_aparece'), subtitulo: i18n.t(`jefe_${this.partida.jefe}`), color: '#EF4444', duracion: CONFIG.DURACION_INTRO
       });
       this.time.delayedCall(CONFIG.APARICION_JEFE, () => this.spawnearJefe());
       this.time.delayedCall(CONFIG.DURACION_INTRO, () => this.iniciarFaseJefe());
     } else {
-      this.events.emit('banner', {
+      this.events.emit(EVENTOS.BANNER, {
         titulo: `${i18n.t('nivel')} ${this.nivelActual}`, subtitulo: i18n.t('objetivo_recoleccion'), iconos: true, duracion: CONFIG.DURACION_INTRO
       });
       this.time.delayedCall(CONFIG.DURACION_INTRO, () => this.iniciarRecoleccion());
@@ -155,8 +156,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   iniciarRecoleccion() {
     if (this.fase !== 'intro') return;
     this.fase = 'recoleccion';
-    this.events.emit('fase', 'recoleccion');
-    this.events.emit('banner', { titulo: i18n.t('ya'), color: '#4ADE80', duracion: 700, chico: true });
+    this.events.emit(EVENTOS.FASE, 'recoleccion');
+    this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('ya'), color: '#4ADE80', duracion: 700, chico: true });
 
     const bolsaInicial = [
       'cuadrado', 'cuadrado', 'cuadrado', 'cuadrado',
@@ -200,7 +201,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     Sonido.efecto(this, 'snd-parry', 0.6);
     this.cameras.main.flash(250, 255, 255, 255);
-    this.events.emit('banner', {
+    this.events.emit(EVENTOS.BANNER, {
       titulo: i18n.t('sello_roto'), subtitulo: `${i18n.t('bono_tiempo')} +${bono}`, color: '#EF4444', duracion: CONFIG.DURACION_SELLO
     });
     this.enemigos.getChildren().forEach(enemigo => enemigo.enfurecer());
@@ -212,9 +213,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (this.fase !== 'transicion') return;
     this.fase = 'caceria';
     this.tiempoRestante = CONFIG.TIEMPO_CACERIA;
-    this.events.emit('actualizar-tiempo', this.tiempoRestante);
-    this.events.emit('fase', 'caceria');
-    this.events.emit('banner', { titulo: i18n.t('caceria'), subtitulo: i18n.t('objetivo_caceria'), color: '#EF4444', duracion: 1400, chico: true });
+    this.events.emit(EVENTOS.TIEMPO, this.tiempoRestante);
+    this.events.emit(EVENTOS.FASE, 'caceria');
+    this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('caceria'), subtitulo: i18n.t('objetivo_caceria'), color: '#EF4444', duracion: 1400, chico: true });
 
     // Cupo de demonios a cazar: crece con el nivel
     const cupo = Math.min(CONFIG.CUPO_CACERIA_BASE + Math.floor(this.nivelActual / 2), CONFIG.CUPO_CACERIA_MAX);
@@ -250,7 +251,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   iniciarFaseJefe() {
     if (this.fase !== 'intro') return;
     this.fase = 'jefe';
-    this.events.emit('fase', 'jefe');
+    this.events.emit(EVENTOS.FASE, 'jefe');
     this.relojJuego.paused = false;
     this.timerArmas.paused = false;
     this.spawnearCajaArma();
@@ -264,7 +265,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.physics.add.overlap(this.jefe, this.proyectilesJugador, this.impactoProyectilJefe, null, this)
     );
     this.jugadores.forEach(j => this.conectarJefe(j));
-    this.events.emit('jefe-aparece', i18n.t(`jefe_${this.partida.jefe}`), this.jefe.hp);
+    this.events.emit(EVENTOS.JEFE_APARECE, i18n.t(`jefe_${this.partida.jefe}`), this.jefe.hp);
   }
 
   jefeDerrotado() {
@@ -297,7 +298,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     Sonido.musica(this, 'musica-win', 0.5, false);
     if (this.uiHotJoin) this.uiHotJoin.setVisible(false);
 
-    this.events.emit('nivel-completado', {
+    this.events.emit(EVENTOS.NIVEL_COMPLETADO, {
       nivel: this.nivelActual,
       puntajes: this.partida.puntajes,
       jugadores: this.cantidadJugadores,
@@ -331,10 +332,10 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     Sonido.efecto(this, 'snd-caida', 0.7);
     const vidas = this.partida.vidas;
     vidas[jugador.indice] = Math.max(0, vidas[jugador.indice] - 1);
-    this.events.emit('vidas', vidas);
+    this.events.emit(EVENTOS.VIDAS, vidas);
 
     if (vidas[jugador.indice] > 0) {
-      this.events.emit('banner', { titulo: i18n.t('vida_perdida'), color: '#EF4444', duracion: 900, chico: true });
+      this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('vida_perdida'), color: '#EF4444', duracion: 900, chico: true });
       const spawnX = jugador.indice === 0 ? this.spawnMonchoX : this.spawnCoopX;
       this.time.delayedCall(CONFIG.ESPERA_RESPAWN, () => {
         if (this.esFaseJugable() && jugador.active) jugador.respawnear(spawnX);
@@ -343,9 +344,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
 
     jugador.retirar();
-    this.events.emit('arma-cambiada', jugador.indice, null, 0);
+    this.events.emit(EVENTOS.ARMA, jugador.indice, null, 0);
     if (this.jugadores.some(j => !j.eliminado)) {
-      this.events.emit('banner', { titulo: `J${jugador.indice + 1} ${i18n.t('eliminado')}`, color: '#EF4444', duracion: 1400, chico: true });
+      this.events.emit(EVENTOS.BANNER, { titulo: `J${jugador.indice + 1} ${i18n.t('eliminado')}`, color: '#EF4444', duracion: 1400, chico: true });
       return;
     }
 
@@ -376,7 +377,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.registry.set('record', total);
     }
 
-    this.events.emit('juego-terminado', {
+    this.events.emit(EVENTOS.JUEGO_TERMINADO, {
       ganaste, puntajes, total, nuevoRecord, record: Math.max(total, recordAnterior), nivel: this.nivelActual
     });
     this.listoParaContinuar = false;
@@ -399,7 +400,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   tickReloj() {
     if (this.fantasma) return;
     this.tiempoRestante = Math.max(0, this.tiempoRestante - 1);
-    this.events.emit('actualizar-tiempo', this.tiempoRestante);
+    this.events.emit(EVENTOS.TIEMPO, this.tiempoRestante);
 
     const t = this.tiempoRestante;
     if (t > 0 && t <= CONFIG.ALARMA_TIEMPO) {
@@ -419,7 +420,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     Sonido.beep(this, 110, 0.6, 0.15, 'sawtooth');
     this.fantasma = new Fantasma(this, 256, -24);
     this.jugadores.forEach(j => this.conectarFantasma(j));
-    this.events.emit('fantasma');
+    this.events.emit(EVENTOS.FANTASMA);
   }
 
   quitarFantasma() {
@@ -526,7 +527,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     // Los ninjas se atraviesan entre sí, salvo al caer sobre la cabeza del compañero: "trampolín humano"
     this.physics.add.overlap(this.jugador, this.jugador2, this.procesarTrampolin, null, this);
-    this.events.emit('jugadores', 2);
+    this.events.emit(EVENTOS.JUGADORES, 2);
 
     if (esMidGame) {
       Sonido.efecto(this, 'snd-salto', 1);
@@ -818,7 +819,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   sumarPuntos(indice, puntos) {
     if (!puntos) return;
     this.partida.puntajes[indice] += puntos;
-    this.events.emit('actualizar-puntaje', this.partida.puntajes);
+    this.events.emit(EVENTOS.PUNTAJE, this.partida.puntajes);
   }
 
   contarInventario() {
@@ -836,7 +837,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.inventario.push(tipoItem);
       const conteo = this.contarInventario();
       const cantidad = conteo[tipoItem];
-      this.events.emit('inventario', conteo);
+      this.events.emit(EVENTOS.INVENTARIO, conteo);
 
       // Feedback: cuántos van de esa forma; los extras se ven en gris porque no hacen falta
       this.mostrarTextoFlotante(item.x, item.y, `${Math.min(cantidad, 3)}/3`, cantidad <= 3 ? '#FBBF24' : '#9CA3AF');
@@ -865,7 +866,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   perderTalismanes(jugador) {
     if (this.inventario.length === 0) return;
     const arrayPerdidos = CONFIG.DAÑO_PIERDE === 'todos' ? this.inventario.splice(0) : [this.inventario.pop()];
-    this.events.emit('inventario', this.contarInventario());
+    this.events.emit(EVENTOS.INVENTARIO, this.contarInventario());
     this.mostrarTextoFlotante(jugador.x, jugador.y - 12, i18n.t(arrayPerdidos.length > 1 ? 'perdiste_talismanes' : 'perdiste_talisman'), '#EF4444');
 
     arrayPerdidos.forEach(tipo => {
@@ -937,7 +938,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   emitirEnemigosRestantes() {
-    this.events.emit('enemigos-restantes', this.enemigos.countActive(true) + this.enemigosPorAparecer);
+    this.events.emit(EVENTOS.ENEMIGOS_RESTANTES, this.enemigos.countActive(true) + this.enemigosPorAparecer);
   }
 
   tocarDemonio(jugador, demonio) {

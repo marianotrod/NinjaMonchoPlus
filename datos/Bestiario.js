@@ -21,8 +21,7 @@ export const Bestiario = {
             },
             caminante: { activo: false },
             volador: { activo: false },
-            lanzador: { activo: false },
-            acorazado: { activo: false }
+            lanzador: { activo: false }
         }
     },
     // Patrullero terrestre: camina y da la vuelta en paredes y bordes de plataforma
@@ -38,8 +37,7 @@ export const Bestiario = {
             saltarin: { activo: false },
             caminante: { activo: true, velocidadX: 60 },
             volador: { activo: false },
-            lanzador: { activo: false },
-            acorazado: { activo: false }
+            lanzador: { activo: false }
         }
     },
     // Espíritu volador: flota en ondas, ignora plataformas y busca la altura del jugador
@@ -55,8 +53,7 @@ export const Bestiario = {
             saltarin: { activo: false },
             caminante: { activo: false },
             volador: { activo: true, velocidadX: 50, amplitud: 10, seguimiento: 0.012 },
-            lanzador: { activo: false },
-            acorazado: { activo: false }
+            lanzador: { activo: false }
         }
     },
     // Lanzador estático: se queda en su plataforma y tira bolas de fuego en parábola
@@ -72,8 +69,7 @@ export const Bestiario = {
             saltarin: { activo: false },
             caminante: { activo: false },
             volador: { activo: false },
-            lanzador: { activo: true, intervalo: 2600, intervaloEnfurecido: 1500, velocidad: 150 },
-            acorazado: { activo: false }
+            lanzador: { activo: true, intervalo: 2600, intervaloEnfurecido: 1500 }
         }
     }
 };

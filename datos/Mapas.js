@@ -48,7 +48,7 @@ PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
 `);
 
 // ==========================================
-// POOL DE 10 MAPAS ALEATORIOS (Niveles 2 al 5)
+// POOL DE MAPAS ALEATORIOS (del nivel 3 en adelante)
 // ==========================================
 export const mapasPool = [
     // Mapa 1: Pirámide Central

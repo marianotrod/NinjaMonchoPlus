@@ -339,7 +339,7 @@ tools/editor/    editor de niveles
 | # | Etapa | Resultado verificable |
 |---|---|---|
 | 0 | ✔ Red de seguridad: escenarios de `probar.js` que fijan el comportamiento actual | Hecho: 109 verificaciones pasan sobre la v1.01 |
-| 1 | Reordenar carpetas, limpieza, constantes y catálogo de eventos | El juego sigue igual |
+| 1 | ✔ Reordenar carpetas, limpieza, constantes y catálogo de eventos | Hecho: 118 pruebas pasan y el juego sigue igual |
 | 2 | Formato de nivel + cargador + conversión de los 13 mapas | El juego sigue igual, pero lee JSON |
 | 3 | Editor de niveles | Se crea un nivel, se guarda y se prueba |
 | 4 | Mundo de 34×20 + wrap + nivel de prueba | **[Probar]** la sensación del wrap |

@@ -4,6 +4,7 @@
 //   salto:     salta hacia el jugador y al caer larga ondas de fuego por el piso.
 //   rafaga:    dispara abanicos de bolas de fuego apuntadas al jugador.
 import { Sonido } from '../sistemas/Sonido.js';
+import { EVENTOS } from '../datos/Eventos.js';
 
 export const JEFES = {
   ogro: { textura: 'jefe-ogro', hp: 24, patrones: ['embestida'], vuela: false, velocidad: 240 },
@@ -245,7 +246,7 @@ export default class Jefe extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(90, () => { if (this.active) this.clearTint(); });
     this.scene.time.delayedCall(250, () => { this.invulnerable = false; });
     Sonido.efecto(this.scene, 'snd-parry', 0.4);
-    this.scene.events.emit('jefe-vida', this.hp, this.hpMax);
+    this.scene.events.emit(EVENTOS.JEFE_VIDA, this.hp, this.hpMax);
 
     if (this.hp <= 0) this.morir();
     return true;

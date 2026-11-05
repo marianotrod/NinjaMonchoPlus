@@ -5,6 +5,7 @@
 // que el juego se comporte igual. Los jugadores se numeran 1 y 2, como en pantalla.
 import { Bestiario } from '../datos/Bestiario.js';
 import { ARMAS } from '../entidades/Armas.js';
+import { EVENTOS } from '../datos/Eventos.js';
 
 export function instalarPuertaPruebas(game) {
   const juego = () => game.scene.getScene('NinjaMonchoScene');
@@ -180,7 +181,7 @@ export function instalarPuertaPruebas(game) {
     vaciarTalismanes() {
       const s = juego();
       s.inventario = [];
-      s.events.emit('inventario', s.contarInventario());
+      s.events.emit(EVENTOS.INVENTARIO, s.contarInventario());
       return true;
     },
     juntarTalismanes(conteo) {
@@ -188,7 +189,7 @@ export function instalarPuertaPruebas(game) {
       ['cuadrado', 'triangulo', 'rombo'].forEach(tipo => {
         for (let i = 0; i < (conteo[tipo] || 0); i++) s.inventario.push(tipo);
       });
-      s.events.emit('inventario', s.contarInventario());
+      s.events.emit(EVENTOS.INVENTARIO, s.contarInventario());
       return s.contarInventario();
     },
     // Hace que el jugador toque un talismán (como si lo agarrara) de ese tipo

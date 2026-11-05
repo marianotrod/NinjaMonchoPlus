@@ -2,6 +2,7 @@ import { CONFIG, DEBUG, FISICA, PAD } from '../config.js';
 import { MODS_JUGADOR_BASE } from '../reglas/Pactos.js';
 import { ARMAS, dispararArma } from './Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
+import { EVENTOS } from '../datos/Eventos.js';
 
 // Lectura segura de un botón del joystick (algunos mandos no reportan todos los botones)
 const boton = (pad, indice) => !!(pad && pad.buttons[indice] && pad.buttons[indice].pressed);
@@ -457,14 +458,14 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       return;
     }
     if (dispararArma(this.sceneRef, this)) {
-      this.sceneRef.events.emit('arma-cambiada', this.indice, this.arma, this.municion);
+      this.sceneRef.events.emit(EVENTOS.ARMA, this.indice, this.arma, this.municion);
     }
   }
 
   equiparArma(tipo) {
     this.arma = tipo;
     this.municion = ARMAS[tipo].municion;
-    this.sceneRef.events.emit('arma-cambiada', this.indice, this.arma, this.municion);
+    this.sceneRef.events.emit(EVENTOS.ARMA, this.indice, this.arma, this.municion);
   }
 
   municionInfinita() {

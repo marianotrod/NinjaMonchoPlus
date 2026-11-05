@@ -5,6 +5,20 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-05 — Claude: etapa 1 de la v2, orden y limpieza
+
+- `scenes/` se repartió en `escenas/`, `entidades/`, `datos/`, `reglas/`, `mundo/`, `sistemas/` y `entrada/`.
+- Un solo estilo de texto (`sistemas/Estilo.js`) en lugar de 26 copias.
+- Valores de calibración sueltos a `config.js` y a la tabla `ARMAS` (tiempos, cupo, daño a jefes, velocidades y bomba).
+- Catálogo de eventos en `datos/Eventos.js`. Botones del menú con `PAD`. Se sacaron `acorazado` y `lanzador.velocidad`, que nada usaba.
+- No cambia el comportamiento: 118 de 118 pruebas después de cada paso, y capturas revisadas a ojo.
+
+**Pendientes**
+- Etapa 2: formato de nivel en JSON, cargador y conversión de los mapas actuales.
+- Mariano: lista revisada de pergaminos y de habilidades.
+
+---
+
 ## 2026-11-05 — Mariano y Claude: entrega con traducciones por API
 
 - Las 80 frases quedaron cargadas en Traducila y verificadas contra `Docs/traducila_frases.tsv`.
