@@ -1,6 +1,6 @@
 {
   "descripcion": "Traducciones por API: lectura, frases faltantes y copia guardada si la API cae (API simulada en tools/navegador/datos)",
-  "query": "?debug&api=http://127.0.0.1:5501/tools/navegador/datos&proyecto=prueba",
+  "query": "?debug&api=tools/navegador/datos&proyecto=prueba",
   "pasos": [
     {"hasta": "!!window.i18n && !!window.game", "timeout": 8000},
     {"verificar": "origen api", "eval": "i18n.getOrigenes()", "espera": {"en": "api"}},
@@ -11,7 +11,7 @@
     {"verificar": "traducción vacía usa respaldo local", "eval": "i18n.t('menu_opciones') === 'SETTINGS'"},
     {"verificar": "frase ausente usa respaldo local", "eval": "i18n.t('menu_2p') === '2 PLAYERS'"},
     {"verificar": "se guardó la copia", "eval": "!!localStorage.getItem('ninjaMoncho.traducciones.prueba.en')"},
-    {"eval": "(location.href = location.href.replace('proyecto=prueba', 'proyecto=prueba&api=http://127.0.0.1:1').replace('api=http://127.0.0.1:5501/tools/navegador/datos&', ''), true)"},
+    {"eval": "(location.href = location.href.replace('proyecto=prueba', 'proyecto=prueba&api=http://127.0.0.1:1').replace('api=tools/navegador/datos&', ''), true)"},
     {"wait": 500},
     {"hasta": "!!window.i18n && !!window.game && Object.keys(i18n.getOrigenes()).length", "timeout": 8000},
     {"verificar": "API caída usa la copia guardada", "eval": "i18n.getOrigenes()", "espera": {"en": "copia"}},

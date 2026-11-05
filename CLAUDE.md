@@ -27,8 +27,8 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 
 ## Para ahorrar tokens
 - Probar cambios sin abrir el juego: desde **PowerShell** (desde Git Bash Edge no arranca), `.\tools\navegador\probar.ps1`
-  corre todos los escenarios de `tools/navegador/escenarios/` (o `probar.ps1 golpes` uno solo). Levanta el servidor si
-  hace falta, usa Edge sin ventana, verifica resultados y termina con ✔/✘ por verificación y un total. Si no hay Node
+  corre todos los escenarios de `tools/navegador/escenarios/` (o `probar.ps1 golpes` uno solo). Usa su propio servidor en el
+  puerto 5599, para no chocar con Live Server, que recarga la página al guardarse una captura; usa Edge sin ventana, verifica resultados y termina con ✔/✘ por verificación y un total. Si no hay Node
   instalado, usa el portable de `%LOCALAPPDATA%\node-portable`. **Correrlo antes y después de cada cambio.**
 - Los escenarios hablan con el juego a través de `window.prueba` (`sistemas/PuertaPruebas.js`, solo con `?debug`), no con
   las variables internas. Al reorganizar código se adapta la puerta, no los escenarios. Formato de los pasos: ver `probar.js`.
