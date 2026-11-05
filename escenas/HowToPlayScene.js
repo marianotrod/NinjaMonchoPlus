@@ -1,6 +1,7 @@
 import { i18n } from '../i18n.js';
 import MenuInputManager from '../entrada/MenuInputManager.js';
 import { Sonido } from '../sistemas/Sonido.js';
+import { estilo } from '../sistemas/Estilo.js';
 
 // Pantalla "CÓMO JUGAR": tres páginas (objetivo, cacería y progresión, controles).
 export default class HowToPlayScene extends Phaser.Scene {
@@ -21,14 +22,9 @@ export default class HowToPlayScene extends Phaser.Scene {
     this.contenido.removeAll(true);
     const clave = this.paginas[this.pagina];
 
-    this.contenido.add(this.add.text(256, 28, i18n.t(`${clave}_titulo`), {
-      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#4ADE80', resolution: 10
-    }).setOrigin(0.5));
+    this.contenido.add(this.add.text(256, 28, i18n.t(`${clave}_titulo`), estilo(16, '#4ADE80')).setOrigin(0.5));
 
-    this.contenido.add(this.add.text(36, 56, i18n.t(clave), {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#FFFFFF', lineSpacing: 7,
-      wordWrap: { width: 440 }, resolution: 10
-    }));
+    this.contenido.add(this.add.text(36, 56, i18n.t(clave), estilo(8, '#FFFFFF', { lineSpacing: 7, wordWrap: { width: 440 } })));
 
     if (clave === 'ayuda_objetivo') {
       ['cuadrado', 'triangulo', 'rombo'].forEach((tipo, i) => {
@@ -36,9 +32,7 @@ export default class HowToPlayScene extends Phaser.Scene {
       });
     }
 
-    this.contenido.add(this.add.text(256, 270, `<  ${this.pagina + 1}/${this.paginas.length}  >     ${i18n.t('ayuda_navegacion')}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#FBBF24', resolution: 10
-    }).setOrigin(0.5));
+    this.contenido.add(this.add.text(256, 270, `<  ${this.pagina + 1}/${this.paginas.length}  >     ${i18n.t('ayuda_navegacion')}`, estilo(8, '#FBBF24')).setOrigin(0.5));
   }
 
   cambiarPagina(direccion) {

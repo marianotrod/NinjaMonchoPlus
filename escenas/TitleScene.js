@@ -2,6 +2,7 @@ import { i18n } from '../i18n.js';
 import MenuInputManager from '../entrada/MenuInputManager.js';
 import { nuevaPartida } from '../reglas/Partida.js';
 import { Sonido } from '../sistemas/Sonido.js';
+import { estilo } from '../sistemas/Estilo.js';
 
 export default class TitleScene extends Phaser.Scene {
   constructor() {
@@ -13,12 +14,8 @@ export default class TitleScene extends Phaser.Scene {
     this.add.image(256, 144, 'fondo-cielo').setDisplaySize(512, 288).setAlpha(0.25);
 
     // Logo (provisorio, en texto) con los dos ninjas a los costados
-    const titulo = this.add.text(256, 52, 'NINJA MONCHO', {
-      fontFamily: '"Press Start 2P"', fontSize: '24px', color: '#FFFFFF', resolution: 10
-    }).setOrigin(0.5).setShadow(3, 3, '#B91C1C', 0, false, true);
-    this.add.text(372, 78, 'PLUS', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#EF4444', resolution: 10
-    }).setOrigin(0.5).setShadow(2, 2, '#000000', 0, false, true);
+    const titulo = this.add.text(256, 52, 'NINJA MONCHO', estilo(24)).setOrigin(0.5).setShadow(3, 3, '#B91C1C', 0, false, true);
+    this.add.text(372, 78, 'PLUS', estilo(12, '#EF4444')).setOrigin(0.5).setShadow(2, 2, '#000000', 0, false, true);
     this.tweens.add({ targets: titulo, y: 48, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
 
     const moncho = this.add.sprite(88, 56, 'ninja').setScale(2).play('moncho-caminar');
@@ -41,28 +38,16 @@ export default class TitleScene extends Phaser.Scene {
     this.espaciado = 24;
 
     this.opciones.forEach((opcion, index) => {
-      const txt = this.add.text(this.startX, this.startY + (index * this.espaciado), opcion.texto, {
-        fontFamily: '"Press Start 2P"',
-        fontSize: '8px',
-        color: '#FFFFFF',
-        resolution: 10
-      }).setOrigin(0, 0.5);
+      const txt = this.add.text(this.startX, this.startY + (index * this.espaciado), opcion.texto, estilo(8)).setOrigin(0, 0.5);
 
       this.textosOpciones.push(txt);
     });
 
-    this.cursor = this.add.text(this.startX - 20, this.startY, ">", {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '8px',
-      color: '#FBBF24',
-      resolution: 10
-    }).setOrigin(0.5);
+    this.cursor = this.add.text(this.startX - 20, this.startY, ">", estilo(8, '#FBBF24')).setOrigin(0.5);
     this.resaltarOpcion();
 
     const record = this.registry.get('record') || 0;
-    this.add.text(256, 262, `${i18n.t('record')}: ${record}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#9CA3AF', resolution: 10
-    }).setOrigin(0.5);
+    this.add.text(256, 262, `${i18n.t('record')}: ${record}`, estilo(8, '#9CA3AF')).setOrigin(0.5);
 
     // INSTANCIAMOS EL MÓDULO DE INPUT GLOBAL
     this.menuInput = new MenuInputManager(this);

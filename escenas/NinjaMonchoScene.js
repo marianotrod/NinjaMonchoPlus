@@ -11,6 +11,7 @@ import { MODS_GLOBAL_BASE, pactosVacios } from '../reglas/Pactos.js';
 import { ARMAS, TIPOS_ARMA, actualizarProyectiles, arrastrarItem } from '../entidades/Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { Guardado } from '../sistemas/Guardado.js';
+import { estilo } from '../sistemas/Estilo.js';
 
 // Fases del nivel:
 //   intro -> recoleccion -> transicion -> caceria -> nivelCompletado   (niveles normales)
@@ -477,9 +478,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.hotJoinTecladoP2 = false;
 
     this.uiHotJoin = this.add.container(496, 284).setDepth(100);
-    const txtHotJoin = this.add.text(0, -6, i18n.t('hotjoin_prompt'), {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', fill: '#ffffff', resolution: 10
-    }).setOrigin(1, 0.5);
+    const txtHotJoin = this.add.text(0, -6, i18n.t('hotjoin_prompt'), estilo(8)).setOrigin(1, 0.5);
     const bgBarra = this.add.rectangle(0, 1, 60, 4, 0x000000, 0.5).setOrigin(1, 0.5);
     this.barraHotJoin = this.add.rectangle(-59, 1, 0, 2, 0xffffff).setOrigin(0, 0.5);
 
@@ -531,9 +530,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     if (esMidGame) {
       Sonido.efecto(this, 'snd-salto', 1);
-      const cartel = this.add.text(496, 268, i18n.t('hotjoin_joined'), {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#FBBF24', resolution: 10
-      }).setOrigin(1, 0.5).setDepth(200);
+      const cartel = this.add.text(496, 268, i18n.t('hotjoin_joined'), estilo(8, '#FBBF24')).setOrigin(1, 0.5).setDepth(200);
 
       let esNaranja = true;
       this.time.addEvent({
@@ -1173,9 +1170,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   mostrarTextoFlotante(x, y, texto, color = '#ffffff') {
-    const flotante = this.add.text(x, y, texto, {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', fill: color, resolution: 10
-    }).setOrigin(0.5).setDepth(90);
+    const flotante = this.add.text(x, y, texto, estilo(8, color)).setOrigin(0.5).setDepth(90);
 
     this.tweens.add({
       targets: flotante, y: y - 25, alpha: 0, duration: 600, ease: 'Power1',

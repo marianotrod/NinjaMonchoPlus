@@ -1,5 +1,6 @@
 import { i18n } from '../i18n.js';
 import MenuInputManager from '../entrada/MenuInputManager.js';
+import { estilo } from '../sistemas/Estilo.js';
 
 export default class CreditsScene extends Phaser.Scene {
   constructor() {
@@ -9,12 +10,7 @@ export default class CreditsScene extends Phaser.Scene {
   create() {
     this.add.rectangle(0, 0, 512, 288, 0x000000).setOrigin(0, 0);
 
-    this.add.text(256, 40, i18n.t('menu_creditos'), {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '16px',
-      color: '#4ADE80',
-      resolution: 10
-    }).setOrigin(0.5);
+    this.add.text(256, 40, i18n.t('menu_creditos'), estilo(16, '#4ADE80')).setOrigin(0.5);
 
     const creditosTexto = [
       i18n.t('credito_musica'),
@@ -30,21 +26,9 @@ export default class CreditsScene extends Phaser.Scene {
       "Gemini · Claude · Mariano Trod · Santiago Tornau"
     ];
 
-    this.add.text(256, 145, creditosTexto, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '8px',
-      color: '#FFFFFF',
-      align: 'center',
-      lineSpacing: 6,
-      resolution: 10
-    }).setOrigin(0.5);
+    this.add.text(256, 145, creditosTexto, estilo(8, '#FFFFFF', { align: 'center', lineSpacing: 6 })).setOrigin(0.5);
 
-    this.add.text(256, 250, `> ${i18n.t('volver')} <`, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '8px',
-      color: '#FBBF24',
-      resolution: 10
-    }).setOrigin(0.5);
+    this.add.text(256, 250, `> ${i18n.t('volver')} <`, estilo(8, '#FBBF24')).setOrigin(0.5);
 
     // INSTANCIAMOS EL MÓDULO DE INPUT GLOBAL
     this.menuInput = new MenuInputManager(this);

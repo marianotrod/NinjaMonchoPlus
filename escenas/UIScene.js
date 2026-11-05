@@ -1,11 +1,9 @@
 import { i18n } from '../i18n.js';
 import { CONFIG } from '../config.js';
 import { ARMAS } from '../entidades/Armas.js';
+import { estilo } from '../sistemas/Estilo.js';
 
 const TIPOS = ['cuadrado', 'triangulo', 'rombo'];
-const estilo = (tamaño, color = '#FFFFFF') => ({
-  fontFamily: '"Press Start 2P"', fontSize: `${tamaño}px`, color, resolution: 10
-});
 
 export default class UIScene extends Phaser.Scene {
   constructor() {

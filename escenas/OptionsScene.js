@@ -2,6 +2,7 @@ import { i18n } from '../i18n.js';
 import MenuInputManager, { barraVolumen } from '../entrada/MenuInputManager.js'; // Importamos el gestor unificado
 import { Sonido } from '../sistemas/Sonido.js';
 import { Guardado } from '../sistemas/Guardado.js';
+import { estilo } from '../sistemas/Estilo.js';
 
 export default class OptionsScene extends Phaser.Scene {
   constructor() {
@@ -11,12 +12,7 @@ export default class OptionsScene extends Phaser.Scene {
   create() {
     this.add.rectangle(0, 0, 512, 288, 0x000000).setOrigin(0, 0);
 
-    this.add.text(256, 40, i18n.t('menu_opciones'), {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '16px',
-      color: '#4ADE80',
-      resolution: 10
-    }).setOrigin(0.5);
+    this.add.text(256, 40, i18n.t('menu_opciones'), estilo(16, '#4ADE80')).setOrigin(0.5);
 
     if (this.registry.get('volMusica') === undefined) this.registry.set('volMusica', 5);
     if (this.registry.get('volSonido') === undefined) this.registry.set('volSonido', 5);
@@ -52,22 +48,12 @@ export default class OptionsScene extends Phaser.Scene {
     const espaciado = 30;
 
     this.opciones.forEach((opcion, index) => {
-      const txt = this.add.text(startX, startY + (index * espaciado), opcion.getTexto(), {
-        fontFamily: '"Press Start 2P"',
-        fontSize: '8px',
-        color: '#FFFFFF',
-        resolution: 10
-      }).setOrigin(0, 0.5);
+      const txt = this.add.text(startX, startY + (index * espaciado), opcion.getTexto(), estilo(8)).setOrigin(0, 0.5);
 
       this.textosOpciones.push(txt);
     });
 
-    this.cursor = this.add.text(startX - 20, startY, ">", {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '8px',
-      color: '#FBBF24',
-      resolution: 10
-    }).setOrigin(0.5);
+    this.cursor = this.add.text(startX - 20, startY, ">", estilo(8, '#FBBF24')).setOrigin(0.5);
 
     // Música de fondo para poder escuchar el volumen mientras se ajusta
     Sonido.musica(this, 'musica-fondo', 0.4);

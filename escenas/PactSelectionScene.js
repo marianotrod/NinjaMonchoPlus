@@ -3,6 +3,7 @@ import { PAD } from '../config.js';
 import { PACTOS, aplicarPacto } from '../reglas/Pactos.js';
 import { esNivelJefe } from '../reglas/Partida.js';
 import { Sonido } from '../sistemas/Sonido.js';
+import { estilo } from '../sistemas/Estilo.js';
 
 const TIEMPO_ELECCION = 8;
 const POSICIONES_X = [128, 256, 384];
@@ -25,28 +26,19 @@ export default class PactSelectionScene extends Phaser.Scene {
     this.prevPad = {};
 
     this.add.rectangle(0, 0, 512, 288, 0x000000).setOrigin(0, 0);
-    this.add.text(256, 22, i18n.t('pacto_titulo'), {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#FBBF24', resolution: 10
-    }).setOrigin(0.5);
+    this.add.text(256, 22, i18n.t('pacto_titulo'), estilo(12, '#FBBF24')).setOrigin(0.5);
     const proximo = esNivelJefe(this.partida.nivel) ? i18n.t('pacto_proximo_jefe') : `${i18n.t('pacto_proximo')} ${this.partida.nivel}`;
-    this.add.text(256, 40, proximo, {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#9CA3AF', resolution: 10
-    }).setOrigin(0.5);
+    this.add.text(256, 40, proximo, estilo(8, '#9CA3AF')).setOrigin(0.5);
 
     this.opciones = Phaser.Utils.Array.Shuffle([...PACTOS]).slice(0, 3);
     this.pergaminos = this.opciones.map((pacto, i) => {
       const x = POSICIONES_X[i];
       const imagen = this.add.image(x, 96, 'pergamino').setScale(2);
-      const texto = (clave, y, color) => this.add.text(x, y, i18n.t(clave), {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color, align: 'center', lineSpacing: 4,
-        wordWrap: { width: 116 }, resolution: 10
-      }).setOrigin(0.5, 0);
+      const texto = (clave, y, color) => this.add.text(x, y, i18n.t(clave), estilo(8, color, { align: 'center', lineSpacing: 4, wordWrap: { width: 116 } })).setOrigin(0.5, 0);
       texto(`pacto_${pacto.id}`, 138, '#FBBF24');
       texto(`pacto_${pacto.id}_pro`, 156, '#4ADE80');
       texto(`pacto_${pacto.id}_contra`, 202, '#EF4444');
-      const etiqueta = this.add.text(x, 52, '', {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#FFFFFF', resolution: 10
-      }).setOrigin(0.5);
+      const etiqueta = this.add.text(x, 52, '', estilo(8)).setOrigin(0.5);
       return { imagen, etiqueta };
     });
 
@@ -56,9 +48,7 @@ export default class PactSelectionScene extends Phaser.Scene {
     });
 
     this.tiempo = TIEMPO_ELECCION;
-    this.textoTiempo = this.add.text(256, 278, this.textoAviso(), {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#FFFFFF', resolution: 10
-    }).setOrigin(0.5);
+    this.textoTiempo = this.add.text(256, 278, this.textoAviso(), estilo(8)).setOrigin(0.5);
     this.reloj = this.time.addEvent({
       delay: 1000, loop: true,
       callback: () => {
