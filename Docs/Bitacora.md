@@ -5,6 +5,17 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-05 — Mariano y Claude: entrega con traducciones por API
+
+- Las 80 frases quedaron cargadas en Traducila y verificadas contra `Docs/traducila_frases.tsv`.
+- Probado en GitHub Pages: el inglés llega de la API y el español sale del juego.
+- La versión entregada quedó congelada en la etiqueta `v1.02-entrega` (`main`). `v1.01-entrega` conserva la anterior.
+
+**Pendientes**
+- Retomar la etapa 1 del plan de la v2 en la rama `v2`. `main` no se toca sin acordarlo con Mariano.
+
+---
+
 ## 2026-11-04 — Claude: traducciones por API (Traducila), pedido para la entrega
 
 - Al arrancar, el juego pide el inglés a la API de Traducila (`TRADUCCIONES` en `config.js`); las claves son las frases en español.
