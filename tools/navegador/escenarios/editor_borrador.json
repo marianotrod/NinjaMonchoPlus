@@ -1,0 +1,17 @@
+{
+  "descripcion": "Editor online: el nivel editado llega al juego sin pasar por una carpeta, y sin ?borrador no cambia nada",
+  "pagina": "tools/editor/index.html",
+  "pasos": [
+    {"hasta": "window.editor && editor.estado.nivel && document.getElementById('mensaje').textContent === 'Listo'", "timeout": 8000, "nombre": "abre el editor"},
+    {"eval": "(editor.crear('n-borrador'), [5, 6, 7, 8].forEach(c => { editor.estado.nivel.capas.logica[12][c] = 1; }), true)"},
+    {"verificar": "un nivel sin spawns no se manda", "eval": "(() => { const objetos = editor.estado.nivel.objetos; editor.estado.nivel.objetos = []; const direccion = editor.enviarBorrador(); editor.estado.nivel.objetos = objetos; return { direccion, guardado: localStorage.getItem('ninja-moncho-borrador'), clase: document.getElementById('mensaje').className }; })()", "espera": {"direccion": null, "guardado": null, "clase": "error"}},
+    {"verificar": "la dirección de prueba pide el borrador", "eval": "editor.enviarBorrador().includes('mapa=n-borrador&borrador')"},
+    {"eval": "(editor.estado.sucio = false, location.href = editor.enviarBorrador(), true)"},
+    {"hasta": "window.prueba && prueba.enJuego()", "timeout": 8000, "nombre": "abre el juego con el borrador"},
+    {"verificar": "el juego arma el nivel editado, aunque no exista en los archivos", "eval": "prueba.nivel()", "espera": {"id": "n-borrador", "bloques": {"min": 4}}},
+    {"eval": "(location.href = location.pathname + '?debug', true)"},
+    {"wait": 500},
+    {"hasta": "window.prueba && prueba.escenas().includes('TitleScene')", "timeout": 8000, "nombre": "abre el juego sin el borrador"},
+    {"verificar": "sin ?borrador el juego no lo mira", "eval": "prueba.validarNiveles().cantidad === 13"}
+  ]
+}

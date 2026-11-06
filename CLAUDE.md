@@ -23,6 +23,7 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
   perdiendoVida y fin interrumpen. La UI se entera por eventos (`this.events.emit(...)`).
 - `public/niveles/`: un JSON por nivel más `indice.json`. `public/assets/`: sprites, tiles y audio. `Docs/`: GDD, GDD técnico, lore, `Roadmap.md` y `Bitacora.md`.
 - `tools/editor/`: editor de niveles. Con el juego servido, abrir http://localhost:5501/tools/editor/ en Chrome o Edge.
+  Online, Probar no guarda: le pasa el nivel al juego por localStorage (`?debug&borrador`).
 - `tools/`: scripts de soporte (no son parte del juego). `.venv/` y `node_modules/` no se versionan.
 
 ## Para ahorrar tokens

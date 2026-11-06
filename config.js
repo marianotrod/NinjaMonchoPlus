@@ -12,7 +12,8 @@ export const ARRANQUE_DEBUG = {
   nivel: DEBUG && parametros.get('nivel') ? parseInt(parametros.get('nivel'), 10) : null,
   jugadores: DEBUG && parametros.get('jugadores') ? parseInt(parametros.get('jugadores'), 10) : 1,
   jefe: DEBUG ? parametros.get('jefe') : null,  // ogro | oni | espectro (solo en niveles de jefe intermedio)
-  mapa: DEBUG ? parametros.get('mapa') : null   // id de un nivel de public/niveles (para probarlo)
+  mapa: DEBUG ? parametros.get('mapa') : null,  // id de un nivel de public/niveles (para probarlo)
+  borrador: DEBUG && parametros.has('borrador') // usa el nivel que mandó el editor online (ver mundo/Niveles.js)
 };
 
 // Traducciones por API (Traducila: https://traducila.vercel.app). Sin proyecto cargado, o si la API falla,

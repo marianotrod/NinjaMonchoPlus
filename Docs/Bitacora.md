@@ -5,6 +5,14 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-05 — Claude: el editor funciona online
+
+- Mariano les pasó el link del editor a los profes. Online, Probar abre el nivel editado sin guardar: se lo pasa al juego por localStorage (`?debug&borrador`). En local sigue guardando en la carpeta.
+- El README tiene el enlace al editor.
+- Banco de pruebas: 144 de 144, con el escenario nuevo `editor_borrador`.
+
+---
+
 ## 2026-11-05 — Mariano y Claude: la v2 pasa a main
 
 - Mariano rediseñó el nivel `inicio` en el editor: el guardado en la carpeta real quedó confirmado.

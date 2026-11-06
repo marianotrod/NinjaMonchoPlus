@@ -8,6 +8,9 @@ const RUTA = 'public/niveles/';
 const VERSION = ARRANQUE_DEBUG.mapa ? `?v=${Date.now()}` : '';
 const niveles = new Map();
 
+// Online el editor no puede escribir en public/niveles: deja el nivel acá para que el juego lo pruebe sin tocar los archivos
+export const CLAVE_BORRADOR = 'ninja-moncho-borrador';
+
 export function cargarNiveles(load) {
   load.json('indice-niveles', `${RUTA}indice.json${VERSION}`);
   load.once('filecomplete-json-indice-niveles', (clave, tipo, indice) => {
@@ -39,6 +42,18 @@ export function registrarNiveles(cache) {
     validarNivel(id, nivel).forEach(error => console.error(`Nivel inválido: ${error}`));
     niveles.set(id, nivel);
   });
+  if (ARRANQUE_DEBUG.borrador) registrarBorrador();
+}
+
+function registrarBorrador() {
+  try {
+    const nivel = JSON.parse(localStorage.getItem(CLAVE_BORRADOR));
+    const errores = validarNivel(nivel ? nivel.id : 'borrador', nivel);
+    if (errores.length) console.error(`Borrador inválido: ${errores[0]}`);
+    else niveles.set(nivel.id, nivel);
+  } catch (error) {
+    console.error(`No se pudo leer el borrador: ${error.message}`);
+  }
 }
 
 export const nivelPorId = (id) => niveles.get(id);

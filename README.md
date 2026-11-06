@@ -40,6 +40,11 @@ Hace falta un servidor estático (los módulos ES no cargan abriendo el `index.h
 
 Phaser está copiado en `lib/phaser.min.js`, así que funciona sin internet (la fuente Press Start 2P sí se baja de Google Fonts).
 
+### Editor de niveles
+
+Online: https://marianotrod.github.io/NinjaMonchoPlus/tools/editor/ (en Chrome o Edge). **Probar** abre el nivel editado
+en el juego; los cambios quedan en ese navegador. **Guardar** escribe en una copia local del repo (carpeta `public/niveles`).
+
 ### Modo desarrollo
 
 Agregá `?debug` a la URL para activar las teclas de prueba y los atajos:

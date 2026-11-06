@@ -2,11 +2,12 @@
 // Editor de niveles de Ninja Moncho. Se abre con el juego servido: http://localhost:5501/tools/editor/
 // Pinta las capas de un nivel (fondo, skin, lógica y objetos) sobre la grilla completa, incluida la zona oculta.
 import { LOGICA, MUNDO } from '../../config.js';
-import { validarNivel } from '../../mundo/Niveles.js';
+import { CLAVE_BORRADOR, validarNivel } from '../../mundo/Niveles.js';
 import { nivelNuevo } from './formato.js';
 import { guardarNivel, leerIndice, leerNivel } from './almacen.js';
 
 const T = MUNDO.tile;
+const ES_LOCAL = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 const ZOOM_MAXIMO = 5;
 const MAX_DESHACER = 100;
 const MAX_RECIENTES = 18;
@@ -541,16 +542,35 @@ async function guardar() {
 }
 
 // El número de nivel solo importa para que el juego arme una pelea de jefe o un nivel común
+function direccionDePrueba(extra = '') {
+  const { id, tipo, jefe } = estado.nivel;
+  const parametros = tipo === 'jefe' ? `nivel=5${jefe && jefe !== 'rey' ? `&jefe=${jefe}` : ''}` : 'nivel=3';
+  return `../../index.html?debug&${parametros}&mapa=${id}${extra}`;
+}
+
+// Online el juego publicado no lee ninguna carpeta local: el nivel le llega por localStorage
+function enviarBorrador() {
+  const errores = validarNivel(estado.nivel.id, estado.nivel);
+  if (errores.length) {
+    avisar(errores[0], 'error');
+    return null;
+  }
+  localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(estado.nivel));
+  return direccionDePrueba('&borrador');
+}
+
 async function probar() {
+  if (!ES_LOCAL) {
+    const direccion = enviarBorrador();
+    if (direccion) window.open(direccion, '_blank');
+    return;
+  }
   const ventana = window.open('about:blank', '_blank');
   if (estado.sucio && !(await guardar())) {
     if (ventana) ventana.close();
     return;
   }
-  const { id, tipo, jefe } = estado.nivel;
-  const parametros = tipo === 'jefe' ? `nivel=5${jefe && jefe !== 'rey' ? `&jefe=${jefe}` : ''}` : 'nivel=3';
-  const direccion = `../../index.html?debug&${parametros}&mapa=${id}`;
-  if (ventana) ventana.location = direccion;
+  if (ventana) ventana.location = direccionDePrueba();
 }
 
 // ------------------------------------------
@@ -621,6 +641,6 @@ async function iniciar() {
 }
 
 // Para el banco de pruebas
-window.editor = { estado, abrir, crear, duplicar, guardar, deshacer, rehacer, elegirCapa, elegirHerramienta };
+window.editor = { estado, abrir, crear, duplicar, guardar, enviarBorrador, deshacer, rehacer, elegirCapa, elegirHerramienta };
 
 iniciar().catch(error => avisar(error.message, 'error'));
