@@ -107,7 +107,7 @@ Un JSON por nivel en `public/niveles/`, más un `indice.json` que mantiene el ed
 | `vacio` | — |
 | `solido` | Choca por los cuatro lados. |
 | `pasarela` | One-way: solo choca desde arriba y se puede bajar. |
-| `trampa` | Daña al ninja desde cualquier dirección. Enfurece a los enemigos. |
+| `trampa` | Bloque sólido que daña al ninja desde cualquier dirección. Enfurece a los enemigos. |
 | `fuego` | Bloque sólido que escupe bolas de fuego al azar (ver 6.4). |
 
 - La colisión es siempre por tile completo.
@@ -354,7 +354,7 @@ tools/editor/    editor de niveles
 | 3 | ✔ Editor de niveles | Hecho: pinta, guarda y prueba (falta confirmar el guardado real en Chrome) |
 | 4 | ✔ Mundo de 34×20 + wrap + nivel de prueba | Hecho: `n-wrap`; solo en niveles con `"wrap": true` hasta decidir si es permanente |
 | 5 | ✔ Reglas por fase, golpe, bando, protección y HP de los enemigos | Hecho: mismo comportamiento, código centralizado |
-| 6 | Tiles de trampa y fuego | Funcionan en un nivel de prueba |
+| 6 | ✔ Tiles de trampa y fuego | Hecho: funcionan en `n-peligros` |
 | 7 | Pergaminos permanentes + nivel de pergaminos + armas con cooldown | Una partida completa con pergaminos |
 | 8 | Ninja como máquina de estados + input unificado | Base para pulir el movimiento |
 | 9 | Rescate (llave y vórtice), pisar proyectiles, parry | Probar las variantes |

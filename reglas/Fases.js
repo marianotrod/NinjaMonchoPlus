@@ -14,6 +14,7 @@ const BASE = {
   aparecenEnemigos: false,      // Aparecen enemigos por tiempo
   cuentaBajas: false,           // Matar enemigos acerca el fin de la fase
   invocaAyudantes: false,       // El jefe puede invocar enemigos
+  escupeFuego: false,           // Los tiles de fuego escupen bolas
   // Al acabarse el tiempo aparecen los fantasmas y nadie reaparece. Esto es lo que se repite si no queda nadie en pie.
   recomienzoPorFantasma: null
 };
@@ -21,11 +22,11 @@ const BASE = {
 const REGLAS = {
   intro: { ...BASE, jugable: true, golpeAlNinja: ATURDE },
   recoleccion: {
-    ...BASE, jugable: true, golpeAlNinja: ATURDE, hayTalismanes: true, aparecenEnemigos: true, recomienzoPorFantasma: NIVEL
+    ...BASE, jugable: true, golpeAlNinja: ATURDE, hayTalismanes: true, aparecenEnemigos: true, escupeFuego: true, recomienzoPorFantasma: NIVEL
   },
   transicion: { ...BASE, jugable: true, enemigosVulnerables: true },
-  caceria: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: VIDA, cuentaBajas: true, recomienzoPorFantasma: FASE },
-  jefe: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: VIDA, invocaAyudantes: true, recomienzoPorFantasma: NIVEL }
+  caceria: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: VIDA, cuentaBajas: true, escupeFuego: true, recomienzoPorFantasma: FASE },
+  jefe: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: VIDA, invocaAyudantes: true, escupeFuego: true, recomienzoPorFantasma: NIVEL }
 };
 
 export const reglasDe = (fase) => REGLAS[fase] ?? BASE;

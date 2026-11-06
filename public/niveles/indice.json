@@ -13,6 +13,7 @@
     {"id":"n-jaula","tipo":"normal","tier":1},
     {"id":"n-valle","tipo":"normal","tier":1},
     {"id":"n-caos","tipo":"normal","tier":1},
-    {"id":"n-wrap","tipo":"prueba","tier":null}
+    {"id":"n-wrap","tipo":"prueba","tier":null},
+    {"id":"n-peligros","tipo":"prueba","tier":null}
   ]
 }

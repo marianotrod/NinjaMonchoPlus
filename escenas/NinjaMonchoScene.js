@@ -6,6 +6,7 @@ import Fantasma from '../entidades/Fantasma.js';
 import Jefe from '../entidades/Jefe.js';
 import { construirNivel } from '../mundo/CargadorNivel.js';
 import { bordeVerticalOpuesto, costadoLibre, wrapear } from '../mundo/Mundo.js';
+import { actualizarFuego } from '../mundo/Fuego.js';
 import { BANDO, CONFIG, DEBUG, FISICA, PAD } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
 import { MODS_GLOBAL_BASE, pactosVacios } from '../reglas/Pactos.js';
@@ -85,6 +86,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.enemigos = this.physics.add.group();
     this.cajasArmas = this.physics.add.group();
     this.proyectiles = this.physics.add.group({ allowGravity: false });
+    this.llamas = this.physics.add.group({ allowGravity: false, immovable: true });
 
     this.jugadores = [];
     this.jugador = new Ninja(this, this.spawnMonchoX, -32, 'ninja', null, 'moncho', 0);
@@ -103,11 +105,16 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.physics.add.collider(this.items, this.bloquesFisicos, this.procesarImpactoPiso, null, this);
     this.physics.add.collider(this.cajasArmas, this.bloquesFisicos);
-    this.physics.add.collider(this.enemigos, this.bloquesFisicos, null, (enemigo) => !enemigo.rasgos.volador.activo, this);
+    this.physics.add.collider(this.enemigos, this.bloquesFisicos,
+      (enemigo, bloque) => { if (bloque.esTrampa) enemigo.enfurecer(); },
+      (enemigo) => !enemigo.rasgos.volador.activo, this);
+    this.physics.add.overlap(this.enemigos, this.llamas, (enemigo) => enemigo.enfurecer());
     this.physics.add.collider(this.proyectiles, this.bloquesFisicos,
-      (proyectil) => { if (proyectil.bando === BANDO.DEMONIOS || proyectil.tipo === 'shuriken') proyectil.destroy(); },
+      (proyectil) => {
+        if ((proyectil.bando === BANDO.DEMONIOS && !proyectil.rebota) || proyectil.tipo === 'shuriken') proyectil.destroy();
+      },
       (proyectil, bloque) => (proyectil.bando === BANDO.DEMONIOS
-        ? !proyectil.atraviesaBloques && !bloque.esOneWay
+        ? proyectil.rebota || (!proyectil.atraviesaBloques && !bloque.esOneWay)
         : proyectil.tipo === 'bomba' || (proyectil.tipo === 'shuriken' && !bloque.esOneWay)), this);
     this.physics.add.overlap(this.proyectiles, this.enemigos, this.impactoProyectil,
       (proyectil) => proyectil.bando === BANDO.JUGADORES, this);
@@ -548,7 +555,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     // Un ninja muerto atraviesa el escenario y no interactúa con nada mientras cae
     const enJuego = () => !jugador.muerto && !jugador.eliminado;
 
-    this.physics.add.collider(jugador, this.bloquesFisicos, null, (j, bloque) => {
+    this.physics.add.collider(jugador, this.bloquesFisicos, (j, bloque) => {
+      if (bloque.esTrampa) this.golpearConTile(j, 'trampa', bloque.x);
+    }, (j, bloque) => {
       if (!enJuego()) return false;
       if (j.quiereAtravesarOneWay && bloque.esOneWay) {
           return false;
@@ -559,6 +568,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.physics.add.overlap(jugador, this.items, (j, item) => {
       this.recolectarItem(j, item);
     }, enJuego, this);
+
+    this.physics.add.overlap(jugador, this.llamas, (j, llama) => this.golpearConTile(j, 'llama', llama.x), enJuego, this);
 
     this.physics.add.overlap(jugador, this.enemigos, (j, demonio) => {
       this.tocarDemonio(j, demonio);
@@ -807,6 +818,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     });
 
     actualizarProyectiles(this);
+    actualizarFuego(this, time);
     if (this.conWrap) this.aplicarWrap();
 
     this.fantasmas.forEach(fantasma => fantasma.actualizar(this.objetivoDeFantasma(fantasma), delta));
@@ -1180,6 +1192,10 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     onda.atraviesaBloques = true;
     onda.nacimiento = this.time.now;
     return onda;
+  }
+
+  golpearConTile(jugador, tipo, fuenteX) {
+    resolverGolpe(this, jugador, crearGolpe(tipo, { bando: BANDO.DEMONIOS, fuenteX }));
   }
 
   impactoProyectilEnemigo(jugador, proyectil) {

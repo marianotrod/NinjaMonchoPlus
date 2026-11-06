@@ -224,7 +224,8 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(this.body.velocity.x * multiplicador);
         this.setTint(0xff9999);
 
-        // El escudo con calavera se rompe sobre su cabeza: ya no es inmune
+        // El escudo con calavera se rompe sobre su cabeza: ya no es inmune. Solo si lo es por la fase, no por una trampa
+        if (!this.scene.reglas.enemigosVulnerables) return;
         const escudo = this.scene.add.sprite(this.x, this.y - 16, 'escudo_roto').setDepth(60);
         escudo.play('escudo-roto');
         escudo.once('animationcomplete', () => escudo.destroy());

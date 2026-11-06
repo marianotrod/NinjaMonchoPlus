@@ -1,6 +1,6 @@
 import { i18n } from '../i18n.js';
-import { ARRANQUE_DEBUG } from '../config.js';
-import { GRAFICOS } from '../datos/Graficos.js';
+import { ARRANQUE_DEBUG, TILES } from '../config.js';
+import { GRAFICOS, GRAFICOS_ANIMADOS } from '../datos/Graficos.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { nuevaPartida } from '../reglas/Partida.js';
 import { cargarNiveles, registrarNiveles } from '../mundo/Niveles.js';
@@ -33,6 +33,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.spritesheet('escudo_roto', `${A}escudo_roto-Sheet.png`, { frameWidth: 16, frameHeight: 16 });
 
     GRAFICOS.forEach(clave => this.load.image(clave, `${A}graficos/${clave}.png`));
+    GRAFICOS_ANIMADOS.forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 16, frameHeight: 16 }));
 
     this.load.audio('musica-fondo', [`${A}GameMusic.ogg`, `${A}GameMusic.mp3`]);
     this.load.audio('musica-cueva', [`${A}CaveMusic.mp3`]);
@@ -69,6 +70,22 @@ export default class BootScene extends Phaser.Scene {
     }
   }
 
+  // Los cuadros de un tile animado siguen en la hoja hasta el primer tile vacío
+  ultimoCuadroDelTile(inicio) {
+    const total = this.textures.get('MapTileSet').frameTotal - 1; // No cuenta el cuadro __BASE de Phaser
+    const vacio = (cuadro) => {
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          if (this.textures.getPixelAlpha(x, y, 'MapTileSet', cuadro) > 0) return false;
+        }
+      }
+      return true;
+    };
+    let ultimo = inicio;
+    while (ultimo + 1 < total && !vacio(ultimo + 1)) ultimo++;
+    return ultimo;
+  }
+
   crearAnimaciones() {
     this.anims.create({ key: 'moncho-idle', frames: [{ key: 'ninja', frame: 9 }], frameRate: 10 });
     this.anims.create({ key: 'moncho-caminar', frames: this.anims.generateFrameNumbers('ninja', { start: 0, end: 4 }), frameRate: 12, repeat: -1 });
@@ -81,6 +98,14 @@ export default class BootScene extends Phaser.Scene {
     this.anims.create({ key: 'coop-saltar', frames: [{ key: 'ninja_coop', frame: 5 }], frameRate: 10 });
     this.anims.create({ key: 'coop-caer', frames: [{ key: 'ninja_coop', frame: 7 }], frameRate: 10 });
     this.anims.create({ key: 'coop-stun', frames: this.anims.generateFrameNumbers('ninja_coop', { start: 10, end: 13 }), frameRate: 12, repeat: -1 });
+
+    GRAFICOS_ANIMADOS.forEach(clave => this.anims.create({
+      key: clave, frames: this.anims.generateFrameNumbers(clave), frameRate: 10, repeat: -1
+    }));
+    this.anims.create({
+      key: 'tile-fuego', frameRate: 8, repeat: -1,
+      frames: this.anims.generateFrameNumbers('MapTileSet', { start: TILES.FUEGO, end: this.ultimoCuadroDelTile(TILES.FUEGO) })
+    });
 
     this.anims.create({ key: 'escudo-roto', frames: this.anims.generateFrameNumbers('escudo_roto', { start: 0, end: 3 }), frameRate: 8 });
   }

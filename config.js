@@ -39,10 +39,17 @@ export const MUNDO = {
 // Tipos de la capa "logica" de los niveles
 export const LOGICA = { VACIO: 0, SOLIDO: 1, PASARELA: 2, TRAMPA: 3, FUEGO: 4 };
 
+// Tiles con significado propio en MapTileSet.png. El fuego es el último: sus cuadros se animan solos desde este
+// hasta el primer tile vacío, así que para agregar uno alcanza con dibujarlo a continuación.
+export const TILES = { TRAMPA: 90, FUEGO: 91 };
+
 export const CONFIG = {
   VIDAS_INICIALES: 3,          // Por jugador: las vidas no se comparten
   FANTASMA_VELOCIDAD: 45,       // Velocidad con la que aparece el fantasma (px/s). No tiene tope
   FANTASMA_ACELERACION: 6,      // Cuánto más rápido va por cada segundo que pasa (px/s por segundo)
+  FUEGO_ESPERA_MIN: 3000,       // Tiempo entre bolas de un tile de fuego: al azar entre estos dos valores (ms)
+  FUEGO_ESPERA_MAX: 7000,
+  DURACION_LLAMA: 5000,         // Lo que dura encendida la llama que deja una bola al quedar quieta (ms)
   ESPERA_RESPAWN: 2000,         // Tras caer fuera de la pantalla, el ninja reaparece arriba después de esto (ms)
   INVUL_RESPAWN: 1500,          // Invulnerabilidad al reaparecer, desde que toca el piso (ms)
   TOTAL_NIVELES: 10,

@@ -8,6 +8,7 @@ import { ARMAS } from '../entidades/Armas.js';
 import { BANDO } from '../config.js';
 import { crearGolpe, resolverGolpe } from '../reglas/Resolvedor.js';
 import { todosLosNiveles, validarNivel } from '../mundo/Niveles.js';
+import { crearBola, escupirFuego } from '../mundo/Fuego.js';
 import { EVENTOS } from '../datos/Eventos.js';
 
 export function instalarPuertaPruebas(game) {
@@ -62,6 +63,20 @@ export function instalarPuertaPruebas(game) {
     validarNiveles: () => {
       const niveles = todosLosNiveles();
       return { cantidad: niveles.length, errores: niveles.flatMap(([id, nivel]) => validarNivel(id, nivel)) };
+    },
+    fuego: () => {
+      const s = juego();
+      return { tiles: s.tilesFuego.length, bolas: s.proyectilesDe(BANDO.DEMONIOS).filter(p => p.rebota).length, llamas: s.llamas.countActive(true) };
+    },
+    escupirFuego(i = 0) {
+      const s = juego();
+      escupirFuego(s, s.tilesFuego[i]);
+      return true;
+    },
+    crearBola: (x, y, vx = 0, vy = 0) => !!crearBola(juego(), x, y, vx, vy),
+    sinFuego() {
+      juego().tilesFuego = [];
+      return true;
     },
     fantasmas: () => juego().fantasmas.map(f => ({
       x: redondear(f.x), y: redondear(f.y), velocidad: redondear(f.velocidad), objetivo: f.objetivo ? f.objetivo.indice + 1 : null

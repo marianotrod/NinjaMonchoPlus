@@ -1,0 +1,12 @@
+{
+  "descripcion": "Los tiles de fuego escupen solos durante la Recolección y sus bolas terminan en llamas",
+  "query": "?debug&nivel=3&mapa=n-peligros",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), prueba.modoDios(true), true)"},
+    {"hasta": "prueba.fuego().bolas > 0", "timeout": 9000, "nombre": "un tile escupe una bola solo"},
+    {"shot": "bola"},
+    {"hasta": "prueba.fuego().llamas > 0", "timeout": 7000, "nombre": "la bola deja una llama"},
+    {"verificar": "los tiles escupen solos", "eval": "prueba.fuego().llamas > 0"}
+  ]
+}

@@ -5,6 +5,20 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-06 — Claude: etapa 6 de la v2, trampa y fuego
+
+- Trampa: bloque sólido. Golpea al ninja según la fase y enfurece a los enemigos, sin hacerlos vulnerables.
+- Fuego (`mundo/Fuego.js`): bloque sólido que escupe bolas al azar por sus caras libres. La bola es un proyectil de los demonios, rebota, acepta parry y, al quedar quieta, deja una llama que se apaga sola. La llama golpea al ninja y enfurece a los enemigos.
+- `MapTileSet.png` creció una fila: trampa en el 90 y fuego del 91 al 94. Los cuadros del fuego se detectan solos hasta el primer tile vacío. `llama.png` también anima todos sus cuadros. `bola-fuego.png` es un gráfico suelto.
+- Nivel `n-peligros`, tipo `prueba`. Se abre con `?debug&nivel=3&mapa=n-peligros`.
+- Arte provisorio, para reemplazar.
+
+**Pendientes**
+- Mariano: probar `n-peligros` y calibrar en `config.js` (`FUEGO_ESPERA_MIN`, `FUEGO_ESPERA_MAX`, `DURACION_LLAMA`).
+- Mariano: lista revisada de pergaminos y de habilidades, para la etapa 7.
+
+---
+
 ## 2026-11-06 — Mariano y Claude: fantasmas y gráficos en archivos
 
 - El fantasma va siempre a toda velocidad y acelera sin tope: antes frenaba al acercarse y un ninja corriendo nunca era alcanzado. Valores en `config.js`.

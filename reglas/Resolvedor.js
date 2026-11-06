@@ -1,7 +1,7 @@
 // Resolvedor.js
 // Todo contacto que hace algo es un golpe, y acá se decide qué provoca según las reglas de la fase, el bando y la protección.
 // Un golpe es { tipo, bando, duenio, fuenteX, daño, direccion, empuje }:
-//   tipo:      katana | proyectil | pisoton | explosion | contacto | fantasma
+//   tipo:      katana | proyectil | pisoton | explosion | contacto | trampa | llama | fantasma
 //   direccion: -1 o 1, para empujar con la fuerza propia de cada objetivo
 //   empuje:    { vx, vy }, para los golpes que empujan distinto a cada objetivo (explosiones)
 import { BANDO, CONFIG, FISICA } from '../config.js';
