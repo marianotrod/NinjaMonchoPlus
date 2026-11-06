@@ -7,11 +7,11 @@ import Jefe from '../entidades/Jefe.js';
 import { construirNivel } from '../mundo/CargadorNivel.js';
 import { bordeVerticalOpuesto, costadoLibre, wrapear } from '../mundo/Mundo.js';
 import { actualizarFuego } from '../mundo/Fuego.js';
-import { BANDO, CONFIG, DEBUG, FISICA, PAD } from '../config.js';
+import { BANDO, CONFIG, DEBUG, FISICA, PAD, TECLAS } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
 import { MODS_GLOBAL_BASE, pactosVacios } from '../reglas/Pactos.js';
 import { RECOMIENZO, reglasDe } from '../reglas/Fases.js';
-import { PROTECCION, crearGolpe, resolverGolpe } from '../reglas/Resolvedor.js';
+import { PROTECCION, crearGolpe, golpeaAliado, itemLanzado, resolverGolpe } from '../reglas/Resolvedor.js';
 import { ARMAS, TIPOS_ARMA, actualizarProyectiles, arrastrarItem } from '../entidades/Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { Guardado } from '../sistemas/Guardado.js';
@@ -89,10 +89,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.llamas = this.physics.add.group({ allowGravity: false, immovable: true });
 
     this.jugadores = [];
-    this.jugador = new Ninja(this, this.spawnMonchoX, -32, 'ninja', null, 'moncho', 0);
-    if (this.padIndexP1 !== null) {
-      this.jugador.asignarPadIndex(this.padIndexP1);
-    }
+    this.jugador = new Ninja(this, this.spawnMonchoX, -32, 'ninja', TECLAS.J1, 'moncho', 0);
+    if (this.padIndexP1 !== null) this.jugador.control.asignarPad(this.padIndexP1);
     this.jugadores.push(this.jugador);
     this.conectarFisicasJugador(this.jugador);
     if (partida.vidas[0] <= 0) this.jugador.retirar();
@@ -109,6 +107,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       (enemigo, bloque) => { if (bloque.esTrampa) enemigo.enfurecer(); },
       (enemigo) => !enemigo.rasgos.volador.activo, this);
     this.physics.add.overlap(this.enemigos, this.llamas, (enemigo) => enemigo.enfurecer());
+    this.physics.add.overlap(this.items, this.enemigos, this.impactoItem, itemLanzado, this);
     this.physics.add.collider(this.proyectiles, this.bloquesFisicos,
       (proyectil) => {
         if ((proyectil.bando === BANDO.DEMONIOS && !proyectil.rebota) || proyectil.tipo === 'shuriken') proyectil.destroy();
@@ -283,7 +282,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.collidersJefe.push(
       this.physics.add.collider(this.jefe, this.bloquesFisicos, null, (jefe, bloque) => !jefe.datos.vuela && !bloque.esOneWay, this),
       this.physics.add.overlap(this.jefe, this.proyectiles, (jefe, proyectil) => this.impactoProyectil(proyectil, jefe),
-        (jefe, proyectil) => proyectil.bando === BANDO.JUGADORES, this)
+        (jefe, proyectil) => proyectil.bando === BANDO.JUGADORES, this),
+      this.physics.add.overlap(this.jefe, this.items, (jefe, item) => this.impactoItem(item, jefe),
+        (jefe, item) => itemLanzado(item), this)
     );
     this.jugadores.forEach(j => this.conectarJefe(j));
     this.events.emit(EVENTOS.JEFE_APARECE, i18n.t(`jefe_${this.partida.jefe}`), this.jefe.hp);
@@ -565,9 +566,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       return true;
     }, this);
 
-    this.physics.add.overlap(jugador, this.items, (j, item) => {
-      this.recolectarItem(j, item);
-    }, enJuego, this);
+    this.physics.add.overlap(jugador, this.items, this.tocarItem, enJuego, this);
 
     this.physics.add.overlap(jugador, this.llamas, (j, llama) => this.golpearConTile(j, 'llama', llama.x), enJuego, this);
 
@@ -577,7 +576,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.physics.add.overlap(jugador, this.cajasArmas, this.recogerArma, enJuego, this);
     this.physics.add.overlap(jugador, this.proyectiles, this.impactoProyectilEnemigo,
-      (j, proyectil) => enJuego() && proyectil.bando === BANDO.DEMONIOS, this);
+      (j, proyectil) => enJuego() && this.proyectilGolpea(proyectil, j), this);
 
     this.fantasmas.forEach(fantasma => this.conectarFantasma(jugador, fantasma));
     if (this.jefe) this.conectarJefe(jugador);
@@ -602,7 +601,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.uiHotJoin.add([txtHotJoin, bgBarra, this.barraHotJoin]);
 
-    const teclasJ2 = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyJ', 'KeyK'];
+    const teclasJ2 = Object.values(TECLAS.J2).map(tecla => `Key${tecla}`);
     const alApretar = (event) => {
       if (this.cantidadJugadores === 1 && this.esFaseJugable() && teclasJ2.includes(event.code)) {
         this.hotJoinTecladoP2 = true;
@@ -627,16 +626,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.uiHotJoin = null;
     }
 
-    const K = Phaser.Input.Keyboard.KeyCodes;
-    const teclasP2 = this.input.keyboard.addKeys({
-      up: K.W, down: K.S, left: K.A, right: K.D, ataque: K.J, especial: K.K
-    });
-
-    this.jugador2 = new Ninja(this, this.spawnCoopX, -32, 'ninja_coop', teclasP2, 'coop', 1);
-
-    if (this.padIndexP2 !== null) {
-      this.jugador2.asignarPadIndex(this.padIndexP2);
-    }
+    this.jugador2 = new Ninja(this, this.spawnCoopX, -32, 'ninja_coop', TECLAS.J2, 'coop', 1);
+    if (this.padIndexP2 !== null) this.jugador2.control.asignarPad(this.padIndexP2);
 
     this.jugadores.push(this.jugador2);
     this.conectarFisicasJugador(this.jugador2);
@@ -691,14 +682,14 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         if (this.padIndexP1 === null) {
           this.padIndexP1 = pad.index;
           this.registry.set('padIndexP1', pad.index);
-          this.jugador.asignarPadIndex(pad.index);
+          this.jugador.control.asignarPad(pad.index);
         } else if (pad.index !== this.padIndexP1) {
           if (this.padIndexP2 !== pad.index) {
             this.padIndexP2 = pad.index;
             this.registry.set('padIndexP2', pad.index);
           }
           if (this.jugador2) {
-            if (this.jugador2.assignedPadIndex !== pad.index) this.jugador2.asignarPadIndex(pad.index);
+            this.jugador2.control.asignarPad(pad.index);
           } else {
             p2IntentandoEntrar = true;
           }
@@ -930,7 +921,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   recogerArma(jugador, caja) {
-    if (jugador.isSpawning || !caja.active) return;
+    if (jugador.apareciendo || !caja.active) return;
     jugador.equiparArma(caja.tipoArma);
     this.mostrarTextoFlotante(caja.x, caja.y - 8, i18n.t(`arma_${caja.tipoArma}`), '#FBBF24');
     Sonido.beep(this, 523, 0.08, 0.1);
@@ -952,7 +943,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   recolectarItem(jugador, item) {
-    if (jugador.isSpawning || !item || !item.active) return;
+    if (jugador.apareciendo || !item || !item.active) return;
 
     if (item.esTalisman) {
       if (!this.reglas.hayTalismanes) return;
@@ -1104,7 +1095,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     const zona = katana.getBounds();
     const direccion = ninja.flipX ? -1 : 1;
 
-    const golpe = crearGolpe('katana', { duenio: ninja, direccion });
+    const golpe = crearGolpe('katana', { duenio: ninja, direccion, origen: ninja });
     const alcanzar = (objeto, accion = () => resolverGolpe(this, objeto, golpe)) => {
       if (!objeto || !objeto.active || ninja.katanaGolpeados.has(objeto)) return;
       if (!Phaser.Geom.Intersects.RectangleToRectangle(zona, objeto.getBounds())) return;
@@ -1198,10 +1189,43 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     resolverGolpe(this, jugador, crearGolpe(tipo, { bando: BANDO.DEMONIOS, fuenteX }));
   }
 
+  golpeDeProyectil(proyectil) {
+    return crearGolpe('proyectil', { bando: proyectil.bando, duenio: proyectil.duenio, fuenteX: proyectil.x });
+  }
+
+  // Los de los demonios siempre. Los de un jugador, si un modificador lo permite y ya se alejaron de quien los tiró.
+  proyectilGolpea(proyectil, jugador) {
+    if (proyectil.bando === BANDO.DEMONIOS) return true;
+    const reciente = this.time.now - proyectil.nacimiento < 150;
+    return !reciente && golpeaAliado(this, this.golpeDeProyectil(proyectil), jugador);
+  }
+
   impactoProyectilEnemigo(jugador, proyectil) {
     if (!proyectil.active || jugador.proteccion === PROTECCION.INTOCABLE) return;
     if (!proyectil.atraviesaBloques) proyectil.destroy();
-    resolverGolpe(this, jugador, crearGolpe('proyectil', { bando: BANDO.DEMONIOS, fuenteX: proyectil.x }));
+    resolverGolpe(this, jugador, this.golpeDeProyectil(proyectil));
+  }
+
+  // Un ítem lanzado golpea una sola vez a cada objetivo y sigue su camino: no se rompe, porque hay que poder juntarlo
+  impactoItem(item, objetivo) {
+    if (objetivo.muerto || item.golpeados.has(objetivo)) return;
+    item.golpeados.add(objetivo);
+    const golpe = crearGolpe('proyectil', {
+      duenio: item.lanzador, direccion: Math.sign(item.body.velocity.x) || 1, fuenteX: item.x
+    });
+    resolverGolpe(this, objetivo, golpe);
+  }
+
+  // Normalmente se junta. Lanzado por el otro con fuego amigo, o por uno mismo con daño propio, primero golpea.
+  tocarItem(jugador, item) {
+    if (itemLanzado(item)) {
+      const golpe = crearGolpe('proyectil', { duenio: item.lanzador, fuenteX: item.x });
+      if (golpeaAliado(this, golpe, jugador)) {
+        this.impactoItem(item, jugador);
+        return;
+      }
+    }
+    this.recolectarItem(jugador, item);
   }
 
   tocarJefe(jugador, jefe) {

@@ -5,8 +5,9 @@
 // que el juego se comporte igual. Los jugadores se numeran 1 y 2, como en pantalla.
 import { Bestiario } from '../datos/Bestiario.js';
 import { ARMAS } from '../entidades/Armas.js';
+import { ESTADO } from '../entidades/Ninja.js';
 import { BANDO } from '../config.js';
-import { crearGolpe, resolverGolpe } from '../reglas/Resolvedor.js';
+import { PROTECCION, crearGolpe, resolverGolpe } from '../reglas/Resolvedor.js';
 import { todosLosNiveles, validarNivel } from '../mundo/Niveles.js';
 import { crearBola, escupirFuego } from '../mundo/Fuego.js';
 import { EVENTOS } from '../datos/Eventos.js';
@@ -22,7 +23,7 @@ export function instalarPuertaPruebas(game) {
     vx: redondear(j.body.velocity.x), vy: redondear(j.body.velocity.y),
     enPiso: j.body.blocked.down || j.body.touching.down,
     muerto: j.muerto, eliminado: j.eliminado,
-    aturdido: j.isStunned, invulnerable: j.isInvul, apareciendo: j.isSpawning,
+    estado: j.estado, aturdido: j.aturdido, invulnerable: j.proteccion !== PROTECCION.NORMAL, apareciendo: j.apareciendo,
     arma: j.arma, municion: j.municion
   } : null;
 
@@ -102,7 +103,7 @@ export function instalarPuertaPruebas(game) {
     // El jugador terminó de aparecer y está parado en el piso
     listo: (n = 1) => {
       const j = jugador(n);
-      return !!j && !j.isSpawning && (j.body.blocked.down || j.body.touching.down);
+      return !!j && !j.apareciendo && (j.body.blocked.down || j.body.touching.down);
     },
 
     // --- Control del entorno ---
@@ -157,6 +158,14 @@ export function instalarPuertaPruebas(game) {
       juego().tiempoRestante = t;
       return true;
     },
+    sinDobleSalto(n = 1) {
+      jugador(n).saltoExtraDisponible = false;
+      return true;
+    },
+    ponerModGlobal(mod, valor) {
+      juego().modsGlobal[mod] = valor;
+      return true;
+    },
     sumarPuntos(n, puntos) {
       juego().sumarPuntos(n - 1, puntos);
       return true;
@@ -174,17 +183,15 @@ export function instalarPuertaPruebas(game) {
     // Saca la protección de aparición o del último golpe, para poder probar el siguiente golpe enseguida
     quitarProteccion(n = 1) {
       const j = jugador(n);
-      const s = juego();
-      s.tweens.killTweensOf(j);
-      j.setAlpha(1);
-      j.isInvul = false;
-      j.isSpawning = false;
-      j.isStunned = false;
+      j.dejarDeParpadear();
+      j.finProteccion = 0;
+      j.reaparece = false;
+      if (j.apareciendo || j.aturdido) j.estado = ESTADO.LIBRE;
       return true;
     },
     // Lo deja protegido contra golpes (para pruebas donde los enemigos andan sueltos)
     proteger(n = 1) {
-      jugador(n).isInvul = true;
+      jugador(n).finProteccion = Infinity;
       return true;
     },
     mirar(n, direccion) {

@@ -1,0 +1,16 @@
+{
+  "descripcion": "En la Cacería una moneda empujada mata al enemigo, da los puntos a quien la empujó",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 300, "eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"wait": 1600, "eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.crearEnemigo('demonio_caminante', 160, 264), prueba.crearEnemigo('demonio_caminante', 480, 264), prueba.proteger(1), true)"},
+    {"eval": "(() => { const x = prueba.enemigo(0).x; prueba.crearItem('coin', x - 30, 262); prueba.ponerJugador(1, x - 46, 264); prueba.mirar(1, 1); window.p0 = prueba.estado().puntajes[0]; window.quedan = prueba.enemigos().length; return x; })()"},
+    {"wait": 30},
+    {"eval": "(prueba.atacar(1), true)"},
+    {"hasta": "prueba.enemigos().length < quedan", "timeout": 1500, "nombre": "la moneda mata al enemigo"},
+    {"verificar": "los puntos son de quien la empujó", "eval": "prueba.estado().puntajes[0] > p0"}
+  ]
+}

@@ -224,6 +224,8 @@ aturdir, dañar, matar, empujar, desviar, rebotar o nada. La regla "en la Cacer�
 - **Parry:** la katana le cambia el bando y la dirección a un proyectil.
 - **Desviar el proyectil del compañero** sale de la misma regla.
 - **Fuego amigo** es un modificador que hace que los proyectiles de un jugador puedan golpear al otro.
+- **Daño propio** es un modificador que hace que los proyectiles de un jugador lo golpeen a él mismo. Sin él, tu proyectil no te hace nada.
+- **Saltar sobre ítems:** tocar un talismán o una moneda desde arriba cuenta como pisar el piso por un instante: recarga los saltos y permite saltar. Es una mecánica buscada.
 
 ### 6.3 Rasgos
 Cada entidad declara qué es y el resolvedor actúa según eso. Algunos rasgos:
@@ -232,7 +234,7 @@ Cada entidad declara qué es y el resolvedor actúa según eso. Algunos rasgos:
 |---|---|
 | `pisable` | Se lo puede pisar desde arriba y da rebote (enemigos, **proyectiles**, incluso los propios). |
 | `desviable` | La katana le cambia la dirección o el bando. |
-| `empujable` | La katana, los proyectiles y las explosiones lo mueven (talismanes, monedas, llave, vórtice). |
+| `empujable` | La katana y las explosiones lo mueven (talismanes, monedas, llave, vórtice). La katana lo aleja del centro del ninja, con una subida mínima. Un ítem empujado es un proyectil de quien lo empujó hasta que frena: golpea una vez a cada objetivo, sigue su camino y se puede juntar. |
 | `saltarin` | Rebota y pierde el rebote de a poco. |
 | `cargable` | Un ninja lo puede llevar (la llave). |
 | `danino` | Daña al tocarlo; tiene dirección (de cualquier lado o solo de costado). |
@@ -356,7 +358,7 @@ tools/editor/    editor de niveles
 | 5 | ✔ Reglas por fase, golpe, bando, protección y HP de los enemigos | Hecho: mismo comportamiento, código centralizado |
 | 6 | ✔ Tiles de trampa y fuego | Hecho: funcionan en `n-peligros` |
 | 7 | Pergaminos permanentes + nivel de pergaminos + armas con cooldown | Una partida completa con pergaminos |
-| 8 | Ninja como máquina de estados + input unificado | Base para pulir el movimiento |
+| 8 | ✔ Ninja como máquina de estados + input unificado | Hecho: `entrada/Control.js`, estados en `Ninja`, mismas medidas de movimiento |
 | 9 | Rescate (llave y vórtice), pisar proyectiles, parry | Probar las variantes |
 | 10 | Contenido: niveles, enemigos, pergaminos, jefes, balance | — |
 

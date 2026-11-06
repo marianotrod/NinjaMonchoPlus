@@ -116,8 +116,12 @@ export const FISICA = {
   bufferSalto: 150,
 
   empujeEnemigo: { x: 200, y: -150 },  // Golpe de katana o proyectil a un enemigo que no muere
-  empujeItem: { x: 220, y: -200 },     // Katana a un talismán o una moneda
+  empujeItem: { fuerza: 300, subidaMinima: -120 },  // Katana a un talismán o una moneda: se aleja del centro del ninja
+  velocidadItemLanzado: 60,            // Un ítem empujado golpea hasta que anda más lento que esto (px/s)
   empujeNinja: { x: 220, y: -160 },    // Katana al compañero
+  parpadeoGolpe: 1200,          // Protección que queda después del aturdimiento (ms)
+  parpadeoPisoton: 600,         // Protección después de pisar a un enemigo (ms)
+  bloqueoSaltoPared: 250,       // Tiempo sin control horizontal después de saltar de la pared (ms)
   knockbackX: 180,
   knockbackY: -220,
   duracionStun: 500,
@@ -130,4 +134,10 @@ export const FISICA = {
 };
 
 // Índices estándar de botones de joystick (layout Xbox / "standard gamepad")
+// Teclas de cada jugador, con los nombres de Phaser.Input.Keyboard.KeyCodes
+export const TECLAS = {
+  J1: { up: 'UP', down: 'DOWN', left: 'LEFT', right: 'RIGHT', ataque: 'X', especial: 'C' },
+  J2: { up: 'W', down: 'S', left: 'A', right: 'D', ataque: 'J', especial: 'K' }
+};
+
 export const PAD = { A: 0, B: 1, X: 2, Y: 3, L1: 4, R1: 5, SELECT: 8, START: 9, ARRIBA: 12, ABAJO: 13, IZQUIERDA: 14, DERECHA: 15 };

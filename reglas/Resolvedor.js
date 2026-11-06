@@ -1,8 +1,9 @@
 // Resolvedor.js
 // Todo contacto que hace algo es un golpe, y acá se decide qué provoca según las reglas de la fase, el bando y la protección.
-// Un golpe es { tipo, bando, duenio, fuenteX, daño, direccion, empuje }:
+// Un golpe es { tipo, bando, duenio, fuenteX, daño, direccion, origen, empuje }:
 //   tipo:      katana | proyectil | pisoton | explosion | contacto | trampa | llama | fantasma
 //   direccion: -1 o 1, para empujar con la fuerza propia de cada objetivo
+//   origen:    desde dónde empuja: los ítems se alejan de ese punto
 //   empuje:    { vx, vy }, para los golpes que empujan distinto a cada objetivo (explosiones)
 import { BANDO, CONFIG, FISICA } from '../config.js';
 import { i18n } from '../i18n.js';
@@ -20,8 +21,21 @@ function empujeDe(golpe, fuerza) {
   return golpe.empuje ?? { vx: (golpe.direccion ?? 1) * fuerza.x, vy: fuerza.y };
 }
 
+function empujeDesde(origen, objetivo) {
+  const { fuerza, subidaMinima } = FISICA.empujeItem;
+  const angulo = Math.atan2(objetivo.y - origen.y, objetivo.x - origen.x);
+  return { vx: Math.cos(angulo) * fuerza, vy: Math.min(subidaMinima, Math.sin(angulo) * fuerza) };
+}
+
+// Un proyectil propio o del compañero solo golpea si algún modificador lo permite
+export function golpeaAliado(escena, golpe, ninja) {
+  if (golpe.tipo !== 'proyectil') return false;
+  return golpe.duenio === ninja ? escena.modsGlobal.dañoPropio : escena.modsGlobal.fuegoAmigo;
+}
+
 function golpearNinja(escena, ninja, golpe) {
-  if (golpe.bando === ninja.bando) {
+  if (golpe.bando === ninja.bando && !golpeaAliado(escena, golpe, ninja)) {
+    if (golpe.tipo === 'proyectil') return;
     const { vx, vy } = empujeDe(golpe, FISICA.empujeNinja);
     ninja.empujar(vx, vy);
     return;
@@ -33,7 +47,7 @@ function golpearNinja(escena, ninja, golpe) {
   // El fantasma es la excepción: mata en cualquier fase y no le importa el parpadeo tras un golpe o un pisotón,
   // que el jugador podría provocar a propósito. Solo respeta la caída al aparecer.
   const esFantasma = golpe.tipo === 'fantasma';
-  if (esFantasma ? ninja.isSpawning : ninja.proteccion === PROTECCION.INTOCABLE) return;
+  if (esFantasma ? ninja.apareciendo : ninja.proteccion === PROTECCION.INTOCABLE) return;
   const efecto = esFantasma ? GOLPE_AL_NINJA.VIDA : reglas.golpeAlNinja;
   if (efecto === GOLPE_AL_NINJA.NADA) return;
 
@@ -73,7 +87,18 @@ function golpearEnemigo(escena, enemigo, golpe) {
   }
 }
 
-// Sin bando: talismanes y monedas, que solo se empujan
+// Un ítem empujado pasa a ser un proyectil de quien lo empujó, hasta que frena
+function lanzarItem(item, golpe) {
+  const { vx, vy } = golpe.empuje ?? empujeDesde(golpe.origen, item);
+  item.setVelocity(vx, vy);
+  item.lanzador = golpe.duenio ?? null;
+  item.golpeados = new Set();
+}
+
+export const itemLanzado = (item) =>
+  !!item.lanzador && Math.hypot(item.body.velocity.x, item.body.velocity.y) >= FISICA.velocidadItemLanzado;
+
+// Sin bando: talismanes y monedas
 export function resolverGolpe(escena, objetivo, golpe) {
   if (objetivo.esJefe) {
     objetivo.recibirDaño(golpe.daño);
@@ -82,7 +107,6 @@ export function resolverGolpe(escena, objetivo, golpe) {
   } else if (objetivo.bando === BANDO.JUGADORES) {
     golpearNinja(escena, objetivo, golpe);
   } else {
-    const { vx, vy } = empujeDe(golpe, FISICA.empujeItem);
-    objetivo.setVelocity(vx, vy);
+    lanzarItem(objetivo, golpe);
   }
 }

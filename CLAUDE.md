@@ -16,9 +16,9 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
   En `v2` los textos salen solo de `i18n.js`. La API de Traducila fue un pedido para la entrega y quedó apagada (`TRADUCCIONES.activa` en `config.js`); `main` la sigue usando.
 - `escenas/`: `BootScene` (carga todo, texturas, animaciones, preferencias) → `TitleScene` → `NinjaMonchoScene` (juego)
   con `UIScene` (HUD, carteles, paneles) y `PauseScene` encima; `PactSelectionScene` entre niveles; `HowToPlayScene`, `OptionsScene`, `CreditsScene`.
-- `entidades/`: `Ninja` (jugador, katana), `Enemigo` (rasgos saltarín/caminante/volador/lanzador), `Jefe`, `Fantasma`, `Armas` (proyectiles del jugador).
+- `entidades/`: `Ninja` (jugador, katana; máquina de estados `ESTADO` y protección en un solo lugar), `Enemigo` (rasgos saltarín/caminante/volador/lanzador), `Jefe`, `Fantasma`, `Armas` (proyectiles del jugador).
 - `datos/`: `Bestiario` (enemigos), `Eventos` (catálogo de eventos), `Graficos` (los PNG sueltos de `public/assets/graficos/`). `reglas/`: `Partida` (estado de la partida en el registry), `Pactos`, `Fases` (qué vale en cada fase), `Resolvedor` (qué hace cada golpe). `mundo/`: `Niveles` (carga y valida `public/niveles/`), `CargadorNivel` (arma el nivel en la escena), `Mundo` (wrap; por ahora solo en niveles con `"wrap": true`, como `n-wrap`), `Fuego` (tiles de fuego, bolas y llamas).
-- `sistemas/`: `Sonido` (volúmenes, música, beeps WebAudio), `Guardado` (localStorage), `Estilo` (texto), `PuertaPruebas`. `entrada/`: `MenuInputManager`.
+- `sistemas/`: `Sonido` (volúmenes, música, beeps WebAudio), `Guardado` (localStorage), `Estilo` (texto), `PuertaPruebas`. `entrada/`: `Control` (teclado y joystick de cada jugador en acciones; teclas en `TECLAS` de `config.js`), `MenuInputManager`.
 - Fases de `NinjaMonchoScene`: intro → recoleccion → transicion → caceria → nivelCompletado (o intro → jefe → nivelCompletado);
   perdiendoVida y fin interrumpen. La UI se entera por eventos (`this.events.emit(...)`).
 - Reglas de juego: se consulta `this.reglas` (tabla de `reglas/Fases.js`), no `this.fase`. Todo golpe pasa por `resolverGolpe` (`reglas/Resolvedor.js`).
@@ -31,7 +31,7 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 
 ## Para ahorrar tokens
 - Probar cambios sin abrir el juego: desde **PowerShell** (desde Git Bash Edge no arranca), `.\tools\navegador\probar.ps1`
-  corre todos los escenarios de `tools/navegador/escenarios/` (o `probar.ps1 golpes` uno solo). Usa su propio servidor en el
+  corre todos los escenarios de `tools/navegador/escenarios/` (o `probar.ps1 golpes` uno solo). Usa su propio servidor (`servidor.py`) en el
   puerto 5599, para no chocar con Live Server, que recarga la página al guardarse una captura; usa Edge sin ventana, verifica resultados y termina con ✔/✘ por verificación y un total. Si no hay Node
   instalado, usa el portable de `%LOCALAPPDATA%\node-portable`. **Correrlo antes y después de cada cambio.**
 - Los escenarios hablan con el juego a través de `window.prueba` (`sistemas/PuertaPruebas.js`, solo con `?debug`), no con

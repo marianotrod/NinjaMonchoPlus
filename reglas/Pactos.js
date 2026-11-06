@@ -10,7 +10,11 @@ export const PACTOS = [
 ];
 
 export const MODS_JUGADOR_BASE = { velocidad: 1, salto: 1, knockback: 1, municionInfinitaCaceria: false };
-export const MODS_GLOBAL_BASE = { tiempoExtra: 0, multPuntos: 1, velProyectiles: 1, enemigosInmunesStun: false };
+export const MODS_GLOBAL_BASE = {
+  tiempoExtra: 0, multPuntos: 1, velProyectiles: 1, enemigosInmunesStun: false,
+  fuegoAmigo: false,   // Los proyectiles de un jugador golpean al otro
+  dañoPropio: false    // Los proyectiles de un jugador lo golpean a él mismo
+};
 
 export function pactosVacios() {
   return { global: { ...MODS_GLOBAL_BASE }, jugadores: [{ ...MODS_JUGADOR_BASE }, { ...MODS_JUGADOR_BASE }] };

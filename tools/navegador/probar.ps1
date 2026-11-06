@@ -1,7 +1,7 @@
 # Corre el banco de pruebas en un solo paso (desde PowerShell, en la raíz del repo):
 #   .\tools\navegador\probar.ps1                  todos los escenarios
 #   .\tools\navegador\probar.ps1 golpes           un escenario (tools/navegador/escenarios/golpes.json)
-# Levanta su propio servidor con Python en un puerto aparte, mientras duran las pruebas: Live Server (5501) recarga
+# Levanta su propio servidor (servidor.py) en un puerto aparte, mientras duran las pruebas: Live Server (5501) recarga
 # la página cada vez que se guarda una captura y corta los escenarios.
 # Si Node no está instalado, usa el portable de %LOCALAPPDATA%\node-portable (si existe).
 param([string]$Escenario = '')
@@ -19,7 +19,7 @@ if (-not (Test-Path "$PSScriptRoot\node_modules")) {
 }
 
 $puerto = 5599
-$servidor = Start-Process python -ArgumentList '-m', 'http.server', $puerto, '--bind', '127.0.0.1' -WorkingDirectory $raiz -WindowStyle Hidden -PassThru
+$servidor = Start-Process python -ArgumentList 'tools/navegador/servidor.py', $puerto -WorkingDirectory $raiz -WindowStyle Hidden -PassThru
 Start-Sleep 2
 
 $objetivo = if ($Escenario) { "tools/navegador/escenarios/$Escenario.json" } else { 'tools/navegador/escenarios' }

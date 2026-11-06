@@ -1,4 +1,9 @@
-import { BANDO, CONFIG, DEBUG, FISICA, PAD } from '../config.js';
+// Ninja.js
+// El jugador. Cada momento está en un solo estado (ESTADO): update() atiende el estado y, si el ninja está libre, actuar()
+// aplica los controles en un orden fijo que importa para la sensación del movimiento.
+// La protección también vive en un solo lugar: el estado y finProteccion, que lee el getter proteccion.
+import { BANDO, CONFIG, DEBUG, FISICA } from '../config.js';
+import Control from '../entrada/Control.js';
 import { fueraDeVista } from '../mundo/Mundo.js';
 import { MODS_JUGADOR_BASE } from '../reglas/Pactos.js';
 import { PROTECCION } from '../reglas/Resolvedor.js';
@@ -6,11 +11,18 @@ import { ARMAS, dispararArma } from './Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { EVENTOS } from '../datos/Eventos.js';
 
-// Lectura segura de un botón del joystick (algunos mandos no reportan todos los botones)
-const boton = (pad, indice) => !!(pad && pad.buttons[indice] && pad.buttons[indice].pressed);
+export const ESTADO = {
+  APARECIENDO: 'apareciendo',   // Cae hasta tocar el piso, sin control
+  LIBRE: 'libre',
+  DASH: 'dash',
+  SALTO_PARED: 'saltoPared',    // Un instante sin control horizontal después de saltar de la pared
+  ATURDIDO: 'aturdido',
+  MUERTO: 'muerto',             // Golpe que costó una vida: cae fuera de la pantalla atravesando el escenario
+  ELIMINADO: 'eliminado'        // Sin vidas: queda fuera de la partida
+};
 
 export default class Ninja extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y, textura = 'ninja', configTeclado = null, animPrefix = 'moncho', indice = 0) {
+  constructor(scene, x, y, textura, teclas, animPrefix, indice) {
     super(scene, x, y, textura);
 
     scene.add.existing(this);
@@ -32,27 +44,23 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.body.setOffset(3, 0);
     this.setDepth(10);
 
-    this.isStunned = false;
-    this.isInvul = false;
-    this.isSpawning = true;
-    this.muerto = false;     // Golpe que costó una vida: cae fuera de la pantalla atravesando el escenario
-    this.eliminado = false;  // Sin vidas: queda fuera de la partida
+    this.estado = ESTADO.APARECIENDO;
+    this.finAturdido = 0;
+    this.finProteccion = 0;
+    this.parpadeo = null;
+    this.reaparece = false;   // Aparece después de morir: al tocar el piso sigue protegido un rato
 
     // --- VARIABLES DE HABILIDADES Y CONTROL ---
-    this.isWallJumping = false;
-    this.isDashing = false;
     this.tieneControlAereo = true;
     this.bufferSaltoTimer = 0;
     this.coyoteTimer = 0;
     this.dropThroughTimer = 0;
     this.tiempoUltimoTap = { left: 0, right: 0 };
-    this.delayDobleTap = FISICA.dobleToque;
     this.saltoCortable = false;
 
-    // --- NUEVO: SISTEMA DE DOBLE CANDADO PARA EL DASH ---
+    // El dash pide dos cosas: que haya pasado el cooldown y que se haya recargado tocando piso, pared o un enemigo
     this.dashDisponible = true;
     this.ultimoDashTimer = 0;
-    this.dashCooldown = FISICA.dashCooldown; // Tiempo mínimo entre dashes
 
     // --- COMBATE ---
     this.katana = null;
@@ -66,13 +74,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.quiereAtravesarOneWay = false;
     this.bloquearCaidaPesada = false;
 
-    if (configTeclado) {
-      this.teclas = configTeclado;
-    } else {
-      this.teclas = scene.input.keyboard.createCursorKeys();
-      this.teclas.ataque = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
-      this.teclas.especial = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
-    }
+    this.control = new Control(scene, teclas);
 
     // --- SISTEMA DE HABILIDADES MODULARES ---
     this.habilidades = {
@@ -82,11 +84,6 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       caidaPesada: true
     };
 
-    // ÍNDICE DEL GAMEPAD ASIGNADO DINÁMICAMENTE POR LA ESCENA
-    this.assignedPadIndex = null;
-
-    this.prevPadState = { left: false, right: false, down: false, A: false, R1: false, X: false, Y: false };
-
     this.estadoDebugHabilidades = 0;
     this.saltoExtraDisponible = false;
     if (DEBUG) {
@@ -95,67 +92,38 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  // MÉTODO PARA ASIGNAR EL PAD DESDE LA ESCENA
-  asignarPadIndex(index) {
-    this.assignedPadIndex = index;
-  }
+  get muerto() { return this.estado === ESTADO.MUERTO; }
+  get eliminado() { return this.estado === ESTADO.ELIMINADO; }
+  get apareciendo() { return this.estado === ESTADO.APARECIENDO; }
+  get aturdido() { return this.estado === ESTADO.ATURDIDO; }
 
   get proteccion() {
-    return this.isInvul || this.isSpawning ? PROTECCION.INTOCABLE : PROTECCION.NORMAL;
+    const sinControl = this.apareciendo || this.aturdido || this.muerto;
+    return sinControl || this.sceneRef.time.now < this.finProteccion ? PROTECCION.INTOCABLE : PROTECCION.NORMAL;
+  }
+
+  // Protección con parpadeo. Lo que dura está en finProteccion: el parpadeo es solo cómo se ve.
+  proteger(ms, alfa = 0.2) {
+    this.finProteccion = this.sceneRef.time.now + ms;
+    this.parpadear(alfa);
+  }
+
+  parpadear(alfa) {
+    this.dejarDeParpadear();
+    this.parpadeo = this.sceneRef.tweens.add({ targets: this, alpha: alfa, duration: 100, yoyo: true, repeat: -1 });
+  }
+
+  dejarDeParpadear() {
+    if (!this.parpadeo) return;
+    this.parpadeo.remove();
+    this.parpadeo = null;
+    this.setAlpha(1);
   }
 
   tieneHabilidad(nombre) {
     if (this.estadoDebugHabilidades === 1) return true;
     if (this.estadoDebugHabilidades === 2) return false;
     return this.habilidades[nombre];
-  }
-
-  obtenerPad() {
-    const gamepad = this.sceneRef.input.gamepad;
-    if (this.assignedPadIndex === null || !gamepad || gamepad.total === 0) return null;
-    return gamepad.getPad(this.assignedPadIndex) || null;
-  }
-
-  obtenerInputs() {
-    const pad = this.obtenerPad();
-
-    const stickIzqX = (pad && pad.leftStick) ? pad.leftStick.x : 0;
-    const stickIzqY = (pad && pad.leftStick) ? pad.leftStick.y : 0;
-    const stickDerX = (pad && pad.rightStick) ? pad.rightStick.x : 0;
-    const stickDerY = (pad && pad.rightStick) ? pad.rightStick.y : 0;
-
-    const padLeft = pad ? (pad.left || stickIzqX < -0.5 || stickDerX < -0.5) : false;
-    const padRight = pad ? (pad.right || stickIzqX > 0.5 || stickDerX > 0.5) : false;
-    const padDown = pad ? (pad.down || stickIzqY > 0.5 || stickDerY > 0.5) : false;
-
-    const padA = boton(pad, PAD.A);
-    const padR1 = boton(pad, PAD.R1);
-    const padX = boton(pad, PAD.X);
-    const padY = boton(pad, PAD.Y);
-
-    const padLeftJustDown = padLeft && !this.prevPadState.left;
-    const padRightJustDown = padRight && !this.prevPadState.right;
-    const padAJustDown = padA && !this.prevPadState.A;
-    const padR1JustDown = padR1 && !this.prevPadState.R1;
-    const padXJustDown = padX && !this.prevPadState.X;
-    const padYJustDown = padY && !this.prevPadState.Y;
-
-    this.prevPadState = { left: padLeft, right: padRight, down: padDown, A: padA, R1: padR1, X: padX, Y: padY };
-
-    return {
-      leftIsDown: this.teclas.left.isDown || padLeft,
-      rightIsDown: this.teclas.right.isDown || padRight,
-      downIsDown: this.teclas.down.isDown || padDown,
-      upIsDown: this.teclas.up.isDown || padA,
-
-      leftJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.left) || padLeftJustDown,
-      rightJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.right) || padRightJustDown,
-      upJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.up) || padAJustDown,
-
-      dashJustDown: padR1JustDown,
-      ataqueJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.ataque) || padXJustDown,
-      especialJustDown: Phaser.Input.Keyboard.JustDown(this.teclas.especial) || padYJustDown
-    };
   }
 
   actualizarDebug() {
@@ -187,6 +155,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   update() {
     if (this.eliminado) return;
     if (DEBUG) this.actualizarDebug();
+    if (!this.apareciendo && this.sceneRef.time.now >= this.finProteccion) this.dejarDeParpadear();
 
     if (this.muerto) {
       this.anims.play(`${this.animPrefix}-stun`, true);
@@ -197,7 +166,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    const input = this.obtenerInputs();
+    const input = this.control.leer();
 
     if (this.katana) {
       const direccion = this.flipX ? -1 : 1;
@@ -205,240 +174,207 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       this.sceneRef.procesarKatana(this);
     }
 
-    if (this.isSpawning) {
-      this.setVelocityX(0);
-      this.anims.play(`${this.animPrefix}-caer`, true);
-      if (this.body.touching.down || this.body.blocked.down) {
-        this.isSpawning = false;
-      } else {
-        return;
-      }
-    }
+    // Cada estado sin control decide si ya terminó; si terminó, en este mismo cuadro el ninja actúa
+    if (this.apareciendo && !this.terminoDeAparecer()) return;
+    if (this.aturdido && !this.terminoAturdimiento()) return;
+    if (this.estado === ESTADO.DASH) return;
 
-    if (this.isStunned) {
+    this.actuar(input);
+  }
+
+  terminoDeAparecer() {
+    this.setVelocityX(0);
+    this.anims.play(`${this.animPrefix}-caer`, true);
+    if (!this.body.touching.down && !this.body.blocked.down) return false;
+    this.estado = ESTADO.LIBRE;
+    if (this.reaparece) {
+      this.reaparece = false;
+      this.finProteccion = this.sceneRef.time.now + CONFIG.INVUL_RESPAWN;
+    }
+    return true;
+  }
+
+  terminoAturdimiento() {
+    if (this.sceneRef.time.now < this.finAturdido) {
       this.anims.play(`${this.animPrefix}-stun`, true);
-      return;
+      return false;
     }
+    this.estado = ESTADO.LIBRE;
+    this.proteger(FISICA.parpadeoGolpe);
+    return true;
+  }
 
-    if (this.isDashing) {
-        return;
-    }
+  get enSaltoPared() {
+    return this.estado === ESTADO.SALTO_PARED;
+  }
 
-    if (input.ataqueJustDown) this.atacar();
-    if (input.especialJustDown) this.usarEspecial();
+  get quiereSaltar() {
+    return this.sceneRef.time.now < this.bufferSaltoTimer;
+  }
 
-    const tiempoActual = this.sceneRef.time.now;
+  // Los controles en orden. Cada salto o dash que se usa corta lo que sigue, así que este orden no se puede cambiar sin probar.
+  actuar(input) {
+    if (input.recienAtaque) this.atacar();
+    if (input.recienEspecial) this.usarEspecial();
 
-    if (input.upJustDown) {
-      this.bufferSaltoTimer = tiempoActual + FISICA.bufferSalto;
-    }
-    let quiereSaltar = tiempoActual < this.bufferSaltoTimer;
+    const ahora = this.sceneRef.time.now;
+    if (input.recienSalto) this.bufferSaltoTimer = ahora + FISICA.bufferSalto;
+    this.cortarSaltoSiSuelta(input);
 
-    // --- SALTO VARIABLE: soltar el botón en plena subida corta el salto ---
-    if (this.body.velocity.y >= 0) this.saltoCortable = false;
-    if (this.saltoCortable && !input.upIsDown) {
-      this.setVelocityY(this.body.velocity.y * FISICA.corteSalto);
-      this.saltoCortable = false;
-    }
-
-    // --- DETECCIÓN DE ENTORNO ---
     let enElPiso = this.body.touching.down || this.body.blocked.down;
     // Fuera de la pantalla no hay agarre: si no, el ninja podría colgarse de una pared que no se ve
     const hayAgarre = !fueraDeVista(this);
-    const tocandoParedIzquierda = hayAgarre && (this.body.blocked.left || this.body.touching.left);
-    const tocandoParedDerecha = hayAgarre && (this.body.blocked.right || this.body.touching.right);
-    const tocandoPared = tocandoParedIzquierda || tocandoParedDerecha;
+    const paredIzquierda = hayAgarre && (this.body.blocked.left || this.body.touching.left);
+    const paredDerecha = hayAgarre && (this.body.blocked.right || this.body.touching.right);
+    const tocandoPared = paredIzquierda || paredDerecha;
 
-    // RECARGA DE DASH POR ENTORNO
-    if (enElPiso || tocandoPared) {
-      this.dashDisponible = true;
-    }
+    if (enElPiso || tocandoPared) this.dashDisponible = true;
+    if (this.intentarDash(input, ahora)) return;
 
-    // EL DOBLE CANDADO: ¿Tiene la habilidad? Y ¿Pasó el cooldown? Y ¿Tocó el piso/pared/enemigo?
-    const puedeDashear = this.tieneHabilidad('dash') && this.dashDisponible && (tiempoActual >= this.ultimoDashTimer);
+    this.prepararCaida(input, enElPiso, ahora);
 
-    if (input.leftJustDown) {
-        if (tiempoActual - this.tiempoUltimoTap.left < this.delayDobleTap && puedeDashear) {
-            this.ejecutarDash(-1);
-            return;
-        }
-        this.tiempoUltimoTap.left = tiempoActual;
-    }
+    if (!enElPiso && tocandoPared) this.intentarSaltoPared(paredIzquierda);
 
-    if (input.rightJustDown) {
-        if (tiempoActual - this.tiempoUltimoTap.right < this.delayDobleTap && puedeDashear) {
-            this.ejecutarDash(1);
-            return;
-        }
-        this.tiempoUltimoTap.right = tiempoActual;
-    }
-
-    if (input.dashJustDown && puedeDashear) {
-        const direccion = input.leftIsDown ? -1 : (input.rightIsDown ? 1 : (this.flipX ? -1 : 1));
-        this.ejecutarDash(direccion);
-        return;
-    }
-
-    if (enElPiso && input.downIsDown) {
-      this.bloquearCaidaPesada = true;
-    }
-    if (!input.downIsDown) {
-      this.bloquearCaidaPesada = false;
-    }
-
-    if (enElPiso) {
-      this.tieneControlAereo = true;
-      this.body.allowGravity = true;
-      this.coyoteTimer = tiempoActual + FISICA.coyote;
-      if (this.tieneHabilidad('dobleSalto')) {
-        this.saltoExtraDisponible = true;
-      }
-    }
-    const puedeUsarCoyote = tiempoActual < this.coyoteTimer;
-
-    if (enElPiso && input.downIsDown) {
-      this.dropThroughTimer = tiempoActual + 200;
-    }
-    this.quiereAtravesarOneWay = (tiempoActual < this.dropThroughTimer);
-
-    const wallJumpIzquierda = tocandoParedIzquierda && quiereSaltar;
-    const wallJumpDerecha = tocandoParedDerecha && quiereSaltar;
-
-    if (!enElPiso && (wallJumpIzquierda || wallJumpDerecha) && this.tieneHabilidad('wallJump')) {
-      this.isWallJumping = true;
-      this.tieneControlAereo = false;
-      this.bufferSaltoTimer = 0;
-      quiereSaltar = false;
-      this.setVelocityY(FISICA.saltoPared * this.factorSalto);
-      this.saltoCortable = true;
-
-      if (tocandoParedIzquierda) {
-        this.setVelocityX(FISICA.empujePared);
-        this.setFlipX(false);
-      } else {
-        this.setVelocityX(-FISICA.empujePared);
-        this.setFlipX(true);
-      }
-
-      Sonido.efecto(this.sceneRef, 'snd-salto', 1.2);
-    }
-
-    if (this.isWallJumping && !this.bloqueoWallJumpConfigurado) {
-      this.bloqueoWallJumpConfigurado = true;
-      this.sceneRef.time.delayedCall(250, () => {
-        this.isWallJumping = false;
-        this.bloqueoWallJumpConfigurado = false;
-      });
-    }
-
-    if ((enElPiso || puedeUsarCoyote) && quiereSaltar) {
+    const puedeUsarCoyote = ahora < this.coyoteTimer;
+    if ((enElPiso || puedeUsarCoyote) && this.quiereSaltar) {
       this.setVelocityY(FISICA.salto * this.factorSalto);
       enElPiso = false;
       this.bufferSaltoTimer = 0;
       this.coyoteTimer = 0;
-      quiereSaltar = false;
       this.saltoCortable = true;
       Sonido.efecto(this.sceneRef, 'snd-salto', 1);
     }
 
-    if (!enElPiso && input.downIsDown && !this.bloquearCaidaPesada && this.tieneHabilidad('caidaPesada')) {
+    if (!enElPiso && input.abajo && !this.bloquearCaidaPesada && this.tieneHabilidad('caidaPesada')) {
       this.setVelocityY(FISICA.caidaRapida);
     }
 
-    if (!enElPiso && !this.tieneControlAereo) {
-      if (!input.leftIsDown && !input.rightIsDown) {
-        this.tieneControlAereo = true;
-      }
+    if (!enElPiso && !this.tieneControlAereo && !input.izquierda && !input.derecha) {
+      this.tieneControlAereo = true;
+    }
+    if (!this.enSaltoPared && (enElPiso || this.tieneControlAereo)) this.moverHorizontal(input, enElPiso);
+
+    if (!enElPiso && !this.enSaltoPared) {
+      this.intentarDobleSalto();
+      if (tocandoPared && this.body.velocity.y > 0) this.setVelocityY(this.body.velocity.y * 0.8);
     }
 
-    if (!this.isWallJumping) {
-      if (enElPiso || this.tieneControlAereo) {
-        const velocidadMaxima = FISICA.velocidadCarrera * this.mods.velocidad;
-        let velocidadObjetivo = 0;
-        let tocandoDireccion = false;
+    this.animar(enElPiso);
+  }
 
-        if (input.leftIsDown) {
-          velocidadObjetivo = -velocidadMaxima;
-          this.setFlipX(true);
-          tocandoDireccion = true;
-        } else if (input.rightIsDown) {
-          velocidadObjetivo = velocidadMaxima;
-          this.setFlipX(false);
-          tocandoDireccion = true;
-        }
-
-        if (tocandoDireccion) {
-          const nuevaVelocidadX = Phaser.Math.Linear(this.body.velocity.x, velocidadObjetivo, FISICA.suavizado);
-          this.setVelocityX(nuevaVelocidadX);
-        } else {
-          if (enElPiso) {
-            const nuevaVelocidadX = Phaser.Math.Linear(this.body.velocity.x, 0, FISICA.suavizado);
-            if (Math.abs(nuevaVelocidadX) < 5) {
-              this.setVelocityX(0);
-            } else {
-              this.setVelocityX(nuevaVelocidadX);
-            }
-          }
-        }
-      }
-    }
-
-    if (!enElPiso && !this.isWallJumping) {
-      if (quiereSaltar && this.saltoExtraDisponible && this.tieneHabilidad('dobleSalto')) {
-        this.setVelocityY(FISICA.dobleSalto * this.factorSalto);
-        this.saltoExtraDisponible = false;
-        this.bufferSaltoTimer = 0;
-        quiereSaltar = false;
-        this.saltoCortable = true;
-        Sonido.efecto(this.sceneRef, 'snd-salto', 1.2);
-        this.setAlpha(0.5);
-        this.sceneRef.time.delayedCall(150, () => this.setAlpha(1));
-      }
-
-      if (tocandoPared && this.body.velocity.y > 0) {
-        this.setVelocityY(this.body.velocity.y * 0.8);
-      }
-    }
-
-    if (this.isDashing) {
-      this.anims.play(`${this.animPrefix}-saltar`, true);
-    } else if (this.isWallJumping) {
-      this.anims.play(`${this.animPrefix}-saltar`, true);
-    } else if (tocandoPared && !enElPiso && this.body.velocity.y > 0) {
-      this.anims.play(`${this.animPrefix}-caer`, true);
-    } else if (!enElPiso) {
-      if (this.body.velocity.y < 0) {
-        this.anims.play(`${this.animPrefix}-saltar`, true);
-      } else {
-        this.anims.play(`${this.animPrefix}-caer`, true);
-      }
-    } else {
-      if (this.body.velocity.x !== 0) {
-        this.anims.play(`${this.animPrefix}-caminar`, true);
-      } else {
-        this.anims.play(`${this.animPrefix}-idle`, true);
-      }
+  // Salto variable: soltar el botón en plena subida corta el salto
+  cortarSaltoSiSuelta(input) {
+    if (this.body.velocity.y >= 0) this.saltoCortable = false;
+    if (this.saltoCortable && !input.salto) {
+      this.setVelocityY(this.body.velocity.y * FISICA.corteSalto);
+      this.saltoCortable = false;
     }
   }
 
+  intentarDash(input, ahora) {
+    const puedeDashear = this.tieneHabilidad('dash') && this.dashDisponible && ahora >= this.ultimoDashTimer;
+    const dobleToque = (lado, recien, direccion) => {
+      if (!recien) return false;
+      if (ahora - this.tiempoUltimoTap[lado] < FISICA.dobleToque && puedeDashear) {
+        this.ejecutarDash(direccion);
+        return true;
+      }
+      this.tiempoUltimoTap[lado] = ahora;
+      return false;
+    };
+    if (dobleToque('left', input.recienIzquierda, -1) || dobleToque('right', input.recienDerecha, 1)) return true;
+
+    if (input.recienDash && puedeDashear) {
+      const mirando = this.flipX ? -1 : 1;
+      this.ejecutarDash(input.izquierda ? -1 : (input.derecha ? 1 : mirando));
+      return true;
+    }
+    return false;
+  }
+
+  // Lo que recarga el piso y las dos formas de usar abajo: caída pesada en el aire y atravesar pasarelas
+  prepararCaida(input, enElPiso, ahora) {
+    if (enElPiso && input.abajo) this.bloquearCaidaPesada = true;
+    if (!input.abajo) this.bloquearCaidaPesada = false;
+
+    if (enElPiso) {
+      this.tieneControlAereo = true;
+      this.body.allowGravity = true;
+      this.coyoteTimer = ahora + FISICA.coyote;
+      if (this.tieneHabilidad('dobleSalto')) this.saltoExtraDisponible = true;
+      if (input.abajo) this.dropThroughTimer = ahora + 200;
+    }
+    this.quiereAtravesarOneWay = ahora < this.dropThroughTimer;
+  }
+
+  intentarSaltoPared(paredIzquierda) {
+    if (!this.quiereSaltar || !this.tieneHabilidad('wallJump')) return;
+    if (!this.enSaltoPared) {
+      this.sceneRef.time.delayedCall(FISICA.bloqueoSaltoPared, () => {
+        if (this.enSaltoPared) this.estado = ESTADO.LIBRE;
+      });
+    }
+    this.estado = ESTADO.SALTO_PARED;
+    this.tieneControlAereo = false;
+    this.bufferSaltoTimer = 0;
+    this.saltoCortable = true;
+    this.setVelocityY(FISICA.saltoPared * this.factorSalto);
+    this.setVelocityX(paredIzquierda ? FISICA.empujePared : -FISICA.empujePared);
+    this.setFlipX(!paredIzquierda);
+    Sonido.efecto(this.sceneRef, 'snd-salto', 1.2);
+  }
+
+  moverHorizontal(input, enElPiso) {
+    const { velocity } = this.body;
+    const tope = FISICA.velocidadCarrera * this.mods.velocidad;
+    if (input.izquierda || input.derecha) {
+      this.setFlipX(input.izquierda);
+      this.setVelocityX(Phaser.Math.Linear(velocity.x, input.izquierda ? -tope : tope, FISICA.suavizado));
+    } else if (enElPiso) {
+      const frenando = Phaser.Math.Linear(velocity.x, 0, FISICA.suavizado);
+      this.setVelocityX(Math.abs(frenando) < 5 ? 0 : frenando);
+    }
+  }
+
+  intentarDobleSalto() {
+    if (!this.quiereSaltar || !this.saltoExtraDisponible || !this.tieneHabilidad('dobleSalto')) return;
+    this.setVelocityY(FISICA.dobleSalto * this.factorSalto);
+    this.saltoExtraDisponible = false;
+    this.bufferSaltoTimer = 0;
+    this.saltoCortable = true;
+    Sonido.efecto(this.sceneRef, 'snd-salto', 1.2);
+    this.setAlpha(0.5);
+    this.sceneRef.time.delayedCall(150, () => this.setAlpha(1));
+  }
+
+  animar(enElPiso) {
+    const { velocity } = this.body;
+    let animacion;
+    if (this.enSaltoPared) animacion = 'saltar';
+    else if (!enElPiso) animacion = velocity.y < 0 ? 'saltar' : 'caer';
+    else animacion = velocity.x !== 0 ? 'caminar' : 'idle';
+    this.anims.play(`${this.animPrefix}-${animacion}`, true);
+  }
+
   ejecutarDash(direccion) {
-    this.isDashing = true;
-    this.dashDisponible = false; // Consumimos la recarga
-    this.ultimoDashTimer = this.sceneRef.time.now + this.dashCooldown; // Arrancamos el cooldown
+    this.estado = ESTADO.DASH;
+    this.dashDisponible = false;
+    this.ultimoDashTimer = this.sceneRef.time.now + FISICA.dashCooldown;
     this.saltoCortable = false;
 
     this.body.allowGravity = false;
     this.setVelocityY(0);
-
     this.setVelocityX(direccion * FISICA.dash * this.mods.velocidad);
     this.setFlipX(direccion === -1);
     this.setAlpha(0.6);
 
+    // Con un temporizador y no comparando la hora: un cuadro de diferencia cambia unos 6 px el largo del dash
     this.sceneRef.time.delayedCall(FISICA.dashDuracion, () => {
-        this.isDashing = false;
-        this.body.allowGravity = true;
-        this.setAlpha(1);
-        this.setVelocityX(this.body.velocity.x * 0.4);
+      if (this.estado !== ESTADO.DASH) return;
+      this.estado = ESTADO.LIBRE;
+      this.body.allowGravity = true;
+      this.setAlpha(1);
+      this.setVelocityX(this.body.velocity.x * 0.4);
     });
   }
 
@@ -481,48 +417,30 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     return this.sceneRef.fase === 'caceria' && this.mods.municionInfinitaCaceria;
   }
 
-  aplicarDaño(demonioX, parpadeos = 5) {
-    if (this.sceneRef.modoDiosActivo) return false;
-    if (this.isInvul || this.isSpawning) return false;
+  aplicarDaño(demonioX) {
+    if (this.sceneRef.modoDiosActivo || this.proteccion === PROTECCION.INTOCABLE) return false;
 
-    this.isStunned = true;
-    this.isInvul = true;
+    this.estado = ESTADO.ATURDIDO;
+    this.finAturdido = this.sceneRef.time.now + FISICA.duracionStun;
+    this.body.allowGravity = true;
     this.saltoCortable = false;
     const knockback = this.mods.knockback;
     this.setVelocity((this.x < demonioX ? -FISICA.knockbackX : FISICA.knockbackX) * knockback, FISICA.knockbackY * knockback);
     Sonido.efecto(this.sceneRef, 'snd-stun', 0.5);
-
-    this.sceneRef.time.delayedCall(FISICA.duracionStun, () => {
-      if (this.muerto) return; // Lo mató el fantasma mientras estaba aturdido
-      this.isStunned = false;
-      this.sceneRef.tweens.add({
-        targets: this,
-        alpha: 0.2,
-        duration: 100,
-        yoyo: true,
-        repeat: parpadeos,
-        onComplete: () => {
-          this.isInvul = false;
-          this.setAlpha(1);
-        }
-      });
-    });
     return true;
   }
 
   // Golpe que cuesta una vida: mismo empujón que un golpe común, pero sin chocar con el escenario ni con los
   // bordes del mundo, así cae fuera de la pantalla. La escena descuenta la vida cuando termina de caer.
   morir(fuenteX) {
-    this.muerto = true;
+    this.estado = ESTADO.MUERTO;
     this.caidaAvisada = false;
-    this.isStunned = true;
-    this.isInvul = true;
-    this.isDashing = false;
     this.saltoCortable = false;
     if (this.katana) {
       this.katana.destroy();
       this.katana = null;
     }
+    this.dejarDeParpadear();
     this.sceneRef.tweens.killTweensOf(this);
     this.setAlpha(1).setDepth(60);
     this.setCollideWorldBounds(false);
@@ -532,45 +450,21 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     Sonido.efecto(this.sceneRef, 'snd-stun', 0.5);
   }
 
-  // Vuelve a caer desde arriba como al empezar el nivel, y titila invulnerable un rato después de tocar el piso
+  // Vuelve a caer desde arriba como al empezar el nivel, y titila protegido un rato después de tocar el piso
   respawnear(x) {
-    this.muerto = false;
-    this.isStunned = false;
-    this.isDashing = false;
-    this.isWallJumping = false;
+    this.estado = ESTADO.APARECIENDO;
+    this.reaparece = true;
     this.setDepth(10).setAlpha(1);
     this.setCollideWorldBounds(true);
     this.body.reset(x, -32);
-    this.isSpawning = true;
-    this.isInvul = true;
     this.dashDisponible = true;
-    this.sceneRef.tweens.add({
-      targets: this,
-      alpha: 0.2,
-      duration: 100,
-      yoyo: true,
-      repeat: -1
-    });
-    const esperarPiso = () => {
-      if (!this.active || this.muerto) return;
-      if (this.isSpawning) {
-        this.sceneRef.time.delayedCall(100, esperarPiso);
-        return;
-      }
-      this.sceneRef.time.delayedCall(CONFIG.INVUL_RESPAWN, () => {
-        if (!this.active || this.muerto) return;
-        this.sceneRef.tweens.killTweensOf(this);
-        this.setAlpha(1);
-        this.isInvul = false;
-      });
-    };
-    esperarPiso();
+    this.parpadear(0.2);
   }
 
   // Sin vidas: deja de jugar y de ocupar lugar en la física
   retirar() {
-    this.eliminado = true;
-    this.muerto = false;
+    this.estado = ESTADO.ELIMINADO;
+    this.parpadeo = null;
     if (this.katana) {
       this.katana.destroy();
       this.katana = null;
@@ -582,7 +476,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   // Empujón sin daño (explosiones y katanazos del compañero: "fuego amigo cinético")
   empujar(vx, vy) {
-    if (this.isSpawning || this.muerto || this.eliminado) return;
+    if (this.apareciendo || this.muerto || this.eliminado) return;
     this.setVelocity(vx, vy);
     this.saltoCortable = false;
   }
@@ -596,18 +490,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.setVelocityY(FISICA.pisoton * this.factorSalto);
     Sonido.efecto(this.sceneRef, 'snd-salto', 1);
 
-    this.isInvul = true;
-    this.sceneRef.tweens.add({
-      targets: this,
-      alpha: 0.5,
-      duration: 100,
-      yoyo: true,
-      repeat: 2,
-      onComplete: () => {
-        this.isInvul = false;
-        this.setAlpha(1);
-      }
-    });
+    this.proteger(FISICA.parpadeoPisoton, 0.5);
   }
 
   destroy(fromScene) {

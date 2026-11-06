@@ -5,6 +5,23 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-06 — Claude: etapa 8 de la v2, estados del ninja y controles
+
+- La 7 espera la lista de pergaminos de Mariano, así que se hizo antes la 8.
+- Antes de tocar nada se midió el movimiento (`movimiento.json`): no había pruebas de salto, doble salto, dash ni salto de pared. Las medidas dan igual después de reorganizar.
+- `entrada/Control.js`: teclado y joystick de cada jugador en acciones. Las teclas están en `TECLAS` (`config.js`).
+- `Ninja`: un solo estado por vez (`ESTADO`) y la protección en un solo lugar, medida en tiempo. Ya no depende de que termine un parpadeo.
+- Cambios mínimos a propósito: morir o aturdirse durante un dash ya no deja al ninja un instante sin gravedad.
+- El banco de pruebas usa `servidor.py`: el servidor simple de Python rechazaba conexiones y a veces un nivel no cargaba. Era el servidor de pruebas, no el juego.
+
+**Pendientes**
+- Mariano: probar el movimiento con teclado y joystick. Las pruebas usan solo teclado y no miden el coyote time.
+- Saltar sobre ítems queda como mecánica del juego, a pedido de Mariano.
+- La katana aleja los ítems del centro del ninja, y un ítem empujado es un proyectil hasta que frena. Modificadores `fuegoAmigo` y `dañoPropio` listos para los pergaminos.
+- Mariano: lista revisada de pergaminos y de habilidades, para la etapa 7.
+
+---
+
 ## 2026-11-06 — Claude: etapa 6 de la v2, trampa y fuego
 
 - Trampa: bloque sólido. Golpea al ninja según la fase y enfurece a los enemigos, sin hacerlos vulnerables.
