@@ -5,6 +5,25 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-06 — Claude: etapa 5 de la v2, reglas y golpes en un solo lugar
+
+- `reglas/Fases.js`: tabla de reglas por fase. `reglas/Resolvedor.js`: todo golpe pasa por `resolverGolpe`, con su bando y la protección del ninja.
+- Un solo grupo de proyectiles, cada uno con `bando` y `duenio`. Los enemigos usan su vida real; todos tienen 1, así que siguen muriendo de un golpe.
+- El juego se juega igual. La diferencia es interna: la vulnerabilidad la decide la fase y no el estar enfurecido.
+- En `v2` la API de Traducila quedó apagada: los textos salen de `i18n.js` (idea de Mariano). `main` la sigue usando.
+- Arreglada una prueba que fallaba al azar (la moneda que pierde valor): también fallaba sin estos cambios.
+- Corregido en el wrap: el caminante no veía piso del otro lado del corte y quedaba yendo y viniendo oculto, sin dejar terminar la Cacería.
+- Corregido: un archivo de nivel que no llegaba rompía el arranque. Ese error también está en `main`, y es muy poco probable que aparezca.
+- Corregida la pérdida de talismanes, a pedido de Mariano: un golpe en la Recolección tira todos, que vuelven a caer, y borra las monedas, como dice el GDD. El juego perdía solo el último desde hace tiempo: en `main` sigue así.
+- Rareza de la v1, para la etapa 8: tocar un ítem en el aire cuenta un instante como estar en el piso.
+
+**Pendientes**
+- Antes de pasar `v2` a `main`: decidir si los profes necesitan seguir viendo la API. Si es así, poner `TRADUCCIONES.activa` en `true`.
+- Mariano: lista revisada de pergaminos y de habilidades.
+- Etapa 6: tiles de trampa y fuego.
+
+---
+
 ## 2026-11-06 — Claude: etapa 4 de la v2, wrap en un nivel de prueba
 
 - `mundo/Mundo.js`: el wrap, en los dos ejes. Jugadores, ítems, cajas, enemigos y proyectiles cruzan; el ninja muerto no.

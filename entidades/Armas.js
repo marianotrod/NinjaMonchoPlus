@@ -3,7 +3,7 @@
 //   shuriken: proyectil rápido que cae muy poco (FISICA.caidaShuriken).
 //   bumeran:  va y vuelve; arrastra talismanes y monedas hacia el jugador y golpea varias veces.
 //   bomba:    tiro con rebote corto que explota y empuja todo lo que esté cerca.
-import { FISICA } from '../config.js';
+import { BANDO, FISICA } from '../config.js';
 import { proyectilVencido } from '../mundo/Mundo.js';
 import { Sonido } from '../sistemas/Sonido.js';
 
@@ -23,7 +23,8 @@ export function dispararArma(scene, ninja) {
 
   const direccion = ninja.flipX ? -1 : 1;
   const datos = ARMAS[ninja.arma];
-  const proyectil = scene.proyectilesJugador.create(ninja.x + direccion * 8, ninja.y - 2, ninja.arma);
+  const proyectil = scene.proyectiles.create(ninja.x + direccion * 8, ninja.y - 2, ninja.arma);
+  proyectil.bando = BANDO.JUGADORES;
   proyectil.body.setSize(10, 10); // El dibujo es de 16x16 pero el área de impacto es más chica (si no, roza el piso al tirar)
   proyectil.tipo = ninja.arma;
   proyectil.duenio = ninja;
@@ -60,7 +61,13 @@ export function dispararArma(scene, ninja) {
 
 export function actualizarProyectiles(scene) {
   const ahora = scene.time.now;
-  scene.proyectilesJugador.getChildren().slice().forEach(p => {
+  scene.proyectiles.getChildren().slice().forEach(p => {
+    if (p.bando === BANDO.DEMONIOS) {
+      const termino = scene.conWrap ? proyectilVencido(p, ahora) : (p.x < -24 || p.x > 536 || p.y > 310 || p.y < -60);
+      if (termino) p.destroy();
+      return;
+    }
+
     const fuera = !scene.conWrap && (p.x < -24 || p.x > 536 || p.y > 310 || p.y < -80);
 
     if (p.tipo === 'bumeran') {

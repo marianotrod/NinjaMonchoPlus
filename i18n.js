@@ -90,7 +90,7 @@ const textos = {
     ayuda_objetivo_titulo: 'OBJETIVO',
     ayuda_objetivo:
       'JUNTÁ 3 TALISMANES DE CADA FORMA ANTES DE QUE SE ACABE EL TIEMPO. ARRIBA SE VAN ENCENDIENDO LOS QUE YA TENÉS.\n\n' +
-      'LOS DEMONIOS SON INMUNES: SALTALES ENCIMA O DALES CON LA KATANA PARA ATURDIRLOS. SI TE TOCAN, SE TE CAE UN TALISMÁN.\n\n' +
+      'LOS DEMONIOS SON INMUNES: SALTALES ENCIMA O DALES CON LA KATANA PARA ATURDIRLOS. SI TE TOCAN, SE TE CAEN TODOS LOS TALISMANES Y DESAPARECEN LAS MONEDAS.\n\n' +
       'LAS MONEDAS DAN PUNTOS, PERO VALEN MENOS CADA VEZ QUE REBOTAN.\n\n' +
       'SI EL RELOJ LLEGA A 0 APARECE EL FANTASMA: SI TE TOCA, PERDÉS UNA VIDA.',
     ayuda_caceria_titulo: 'CACERÍA',
@@ -199,7 +199,7 @@ const textos = {
     ayuda_objetivo_titulo: 'GOAL',
     ayuda_objetivo:
       'COLLECT 3 TALISMANS OF EACH SHAPE BEFORE TIME RUNS OUT. THE ICONS AT THE TOP LIGHT UP AS YOU GET THEM.\n\n' +
-      'DEMONS ARE IMMUNE: STOMP THEM OR USE THE KATANA TO STUN THEM. IF THEY TOUCH YOU, YOU DROP A TALISMAN.\n\n' +
+      'DEMONS ARE IMMUNE: STOMP THEM OR USE THE KATANA TO STUN THEM. IF THEY TOUCH YOU, YOU DROP ALL YOUR TALISMANS AND THE COINS DISAPPEAR.\n\n' +
       'COINS GIVE POINTS, BUT THEY ARE WORTH LESS EVERY TIME THEY BOUNCE.\n\n' +
       'IF THE CLOCK HITS 0 THE GHOST APPEARS: IF IT TOUCHES YOU, YOU LOSE A LIFE.',
     ayuda_caceria_titulo: 'THE HUNT',
@@ -245,7 +245,7 @@ export async function cargarTraducciones() {
   const idiomas = Object.keys(textos).filter(idioma => idioma !== IDIOMA_BASE);
   await Promise.all(idiomas.map(async (idioma) => {
     origenes[idioma] = 'local';
-    if (!TRADUCCIONES.proyecto) return;
+    if (!TRADUCCIONES.activa) return;
     const claveCopia = `traducciones.${TRADUCCIONES.proyecto}.${idioma}`;
     try {
       remotas[idioma] = await pedirIdioma(idioma);

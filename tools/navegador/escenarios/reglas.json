@@ -1,0 +1,25 @@
+{
+  "descripcion": "Reglas por fase, vida de los enemigos y bandos: cada golpe hace lo que dice la tabla",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego()", "timeout": 8000, "nombre": "arranca el nivel"},
+    {"hasta": "prueba.estado().fase === 'recoleccion'", "timeout": 4000, "nombre": "arranca la Recolección"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"verificar": "Recolección: enemigos invulnerables y un golpe aturde", "eval": "prueba.reglas()", "espera": {"jugable": true, "enemigosVulnerables": false, "golpeAlNinja": "aturde", "hayTalismanes": true}},
+    {"eval": "(prueba.crearEnemigo('demonio_caminante', 300, 264), prueba.enemigos().length)"},
+    {"eval": "(prueba.ponerJugador(1, 290, 264), prueba.mirar(1, 1), prueba.ponerVidaEnemigo(0, 2), prueba.atacar(1), true)"},
+    {"wait": 120},
+    {"verificar": "en la Recolección la katana aturde y no resta vida", "eval": "prueba.enemigo(0)", "espera": {"aturdido": true, "hp": 2}},
+    {"eval": "(prueba.sinEnemigos(), prueba.completarRecoleccion(), true)"},
+    {"verificar": "Transición: los enemigos ya son vulnerables y al ninja no le pasa nada", "eval": "prueba.reglas()", "espera": {"enemigosVulnerables": true, "golpeAlNinja": "nada", "hayTalismanes": false}},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"verificar": "Cacería: un golpe cuesta una vida y las bajas cuentan", "eval": "prueba.reglas()", "espera": {"enemigosVulnerables": true, "golpeAlNinja": "vida", "cuentaBajas": true}},
+    {"eval": "(prueba.sinEnemigos(), prueba.crearEnemigo('demonio_caminante', 300, 264), prueba.proteger(1), prueba.ponerJugador(1, 290, 264), prueba.mirar(1, 1), prueba.ponerVidaEnemigo(0, 2), prueba.atacar(1), true)"},
+    {"wait": 120},
+    {"verificar": "un enemigo con 2 de vida sobrevive al primer golpe, aturdido", "eval": "prueba.enemigo(0)", "espera": {"hp": 1, "aturdido": true, "muerto": false}},
+    {"eval": "(prueba.proteger(1), prueba.ponerJugador(1, 200, 264), prueba.proyectilEnemigo(320, prueba.enemigo(0).y, -200, 0), true)"},
+    {"wait": 300},
+    {"verificar": "bando: un proyectil de los demonios no le hace nada a un enemigo", "eval": "prueba.enemigo(0).hp === 1"}
+  ]
+}

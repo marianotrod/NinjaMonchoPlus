@@ -40,7 +40,7 @@ export function registrarNiveles(cache) {
   cache.json.get('indice-niveles').niveles.forEach(({ id }) => {
     const nivel = cache.json.get(`nivel-${id}`);
     validarNivel(id, nivel).forEach(error => console.error(`Nivel inválido: ${error}`));
-    niveles.set(id, nivel);
+    if (nivel) niveles.set(id, nivel); // Si un archivo no llegó, la partida sigue con los demás
   });
   if (ARRANQUE_DEBUG.borrador) registrarBorrador();
 }

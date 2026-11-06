@@ -7,6 +7,7 @@
     {"verificar": "?mapa= arranca el nivel pedido, con sus 226 bloques", "eval": "prueba.nivel()", "espera": {"id": "n-valle", "bloques": 226, "pasarelas": {"min": 0}}},
     {"verificar": "el jugador cae donde dice el archivo", "eval": "prueba.jugador(1).x === 88"},
     {"hasta": "prueba.estado().fase === 'recoleccion'", "timeout": 4000, "nombre": "arranca la Recolección"},
+    {"verificar": "un nivel que no se pudo cargar no rompe la lista", "eval": "(async () => { const { registrarNiveles, idsDeTipo } = await import('./mundo/Niveles.js'); const cache = { json: { get: (clave) => (clave === 'indice-niveles' ? { niveles: [{ id: 'no-llego' }] } : undefined) } }; registrarNiveles(cache); return idsDeTipo('normal').length > 0; })()"},
     {"shot": "valle"}
   ]
 }

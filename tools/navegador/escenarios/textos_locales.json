@@ -1,0 +1,11 @@
+{
+  "descripcion": "Sin ?api el juego no llama a Traducila: los textos salen de i18n.js, en los dos idiomas",
+  "query": "?debug",
+  "pasos": [
+    {"hasta": "!!window.i18n && !!window.game && Object.keys(i18n.getOrigenes()).length", "timeout": 8000},
+    {"verificar": "no se pide nada a la API", "eval": "({ origen: i18n.getOrigenes().en, pedidos: performance.getEntriesByType('resource').filter(r => r.name.includes('traducila')).length })", "espera": {"origen": "local", "pedidos": 0}},
+    {"verificar": "español local", "eval": "(i18n.setIdioma('es'), i18n.t('menu_1p')) === '1 JUGADOR'"},
+    {"verificar": "inglés local", "eval": "(i18n.setIdioma('en'), i18n.t('menu_1p')) === '1 PLAYER'"},
+    {"eval": "(i18n.setIdioma('es'), true)"}
+  ]
+}

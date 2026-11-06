@@ -1,4 +1,6 @@
 // Enemigo.js
+import { BANDO } from '../config.js';
+import { envolverX } from '../mundo/Mundo.js';
 
 export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, configConfiguracion) {
@@ -8,6 +10,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         // Las físicas se activan en NinjaMonchoScene al hacer this.enemigos.add(demonio)
         scene.add.existing(this);
 
+        this.bando = BANDO.DEMONIOS;
         this.config = configConfiguracion;
         this.hp = configConfiguracion.hp;
         this.rasgos = configConfiguracion.rasgos;
@@ -156,7 +159,8 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
             // ...o si se acaba la plataforma: miramos si hay un bloque justo delante y debajo de los pies
             const direccion = Math.sign(this.body.velocity.x) || 1;
             const xAdelante = direccion > 0 ? this.body.right + 1 : this.body.left - 3;
-            const hayPiso = this.scene.physics.overlapRect(xAdelante, this.body.bottom + 1, 2, 4, false, true).length > 0;
+            const xPiso = this.scene.conWrap ? envolverX(xAdelante) : xAdelante;
+            const hayPiso = this.scene.physics.overlapRect(xPiso, this.body.bottom + 1, 2, 4, false, true).length > 0;
             this.setVelocityX((hayPiso ? direccion : -direccion) * velocidad);
         }
 
@@ -202,6 +206,15 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
 
         this.scene.dispararProyectilEnemigo(this.x, this.y - 6, vx, vy, { gravedad: true });
         this.scene.tweens.add({ targets: this, scaleY: 0.8, duration: 80, yoyo: true });
+    }
+
+    // Pisado sin morir: cae de golpe y un saltarín vuelve a tomar impulso
+    alSerPisado() {
+        this.setVelocityY(250);
+        if (this.rasgos.saltarin.activo) {
+            this.ultimoReboteY = 0;
+            this.contadorRebotes = 0;
+        }
     }
 
     enfurecer(multiplicador = 1.5) {

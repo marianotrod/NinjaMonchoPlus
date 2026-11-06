@@ -5,6 +5,8 @@
 // que el juego se comporte igual. Los jugadores se numeran 1 y 2, como en pantalla.
 import { Bestiario } from '../datos/Bestiario.js';
 import { ARMAS } from '../entidades/Armas.js';
+import { BANDO } from '../config.js';
+import { crearGolpe, resolverGolpe } from '../reglas/Resolvedor.js';
 import { todosLosNiveles, validarNivel } from '../mundo/Niveles.js';
 import { EVENTOS } from '../datos/Eventos.js';
 
@@ -25,7 +27,7 @@ export function instalarPuertaPruebas(game) {
 
   const estadoEnemigo = (e) => ({
     clave: claveEnemigo(e), x: redondear(e.x), y: redondear(e.y),
-    enfurecido: e.enfurecido, aturdido: e.aturdido, muerto: e.muerto
+    enfurecido: e.enfurecido, aturdido: e.aturdido, muerto: e.muerto, hp: e.hp
   });
 
   window.prueba = {
@@ -65,8 +67,8 @@ export function instalarPuertaPruebas(game) {
     enemigos: () => juego().enemigos.getChildren().map(estadoEnemigo),
     enemigo: (i = 0) => { const e = juego().enemigos.getChildren()[i]; return e ? estadoEnemigo(e) : null; },
     proyectiles: () => ({
-      jugador: juego().proyectilesJugador.getChildren().map(p => ({ tipo: p.tipo, x: redondear(p.x), y: redondear(p.y) })),
-      enemigos: juego().proyectilesEnemigos.countActive(true)
+      jugador: juego().proyectilesDe(BANDO.JUGADORES).map(p => ({ tipo: p.tipo, x: redondear(p.x), y: redondear(p.y) })),
+      enemigos: juego().proyectilesDe(BANDO.DEMONIOS).length
     }),
     items: () => juego().items.getChildren().map(i => ({
       talisman: i.esTalisman, tipo: i.texture.key, x: redondear(i.x), y: redondear(i.y),
@@ -171,7 +173,7 @@ export function instalarPuertaPruebas(game) {
     // --- Acciones ---
     golpear(n = 1, desdeLado = 1) {
       const j = jugador(n);
-      juego().recibirGolpe(j, j.x + desdeLado * 5);
+      resolverGolpe(juego(), j, crearGolpe('contacto', { bando: BANDO.DEMONIOS, fuenteX: j.x + desdeLado * 5 }));
       return true;
     },
     atacar(n = 1) {
@@ -186,6 +188,17 @@ export function instalarPuertaPruebas(game) {
     },
     disparar(n = 1) {
       jugador(n).usarEspecial();
+      return true;
+    },
+    // Anota en window.talismanesCaidos cada talismán que vuelve a caer
+    espiarTalismanes() {
+      const s = juego();
+      const original = s.spawnearItem;
+      window.talismanesCaidos = [];
+      s.spawnearItem = function (tipo) {
+        window.talismanesCaidos.push(tipo);
+        return original.call(this, tipo);
+      };
       return true;
     },
     vaciarTalismanes() {
@@ -231,6 +244,11 @@ export function instalarPuertaPruebas(game) {
       else s.finCaceria(false);
       return s.fase;
     },
+    ponerVidaEnemigo(i, hp) {
+      juego().enemigos.getChildren()[i].hp = hp;
+      return true;
+    },
+    reglas: () => ({ ...juego().reglas }),
     proyectilEnemigo(x, y, vx, vy, gravedad = false) {
       return !!juego().dispararProyectilEnemigo(x, y, vx, vy, { gravedad });
     },

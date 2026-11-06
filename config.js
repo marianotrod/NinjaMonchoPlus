@@ -18,13 +18,18 @@ export const ARRANQUE_DEBUG = {
 
 // Traducciones por API (Traducila: https://traducila.vercel.app). Sin proyecto cargado, o si la API falla,
 // el juego usa la última copia guardada o los textos de i18n.js. Con ?debug se puede cambiar: ?debug&api=...&proyecto=...
+// La API de Traducila fue un pedido para la entrega: ahora los textos salen de i18n.js. Para volver a usarla, activa: true.
+// Con ?debug&api=... se prende igual, para que el banco de pruebas siga cubriendo ese código.
 export const TRADUCCIONES = {
+  activa: DEBUG && parametros.has('api'),
   api: (DEBUG && parametros.get('api')) || 'https://traducila.vercel.app',
   proyecto: (DEBUG && parametros.get('proyecto')) || '3ed44ceb-d294-4cfb-9cfa-6a5509745628',
   espera: 3000                 // Tiempo máximo para arrancar sin respuesta de la API (ms)
 };
 
 // Grilla de los niveles: 34×20 tiles, con la pantalla de 32×18 al centro abajo (2 filas ocultas arriba y 1 columna a cada lado).
+export const BANDO = { JUGADORES: 'jugadores', DEMONIOS: 'demonios' };
+
 export const MUNDO = {
   columnas: 34, filas: 20, columnasOcultas: 1, filasOcultas: 2, tile: 16,
   caidaMaxima: 600,    // Tope de velocidad al caer por un hueco y volver a entrar por arriba (px/s)
@@ -59,10 +64,6 @@ export const CONFIG = {
   VALOR_MONEDA: 200,
   CAIDA_VALOR_MONEDA: 0.8,      // En cada rebote la moneda vale esto respecto de lo que valía
 
-  // Qué se pierde al recibir un golpe en la Fase de Recolección:
-  // 'ultimo' = el último talismán (como dice el GDD) | 'todos' = todo el inventario (versión anterior)
-  DAÑO_PIERDE: 'ultimo',
-
   TOPE_ENEMIGOS_BASE: 3,
   TOPE_ENEMIGOS_MAX: 5,
   CUPO_CACERIA_BASE: 3,         // Demonios a cazar: base + nivel / 2, hasta el máximo
@@ -76,7 +77,7 @@ export const CONFIG = {
   PRIMERA_CAJA_ARMAS: 5000,
 
   // Vida que le saca cada cosa a un jefe
-  DAÑO_JEFE: { katana: 1, proyectil: 1, pisoton: 2, explosion: 3 }
+  DAÑO_GOLPE: { katana: 1, proyectil: 1, pisoton: 2, explosion: 3 }
 };
 
 // Parámetros de movimiento del ninja. Gravedad efectiva = gravedadMundo + gravedadJugador = 800 px/s².
@@ -105,6 +106,9 @@ export const FISICA = {
   coyote: 100,
   bufferSalto: 150,
 
+  empujeEnemigo: { x: 200, y: -150 },  // Golpe de katana o proyectil a un enemigo que no muere
+  empujeItem: { x: 220, y: -200 },     // Katana a un talismán o una moneda
+  empujeNinja: { x: 220, y: -160 },    // Katana al compañero
   knockbackX: 180,
   knockbackY: -220,
   duracionStun: 500,

@@ -30,8 +30,7 @@ y se pueden eliminar) → **Pergaminos de Pacto**. Hay 3 vidas por jugador, un f
       Con 5 s o menos: tic más agudo, el número late y se marca el borde rojo de la pantalla.
 - [x] **1.3 Claridad.** Cartel de inicio de nivel con el objetivo y los íconos · HUD con siluetas que se encienden ·
       texto "2/3" y sonido propio al juntar · aviso al perder un talismán · pantalla **CÓMO JUGAR** (3 páginas).
-- [~] **Decisión de diseño:** al recibir daño se pierde **solo el último talismán** (como dice el GDD). Para volver a perder todos:
-      `CONFIG.DAÑO_PIERDE = 'todos'`.
+- [x] **Decisión de diseño:** al recibir daño se pierden **todos los talismanes**, que vuelven a caer, y desaparecen las monedas (como dice el GDD).
 
 ## Fase 2 — Pulido de interfaz
 

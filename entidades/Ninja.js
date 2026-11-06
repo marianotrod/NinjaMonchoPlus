@@ -1,6 +1,7 @@
-import { CONFIG, DEBUG, FISICA, PAD } from '../config.js';
+import { BANDO, CONFIG, DEBUG, FISICA, PAD } from '../config.js';
 import { fueraDeVista } from '../mundo/Mundo.js';
 import { MODS_JUGADOR_BASE } from '../reglas/Pactos.js';
+import { PROTECCION } from '../reglas/Resolvedor.js';
 import { ARMAS, dispararArma } from './Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { EVENTOS } from '../datos/Eventos.js';
@@ -16,6 +17,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
 
     this.sceneRef = scene;
+    this.bando = BANDO.JUGADORES;
     this.animPrefix = animPrefix;
     this.indice = indice; // 0 = Jugador 1, 1 = Jugador 2
 
@@ -96,6 +98,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   // MÉTODO PARA ASIGNAR EL PAD DESDE LA ESCENA
   asignarPadIndex(index) {
     this.assignedPadIndex = index;
+  }
+
+  get proteccion() {
+    return this.isInvul || this.isSpawning ? PROTECCION.INTOCABLE : PROTECCION.NORMAL;
   }
 
   tieneHabilidad(nombre) {

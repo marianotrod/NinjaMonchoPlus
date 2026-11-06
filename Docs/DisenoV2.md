@@ -150,7 +150,7 @@ Cada fase es una **tabla de reglas**. El resto del código consulta la tabla y n
 | Regla | Recolección | Transición | Cacería | Jefe | Pergaminos |
 |---|---|---|---|---|---|
 | Los enemigos son vulnerables | no | — | sí | sí | — |
-| Un golpe al ninja | aturde y quita un talismán | nada | cuesta una vida | cuesta una vida | no hay peligros |
+| Un golpe al ninja | aturde, se caen todos los talismanes (vuelven a aparecer) y desaparecen las monedas | nada | cuesta una vida | cuesta una vida | no hay peligros |
 | Corre el reloj | sí | no | sí | sí | sí, corto (≈5 s) |
 | Aparecen enemigos | sí | no | cupo | los del jefe | no |
 | Pergaminos activos | sí | sí | sí | sí | no |
@@ -347,8 +347,8 @@ tools/editor/    editor de niveles
 | 1 | ✔ Reordenar carpetas, limpieza, constantes y catálogo de eventos | Hecho: 118 pruebas pasan y el juego sigue igual |
 | 2 | ✔ Formato de nivel + cargador + conversión de los 13 mapas | Hecho: el juego sigue igual y lee JSON |
 | 3 | ✔ Editor de niveles | Hecho: pinta, guarda y prueba (falta confirmar el guardado real en Chrome) |
-| 4 | Mundo de 34×20 + wrap + nivel de prueba | **[Probar]** la sensación del wrap |
-| 5 | Reglas por fase, golpe, bando, protección y HP de los enemigos | Comportamiento igual, código centralizado |
+| 4 | ✔ Mundo de 34×20 + wrap + nivel de prueba | Hecho: `n-wrap`; solo en niveles con `"wrap": true` hasta decidir si es permanente |
+| 5 | ✔ Reglas por fase, golpe, bando, protección y HP de los enemigos | Hecho: mismo comportamiento, código centralizado |
 | 6 | Tiles de trampa y fuego | Funcionan en un nivel de prueba |
 | 7 | Pergaminos permanentes + nivel de pergaminos + armas con cooldown | Una partida completa con pergaminos |
 | 8 | Ninja como máquina de estados + input unificado | Base para pulir el movimiento |

@@ -3,6 +3,7 @@
 //   embestida: avisa titilando, carga en línea recta y queda mareado al chocar la pared (recibe daño doble).
 //   salto:     salta hacia el jugador y al caer larga ondas de fuego por el piso.
 //   rafaga:    dispara abanicos de bolas de fuego apuntadas al jugador.
+import { BANDO } from '../config.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { EVENTOS } from '../datos/Eventos.js';
 
@@ -22,6 +23,8 @@ export default class Jefe extends Phaser.Physics.Arcade.Sprite {
 
     this.tipo = tipo;
     this.datos = datos;
+    this.esJefe = true;
+    this.bando = BANDO.DEMONIOS;
     this.hpMax = datos.hp;
     this.hp = datos.hp;
     this.estado = 'entrando';

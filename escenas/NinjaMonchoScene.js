@@ -5,10 +5,12 @@ import Enemigo from '../entidades/Enemigo.js';
 import Fantasma from '../entidades/Fantasma.js';
 import Jefe from '../entidades/Jefe.js';
 import { construirNivel } from '../mundo/CargadorNivel.js';
-import { proyectilVencido, wrapear } from '../mundo/Mundo.js';
-import { CONFIG, DEBUG, FISICA, PAD } from '../config.js';
+import { wrapear } from '../mundo/Mundo.js';
+import { BANDO, CONFIG, DEBUG, FISICA, PAD } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
 import { MODS_GLOBAL_BASE, pactosVacios } from '../reglas/Pactos.js';
+import { AL_ACABARSE_EL_TIEMPO, reglasDe } from '../reglas/Fases.js';
+import { PROTECCION, crearGolpe, resolverGolpe } from '../reglas/Resolvedor.js';
 import { ARMAS, TIPOS_ARMA, actualizarProyectiles, arrastrarItem } from '../entidades/Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { Guardado } from '../sistemas/Guardado.js';
@@ -20,7 +22,6 @@ import { EVENTOS } from '../datos/Eventos.js';
 //   intro -> jefe -> nivelCompletado                                    (niveles de jefe)
 //   perdiendoVida (todos sin vidas, esperando el game over) y fin interrumpen cualquiera de las anteriores.
 // Perder una vida no reinicia el nivel: el ninja cae fuera de la pantalla y reaparece arriba (si le quedan vidas).
-const FASES_JUGABLES = ['intro', 'recoleccion', 'transicion', 'caceria', 'jefe'];
 const TIPOS_TALISMAN = ['cuadrado', 'triangulo', 'rombo'];
 
 export default class NinjaMonchoScene extends Phaser.Scene {
@@ -82,8 +83,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.items = this.physics.add.group();
     this.enemigos = this.physics.add.group();
     this.cajasArmas = this.physics.add.group();
-    this.proyectilesJugador = this.physics.add.group({ allowGravity: false });
-    this.proyectilesEnemigos = this.physics.add.group({ allowGravity: false });
+    this.proyectiles = this.physics.add.group({ allowGravity: false });
 
     this.jugadores = [];
     this.jugador = new Ninja(this, this.spawnMonchoX, -32, 'ninja', null, 'moncho', 0);
@@ -103,14 +103,14 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.physics.add.collider(this.items, this.bloquesFisicos, this.procesarImpactoPiso, null, this);
     this.physics.add.collider(this.cajasArmas, this.bloquesFisicos);
     this.physics.add.collider(this.enemigos, this.bloquesFisicos, null, (enemigo) => !enemigo.rasgos.volador.activo, this);
-    this.physics.add.collider(this.proyectilesJugador, this.bloquesFisicos,
-      (proyectil) => { if (proyectil.tipo === 'shuriken') proyectil.destroy(); },
-      (proyectil, bloque) => proyectil.tipo === 'bomba' || (proyectil.tipo === 'shuriken' && !bloque.esOneWay), this);
-    this.physics.add.collider(this.proyectilesEnemigos, this.bloquesFisicos,
-      (proyectil) => proyectil.destroy(),
-      (proyectil, bloque) => !proyectil.atraviesaBloques && !bloque.esOneWay, this);
-    this.physics.add.overlap(this.proyectilesJugador, this.enemigos, this.impactoProyectil, null, this);
-    this.physics.add.overlap(this.proyectilesJugador, this.items, (proyectil, item) => arrastrarItem(proyectil, item),
+    this.physics.add.collider(this.proyectiles, this.bloquesFisicos,
+      (proyectil) => { if (proyectil.bando === BANDO.DEMONIOS || proyectil.tipo === 'shuriken') proyectil.destroy(); },
+      (proyectil, bloque) => (proyectil.bando === BANDO.DEMONIOS
+        ? !proyectil.atraviesaBloques && !bloque.esOneWay
+        : proyectil.tipo === 'bomba' || (proyectil.tipo === 'shuriken' && !bloque.esOneWay)), this);
+    this.physics.add.overlap(this.proyectiles, this.enemigos, this.impactoProyectil,
+      (proyectil) => proyectil.bando === BANDO.JUGADORES, this);
+    this.physics.add.overlap(this.proyectiles, this.items, (proyectil, item) => arrastrarItem(proyectil, item),
       (proyectil) => proyectil.tipo === 'bumeran', this);
 
     const tiempoNivel = datosNivel.tiempo ?? (this.esNivelJefe ? CONFIG.TIEMPO_JEFE : CONFIG.TIEMPO_RECOLECCION);
@@ -268,7 +268,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.jefe = new Jefe(this, 256, -6, this.partida.jefe);
     this.collidersJefe.push(
       this.physics.add.collider(this.jefe, this.bloquesFisicos, null, (jefe, bloque) => !jefe.datos.vuela && !bloque.esOneWay, this),
-      this.physics.add.overlap(this.jefe, this.proyectilesJugador, this.impactoProyectilJefe, null, this)
+      this.physics.add.overlap(this.jefe, this.proyectiles, (jefe, proyectil) => this.impactoProyectil(proyectil, jefe),
+        (jefe, proyectil) => proyectil.bando === BANDO.JUGADORES, this)
     );
     this.jugadores.forEach(j => this.conectarJefe(j));
     this.events.emit(EVENTOS.JEFE_APARECE, i18n.t(`jefe_${this.partida.jefe}`), this.jefe.hp);
@@ -282,7 +283,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.detenerTimers();
     this.quitarFantasma();
     this.enemigos.getChildren().slice().forEach(enemigo => enemigo.morir());
-    this.proyectilesEnemigos.clear(true, true);
+    this.proyectilesDe(BANDO.DEMONIOS).forEach(proyectil => proyectil.destroy());
 
     const bonoTiempo = this.tiempoRestante * CONFIG.BONO_POR_SEGUNDO;
     this.jugadores.forEach(j => this.sumarPuntos(j.indice, bonoTiempo + CONFIG.BONO_JEFE));
@@ -321,16 +322,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     partida.pactos = pactosVacios(); // Los pactos duran un solo nivel
     this.scene.stop('UIScene');
     this.scene.start('PactSelectionScene');
-  }
-
-  // Golpe que cuesta una vida (Cacería, jefe o fantasma): el ninja sale despedido como en un golpe común,
-  // atraviesa el escenario y cae fuera de la pantalla. Recién ahí pierde la vida (jugadorCayoFuera).
-  matarJugador(jugador, fuenteX) {
-    if (!this.esFaseJugable() || this.modoDiosActivo) return;
-    if (jugador.muerto || jugador.eliminado || jugador.isInvul || jugador.isSpawning) return;
-    jugador.morir(fuenteX);
-    this.cameras.main.shake(250, 0.012);
-    if (this.fase === 'recoleccion') this.perderTalismanes(jugador);
   }
 
   jugadorCayoFuera(jugador) {
@@ -396,8 +387,12 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.timerArmas.paused = true;
   }
 
+  get reglas() {
+    return reglasDe(this.fase);
+  }
+
   esFaseJugable() {
-    return FASES_JUGABLES.includes(this.fase);
+    return this.reglas.jugable;
   }
 
   // ==========================================
@@ -416,8 +411,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
     if (t > 0 || this.modoDiosActivo) return;
 
-    if (this.fase === 'caceria') this.finCaceria(false);
-    else if (this.fase === 'recoleccion' || this.fase === 'jefe') this.aparecerFantasma();
+    const { alAcabarseElTiempo } = this.reglas;
+    if (alAcabarseElTiempo === AL_ACABARSE_EL_TIEMPO.FIN_CACERIA) this.finCaceria(false);
+    else if (alAcabarseElTiempo === AL_ACABARSE_EL_TIEMPO.FANTASMA) this.aparecerFantasma();
   }
 
   aparecerFantasma() {
@@ -464,7 +460,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }, enJuego, this);
 
     this.physics.add.overlap(jugador, this.cajasArmas, this.recogerArma, enJuego, this);
-    this.physics.add.overlap(jugador, this.proyectilesEnemigos, this.impactoProyectilEnemigo, enJuego, this);
+    this.physics.add.overlap(jugador, this.proyectiles, this.impactoProyectilEnemigo,
+      (j, proyectil) => enJuego() && proyectil.bando === BANDO.DEMONIOS, this);
 
     if (this.fantasma) this.conectarFantasma(jugador);
     if (this.jefe) this.conectarJefe(jugador);
@@ -472,7 +469,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   conectarFantasma(jugador) {
     this.collidersFantasma.push(this.physics.add.overlap(jugador, this.fantasma, () => {
-      if (this.fantasma) this.matarJugador(jugador, this.fantasma.x);
+      if (this.fantasma) resolverGolpe(this, jugador, crearGolpe('fantasma', { bando: BANDO.DEMONIOS, fuenteX: this.fantasma.x }));
     }, null, this));
   }
 
@@ -707,10 +704,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     });
 
     actualizarProyectiles(this);
-    this.proyectilesEnemigos.getChildren().slice().forEach(p => {
-      const termino = this.conWrap ? proyectilVencido(p, time) : (p.x < -24 || p.x > 536 || p.y > 310 || p.y < -60);
-      if (termino) p.destroy();
-    });
     if (this.conWrap) this.aplicarWrap();
 
     if (this.fantasma) this.fantasma.actualizar(this.jugadorMasCercano(this.fantasma.x, this.fantasma.y));
@@ -720,7 +713,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // El ninja muerto no cruza: sigue cayendo hasta salir de la pantalla y recién ahí pierde la vida
   aplicarWrap() {
     this.jugadores.filter(jugador => !jugador.muerto).forEach(wrapear);
-    [this.items, this.enemigos, this.cajasArmas, this.proyectilesJugador, this.proyectilesEnemigos]
+    [this.items, this.enemigos, this.cajasArmas, this.proyectiles]
       .forEach(grupo => grupo.getChildren().forEach(wrapear));
   }
 
@@ -748,7 +741,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       if (!this.enemigosHabilitados) {
         this.timerDemonios.paused = true;
         this.enemigos.getChildren().slice().forEach(demonio => demonio.destroy());
-      } else if (this.fase === 'recoleccion') {
+      } else if (this.reglas.aparecenEnemigos) {
         this.timerDemonios.paused = false;
       }
     }
@@ -847,7 +840,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (jugador.isSpawning || !item || !item.active) return;
 
     if (item.esTalisman) {
-      if (this.fase !== 'recoleccion') return;
+      if (!this.reglas.hayTalismanes) return;
       const tipoItem = item.texture.key;
       this.inventario.push(tipoItem);
       const conteo = this.contarInventario();
@@ -873,14 +866,15 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
 
     item.destroy();
-    if (this.fase === 'recoleccion') this.spawnearMoneda();
+    if (this.reglas.hayTalismanes) this.spawnearMoneda();
   }
 
-  // Al recibir un golpe en Recolección se caen talismanes (el último o todos, según CONFIG.DAÑO_PIERDE)
+  // Al recibir un golpe en Recolección se caen todos los talismanes y desaparecen todas las monedas: quien se queda
+  // juntando monedas para sumar puntos arriesga lo que ya juntó.
   // y vuelven a caer desde arriba un rato después.
   perderTalismanes(jugador) {
     if (this.inventario.length === 0) return;
-    const arrayPerdidos = CONFIG.DAÑO_PIERDE === 'todos' ? this.inventario.splice(0) : [this.inventario.pop()];
+    const arrayPerdidos = this.inventario.splice(0);
     this.events.emit(EVENTOS.INVENTARIO, this.contarInventario());
     this.mostrarTextoFlotante(jugador.x, jugador.y - 12, i18n.t(arrayPerdidos.length > 1 ? 'perdiste_talismanes' : 'perdiste_talisman'), '#EF4444');
 
@@ -893,15 +887,12 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       });
     });
 
-    // Cada talismán juntado había generado una moneda: se quitan tantas como talismanes perdidos
-    let monedasEnPantalla = this.items.getChildren().filter(i => !i.esTalisman);
-    monedasEnPantalla.sort((a, b) => b.valorPuntos - a.valorPuntos);
-    monedasEnPantalla.slice(0, arrayPerdidos.length).forEach(m => m.destroy());
+    this.items.getChildren().filter(item => !item.esTalisman).forEach(moneda => moneda.destroy());
 
     this.time.delayedCall(1200, () => {
       arrayPerdidos.forEach((tipo, index) => {
         this.time.delayedCall(index * 250, () => {
-          if (this.fase === 'recoleccion') this.spawnearItem(tipo);
+          if (this.reglas.hayTalismanes) this.spawnearItem(tipo);
         });
       });
     });
@@ -913,7 +904,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   spawnearDemonio(enCaceria = false) {
     if (!this.enemigosHabilitados) return null;
     if (!enCaceria) {
-      if (this.fase !== 'recoleccion') return null;
+      if (!this.reglas.aparecenEnemigos) return null;
       const tope = Math.min(CONFIG.TOPE_ENEMIGOS_BASE + Math.floor((this.nivelActual - 1) / 2), CONFIG.TOPE_ENEMIGOS_MAX);
       if (this.enemigos.countActive(true) >= tope) return null;
     }
@@ -948,7 +939,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   // El jefe Espectro invoca ayudantes durante la pelea
   invocarEnemigo(clave) {
-    if (this.fase !== 'jefe' || this.enemigos.countActive(true) >= 2) return;
+    if (!this.reglas.invocaAyudantes || this.enemigos.countActive(true) >= 2) return;
     this.crearEnemigo(clave);
   }
 
@@ -957,39 +948,19 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   tocarDemonio(jugador, demonio) {
-    if (jugador.isInvul || jugador.isSpawning || demonio.muerto || !this.esFaseJugable()) return;
+    if (jugador.proteccion === PROTECCION.INTOCABLE || demonio.muerto || !this.reglas.jugable) return;
 
     const desdeArriba = jugador.body.velocity.y > 0 && jugador.body.bottom <= demonio.body.top + 8;
     if (desdeArriba) {
       jugador.hacerPisoton();
       this.hitStop(50);
       Sonido.efecto(this, 'snd-grito', 0.25);
-      if (demonio.enfurecido || this.fase === 'jefe') {
-        this.matarEnemigo(demonio, jugador);
-        return;
-      }
-      demonio.setVelocityY(250);
-      if (demonio.rasgos.saltarin.activo) {
-        demonio.ultimoReboteY = 0; demonio.contadorRebotes = 0;
-      }
+      resolverGolpe(this, demonio, crearGolpe('pisoton', { duenio: jugador }));
       return;
     }
 
     if (demonio.aturdido) return; // Un demonio aturdido no hace daño
-    this.recibirGolpe(jugador, demonio.x);
-  }
-
-  // Golpe de katana o proyectil: en Recolección aturde y empuja; enfurecidos (Cacería) o en la pelea del jefe, mata.
-  golpearEnemigo(enemigo, { dirX = 1, jugador = null } = {}) {
-    if (enemigo.muerto) return;
-    if (enemigo.enfurecido || this.fase === 'jefe') {
-      this.matarEnemigo(enemigo, jugador);
-      return;
-    }
-    enemigo.inmuneStun = this.modsGlobal.enemigosInmunesStun;
-    enemigo.aturdir(enemigo.config.duracionStun, dirX * 200, -150);
-    Sonido.efecto(this, 'snd-parry', 0.35);
-    this.efectoChispas(enemigo.x, enemigo.y, 0x7dd3fc);
+    resolverGolpe(this, jugador, crearGolpe('contacto', { bando: BANDO.DEMONIOS, fuenteX: demonio.x }));
   }
 
   matarEnemigo(enemigo, jugador) {
@@ -1003,25 +974,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     Sonido.efecto(this, 'snd-grito', 0.3, { rate: 1.4 });
     enemigo.morir();
 
-    if (this.fase === 'caceria') {
+    if (this.reglas.cuentaBajas) {
       this.emitirEnemigosRestantes();
       if (this.enemigos.countActive(true) === 0 && this.enemigosPorAparecer <= 0) this.finCaceria(true);
-    }
-  }
-
-  recibirGolpe(jugador, fuenteX) {
-    if (jugador.isInvul || jugador.isSpawning || this.modoDiosActivo) return;
-    // Mientras se muestra "¡Sello roto!" los ninjas son invulnerables
-    if (this.fase === 'transicion') return;
-
-    if (this.fase === 'caceria' || this.fase === 'jefe') {
-      this.matarJugador(jugador, fuenteX);
-      return;
-    }
-    if (jugador.aplicarDaño(fuenteX)) {
-      this.cameras.main.shake(150, 0.008);
-      this.mostrarTextoFlotante(jugador.x, jugador.y, i18n.t('ouch'), '#EF4444');
-      if (this.fase === 'recoleccion') this.perderTalismanes(jugador);
     }
   }
 
@@ -1034,45 +989,41 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     const zona = katana.getBounds();
     const direccion = ninja.flipX ? -1 : 1;
 
-    const golpear = (objeto, accion) => {
+    const golpe = crearGolpe('katana', { duenio: ninja, direccion });
+    const alcanzar = (objeto, accion = () => resolverGolpe(this, objeto, golpe)) => {
       if (!objeto || !objeto.active || ninja.katanaGolpeados.has(objeto)) return;
       if (!Phaser.Geom.Intersects.RectangleToRectangle(zona, objeto.getBounds())) return;
       ninja.katanaGolpeados.add(objeto);
-      accion(objeto);
+      accion();
     };
 
-    this.enemigos.getChildren().slice().forEach(e => golpear(e, () => this.golpearEnemigo(e, { dirX: direccion, jugador: ninja })));
-    this.items.getChildren().forEach(item => golpear(item, () => item.setVelocity(direccion * 220, -200)));
-    this.proyectilesEnemigos.getChildren().slice().forEach(p => golpear(p, () => {
+    this.enemigos.getChildren().slice().forEach(enemigo => alcanzar(enemigo));
+    this.items.getChildren().forEach(item => alcanzar(item));
+    this.proyectilesDe(BANDO.DEMONIOS).forEach(p => alcanzar(p, () => {
       Sonido.efecto(this, 'snd-parry', 0.5);
       this.efectoChispas(p.x, p.y, 0xffffff);
       p.destroy();
     }));
     this.jugadores.forEach(otro => {
-      if (otro !== ninja && !otro.eliminado) golpear(otro, () => otro.empujar(direccion * 220, -160));
+      if (otro !== ninja && !otro.eliminado) alcanzar(otro);
     });
-    if (this.jefe && this.jefe.active) golpear(this.jefe, () => this.jefe.recibirDaño(CONFIG.DAÑO_JEFE.katana));
+    if (this.jefe && this.jefe.active) alcanzar(this.jefe);
   }
 
-  impactoProyectil(proyectil, enemigo) {
-    if (!proyectil.active || enemigo.muerto || proyectil.golpeados.has(enemigo)) return;
-    proyectil.golpeados.add(enemigo);
+  proyectilesDe(bando) {
+    return this.proyectiles.getChildren().filter(p => p.bando === bando);
+  }
+
+  // El objetivo es un enemigo o el jefe
+  impactoProyectil(proyectil, objetivo) {
+    if (!proyectil.active || objetivo.muerto || proyectil.golpeados.has(objetivo)) return;
+    proyectil.golpeados.add(objetivo);
     if (proyectil.tipo === 'bomba') {
       this.explotarBomba(proyectil);
       return;
     }
-    this.golpearEnemigo(enemigo, { dirX: Math.sign(proyectil.body.velocity.x) || 1, jugador: proyectil.duenio });
-    if (proyectil.tipo === 'shuriken') proyectil.destroy();
-  }
-
-  impactoProyectilJefe(jefe, proyectil) {
-    if (!proyectil.active || proyectil.golpeados.has(jefe)) return;
-    proyectil.golpeados.add(jefe);
-    if (proyectil.tipo === 'bomba') {
-      this.explotarBomba(proyectil);
-      return;
-    }
-    jefe.recibirDaño(CONFIG.DAÑO_JEFE.proyectil);
+    const direccion = Math.sign(proyectil.body.velocity.x) || 1;
+    resolverGolpe(this, objetivo, crearGolpe('proyectil', { duenio: proyectil.duenio, direccion }));
     if (proyectil.tipo === 'shuriken') proyectil.destroy();
   }
 
@@ -1094,32 +1045,21 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       return { vx: Math.cos(angulo) * fuerza, vy: Math.min(impulsoMinimo, Math.sin(angulo) * fuerza) };
     };
 
-    this.enemigos.getChildren().slice().forEach(enemigo => {
-      const v = impulso(enemigo);
-      if (!v || enemigo.muerto) return;
-      if (enemigo.enfurecido || this.fase === 'jefe') {
-        this.matarEnemigo(enemigo, duenio);
-      } else {
-        enemigo.inmuneStun = this.modsGlobal.enemigosInmunesStun;
-        enemigo.aturdir(enemigo.config.duracionStun, v.vx, v.vy);
-      }
-    });
-    this.items.getChildren().forEach(item => {
-      const v = impulso(item);
-      if (v) item.setVelocity(v.vx, v.vy);
-    });
-    this.jugadores.forEach(j => {
-      const v = impulso(j);
-      if (v) j.empujar(v.vx, v.vy);
-    });
+    const golpeA = (objeto, empuje) => {
+      if (empuje) resolverGolpe(this, objeto, crearGolpe('explosion', { duenio, empuje }));
+    };
+    this.enemigos.getChildren().slice().forEach(enemigo => golpeA(enemigo, impulso(enemigo)));
+    this.items.getChildren().forEach(item => golpeA(item, impulso(item)));
+    this.jugadores.forEach(jugador => golpeA(jugador, impulso(jugador)));
     if (this.jefe && this.jefe.active && Phaser.Math.Distance.Between(x, y, this.jefe.x, this.jefe.y) < radio + 16) {
-      this.jefe.recibirDaño(CONFIG.DAÑO_JEFE.explosion);
+      resolverGolpe(this, this.jefe, crearGolpe('explosion', { duenio }));
     }
   }
 
   dispararProyectilEnemigo(x, y, vx, vy, { gravedad = false } = {}) {
     if (!this.esFaseJugable()) return null;
-    const proyectil = this.proyectilesEnemigos.create(x, y, 'proyectil');
+    const proyectil = this.proyectiles.create(x, y, 'proyectil');
+    proyectil.bando = BANDO.DEMONIOS;
     proyectil.body.setAllowGravity(gravedad);
     if (gravedad) proyectil.body.setGravityY(200);
     proyectil.body.setCircle(3);
@@ -1130,7 +1070,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   crearOnda(x, yPiso, vx) {
-    const onda = this.proyectilesEnemigos.create(x, yPiso - 5, 'onda');
+    const onda = this.proyectiles.create(x, yPiso - 5, 'onda');
+    onda.bando = BANDO.DEMONIOS;
     onda.setVelocity(vx, 0);
     onda.setFlipX(vx < 0);
     onda.atraviesaBloques = true;
@@ -1139,21 +1080,21 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   impactoProyectilEnemigo(jugador, proyectil) {
-    if (!proyectil.active || jugador.isInvul || jugador.isSpawning) return;
+    if (!proyectil.active || jugador.proteccion === PROTECCION.INTOCABLE) return;
     if (!proyectil.atraviesaBloques) proyectil.destroy();
-    this.recibirGolpe(jugador, proyectil.x);
+    resolverGolpe(this, jugador, crearGolpe('proyectil', { bando: BANDO.DEMONIOS, fuenteX: proyectil.x }));
   }
 
   tocarJefe(jugador, jefe) {
-    if (jugador.isInvul || jugador.isSpawning || jefe.muerto || this.fase !== 'jefe') return;
+    if (jugador.proteccion === PROTECCION.INTOCABLE || jefe.muerto || !this.reglas.enemigosVulnerables) return;
     const desdeArriba = jugador.body.velocity.y > 0 && jugador.body.bottom <= jefe.body.top + 10;
     if (desdeArriba) {
       jugador.hacerPisoton();
-      jefe.recibirDaño(CONFIG.DAÑO_JEFE.pisoton);
+      resolverGolpe(this, jefe, crearGolpe('pisoton', { duenio: jugador }));
       this.hitStop(60);
       return;
     }
-    this.recibirGolpe(jugador, jefe.x);
+    resolverGolpe(this, jugador, crearGolpe('contacto', { bando: BANDO.DEMONIOS, fuenteX: jefe.x }));
   }
 
   // ==========================================

@@ -18,10 +18,15 @@ const ALTO_VISIBLE = (MUNDO.filas - MUNDO.filasOcultas) * MUNDO.tile;
 // El centro del objeto está fuera de la pantalla
 export const fueraDeVista = ({ x, y }) => x < 0 || x > ANCHO_VISIBLE || y < 0 || y > ALTO_VISIBLE;
 
+// La misma columna vista del otro lado del corte: quien mira adelante en el borde tiene que ver lo que hay al cruzar
+export function envolverX(x) {
+  if (x < IZQUIERDA) return x + ANCHO;
+  return x >= DERECHA ? x - ANCHO : x;
+}
+
 export function wrapear(objeto) {
   const { velocity } = objeto.body;
-  if (objeto.x < IZQUIERDA) objeto.x += ANCHO;
-  else if (objeto.x >= DERECHA) objeto.x -= ANCHO;
+  objeto.x = envolverX(objeto.x);
 
   if (velocity.y < 0 && objeto.y < ARRIBA) {
     objeto.y += ALTO;
