@@ -5,6 +5,22 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-06 — Claude: etapa 4 de la v2, wrap en un nivel de prueba
+
+- `mundo/Mundo.js`: el wrap, en los dos ejes. Jugadores, ítems, cajas, enemigos y proyectiles cruzan; el ninja muerto no.
+- Solo actúa en niveles con `"wrap": true` (el editor tiene el campo). El resto de los niveles se juega igual.
+- Nivel `n-wrap`, tipo `prueba` (no entra en los niveles al azar), con huecos en los 4 lados. Se abre con `?debug&nivel=3&mapa=n-wrap`.
+- Con wrap los proyectiles duran 4 s como máximo. Cambio al diseño: el corte vertical quedó una fila más abajo, para que no se vea.
+- Sin agarre a paredes fuera de la pantalla, en todos los niveles (idea de Mariano). No hizo falta un tile nuevo.
+- Bloques en la fila 1 traban a los enemigos que aparecen ahí: el techo va solo en la fila 0. Mariano saca los cuadrados que puse en `n-wrap`.
+- Sin probar con wrap: jefes. Banco de pruebas: el escenario nuevo `wrap` cubre los 4 lados.
+
+**Pendientes**
+- Mariano: jugar `n-wrap` y decidir cómo se siente.
+- Mariano: lista revisada de pergaminos y de habilidades.
+
+---
+
 ## 2026-11-05 — Claude: el editor funciona online
 
 - Mariano les pasó el link del editor a los profes. Online, Probar abre el nivel editado sin guardar: se lo pasa al juego por localStorage (`?debug&borrador`). En local sigue guardando en la carpeta.

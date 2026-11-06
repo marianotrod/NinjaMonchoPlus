@@ -2,13 +2,15 @@
 // Cómo se escribe un nivel en disco: legible y con una fila de la grilla por línea, para que git muestre diferencias claras.
 import { LOGICA, MUNDO } from '../../config.js';
 
-const CABECERA = ['id', 'nombre', 'tipo', 'tier', 'jefe', 'musica', 'fondoImagen', 'tiempo', 'tileset'];
+const CABECERA = ['id', 'nombre', 'tipo', 'tier', 'jefe', 'musica', 'fondoImagen', 'tiempo', 'tileset', 'wrap'];
 
 const grillaVacia = (valor) => Array.from({ length: MUNDO.filas }, () => Array(MUNDO.columnas).fill(valor));
 const escribirFilas = (grilla) => grilla.map(fila => `      [${fila.join(',')}]`).join(',\n');
 
 export function serializarNivel(nivel) {
-  const cabecera = CABECERA.map(clave => `  ${JSON.stringify(clave)}: ${JSON.stringify(nivel[clave])},`).join('\n');
+  // Los campos que un nivel no tiene no se escriben
+  const claves = CABECERA.filter(clave => nivel[clave] !== undefined);
+  const cabecera = claves.map(clave => `  ${JSON.stringify(clave)}: ${JSON.stringify(nivel[clave])},`).join('\n');
   const objetos = nivel.objetos.map(objeto => `    ${JSON.stringify(objeto)}`).join(',\n');
   return `{\n${cabecera}\n  "capas": {\n` +
     `    "fondo": [\n${escribirFilas(nivel.capas.fondo)}\n    ],\n` +

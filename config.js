@@ -25,7 +25,11 @@ export const TRADUCCIONES = {
 };
 
 // Grilla de los niveles: 34×20 tiles, con la pantalla de 32×18 al centro abajo (2 filas ocultas arriba y 1 columna a cada lado).
-export const MUNDO = { columnas: 34, filas: 20, columnasOcultas: 1, filasOcultas: 2, tile: 16 };
+export const MUNDO = {
+  columnas: 34, filas: 20, columnasOcultas: 1, filasOcultas: 2, tile: 16,
+  caidaMaxima: 600,    // Tope de velocidad al caer por un hueco y volver a entrar por arriba (px/s)
+  vidaProyectil: 4000  // Con wrap los proyectiles no salen nunca de la pantalla: duran esto como máximo (ms)
+};
 
 // Tipos de la capa "logica" de los niveles
 export const LOGICA = { VACIO: 0, SOLIDO: 1, PASARELA: 2, TRAMPA: 3, FUEGO: 4 };

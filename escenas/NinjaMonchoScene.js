@@ -5,6 +5,7 @@ import Enemigo from '../entidades/Enemigo.js';
 import Fantasma from '../entidades/Fantasma.js';
 import Jefe from '../entidades/Jefe.js';
 import { construirNivel } from '../mundo/CargadorNivel.js';
+import { proyectilVencido, wrapear } from '../mundo/Mundo.js';
 import { CONFIG, DEBUG, FISICA, PAD } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
 import { MODS_GLOBAL_BASE, pactosVacios } from '../reglas/Pactos.js';
@@ -66,6 +67,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.physics.world.setBounds(0, -32, 512, 320);
 
     const datosNivel = partida.datosNivel;
+    this.conWrap = !!datosNivel.wrap;
+    const hayBordes = !this.conWrap;
+    this.physics.world.setBoundsCollision(hayBordes, hayBordes, hayBordes, hayBordes);
     Sonido.musica(this, datosNivel.musica || musicaDelNivel(this.nivelActual), 0.4);
     Sonido.ritmoMusica(1);
 
@@ -704,11 +708,20 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     actualizarProyectiles(this);
     this.proyectilesEnemigos.getChildren().slice().forEach(p => {
-      if (p.x < -24 || p.x > 536 || p.y > 310 || p.y < -60) p.destroy();
+      const termino = this.conWrap ? proyectilVencido(p, time) : (p.x < -24 || p.x > 536 || p.y > 310 || p.y < -60);
+      if (termino) p.destroy();
     });
+    if (this.conWrap) this.aplicarWrap();
 
     if (this.fantasma) this.fantasma.actualizar(this.jugadorMasCercano(this.fantasma.x, this.fantasma.y));
     if (this.jefe && this.jefe.active) this.jefe.actualizar();
+  }
+
+  // El ninja muerto no cruza: sigue cayendo hasta salir de la pantalla y recién ahí pierde la vida
+  aplicarWrap() {
+    this.jugadores.filter(jugador => !jugador.muerto).forEach(wrapear);
+    [this.items, this.enemigos, this.cajasArmas, this.proyectilesJugador, this.proyectilesEnemigos]
+      .forEach(grupo => grupo.getChildren().forEach(wrapear));
   }
 
   actualizarDebug() {
@@ -1112,6 +1125,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     proyectil.body.setCircle(3);
     proyectil.setVelocity(vx, vy);
     proyectil.atraviesaBloques = false;
+    proyectil.nacimiento = this.time.now;
     return proyectil;
   }
 
@@ -1120,6 +1134,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     onda.setVelocity(vx, 0);
     onda.setFlipX(vx < 0);
     onda.atraviesaBloques = true;
+    onda.nacimiento = this.time.now;
     return onda;
   }
 

@@ -38,11 +38,12 @@ const TIPOS_OBJETO = [
 ];
 const CAMPOS = [
   { clave: 'nombre', etiqueta: 'Nombre' },
-  { clave: 'tipo', etiqueta: 'Tipo', opciones: ['inicio', 'fijo', 'normal', 'jefe', 'pergaminos'] },
+  { clave: 'tipo', etiqueta: 'Tipo', opciones: ['inicio', 'fijo', 'normal', 'jefe', 'pergaminos', 'prueba'] },
   { clave: 'tier', etiqueta: 'Tier (dificultad)', opciones: [null, 1, 2, 3] },
   { clave: 'jefe', etiqueta: 'Jefe', opciones: [null, 'ogro', 'oni', 'espectro', 'rey'] },
   { clave: 'musica', etiqueta: 'Música', opciones: [null, 'musica-fondo', 'musica-cueva', 'musica-agua', 'musica-jefe'] },
-  { clave: 'tiempo', etiqueta: 'Tiempo (s)', numero: true }
+  { clave: 'tiempo', etiqueta: 'Tiempo (s)', numero: true },
+  { clave: 'wrap', etiqueta: 'Wrap', opciones: [null, true] }
 ];
 
 const estado = {
@@ -450,8 +451,8 @@ function campoDePropiedad({ clave, etiqueta, opciones, numero }) {
   let control;
   if (opciones) {
     control = document.createElement('select');
-    opciones.forEach(valor => control.add(new Option(valor === null ? '(por defecto)' : valor, JSON.stringify(valor))));
-    control.value = JSON.stringify(nivel[clave]);
+    opciones.forEach(valor => control.add(new Option(valor === null ? '(por defecto)' : valor === true ? 'sí' : valor, JSON.stringify(valor))));
+    control.value = JSON.stringify(nivel[clave] ?? null);
     control.addEventListener('change', () => { nivel[clave] = JSON.parse(control.value); marcarSucio(); });
   } else {
     control = document.createElement('input');

@@ -4,6 +4,7 @@
 //   bumeran:  va y vuelve; arrastra talismanes y monedas hacia el jugador y golpea varias veces.
 //   bomba:    tiro con rebote corto que explota y empuja todo lo que esté cerca.
 import { FISICA } from '../config.js';
+import { proyectilVencido } from '../mundo/Mundo.js';
 import { Sonido } from '../sistemas/Sonido.js';
 
 export const ARMAS = {
@@ -60,7 +61,7 @@ export function dispararArma(scene, ninja) {
 export function actualizarProyectiles(scene) {
   const ahora = scene.time.now;
   scene.proyectilesJugador.getChildren().slice().forEach(p => {
-    const fuera = p.x < -24 || p.x > 536 || p.y > 310 || p.y < -80;
+    const fuera = !scene.conWrap && (p.x < -24 || p.x > 536 || p.y > 310 || p.y < -80);
 
     if (p.tipo === 'bumeran') {
       const duenio = p.duenio;
@@ -84,7 +85,8 @@ export function actualizarProyectiles(scene) {
       return;
     }
 
-    if (fuera || (p.tipo === 'shuriken' && ahora - p.nacimiento > ARMAS.shuriken.duracion)) p.destroy();
+    const vencido = scene.conWrap && proyectilVencido(p, ahora);
+    if (fuera || vencido || (p.tipo === 'shuriken' && ahora - p.nacimiento > ARMAS.shuriken.duracion)) p.destroy();
   });
 }
 

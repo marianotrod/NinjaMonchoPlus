@@ -1,4 +1,5 @@
 import { CONFIG, DEBUG, FISICA, PAD } from '../config.js';
+import { fueraDeVista } from '../mundo/Mundo.js';
 import { MODS_JUGADOR_BASE } from '../reglas/Pactos.js';
 import { ARMAS, dispararArma } from './Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
@@ -236,8 +237,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     // --- DETECCIÓN DE ENTORNO ---
     let enElPiso = this.body.touching.down || this.body.blocked.down;
-    const tocandoParedIzquierda = this.body.blocked.left || this.body.touching.left;
-    const tocandoParedDerecha = this.body.blocked.right || this.body.touching.right;
+    // Fuera de la pantalla no hay agarre: si no, el ninja podría colgarse de una pared que no se ve
+    const hayAgarre = !fueraDeVista(this);
+    const tocandoParedIzquierda = hayAgarre && (this.body.blocked.left || this.body.touching.left);
+    const tocandoParedDerecha = hayAgarre && (this.body.blocked.right || this.body.touching.right);
     const tocandoPared = tocandoParedIzquierda || tocandoParedDerecha;
 
     // RECARGA DE DASH POR ENTORNO

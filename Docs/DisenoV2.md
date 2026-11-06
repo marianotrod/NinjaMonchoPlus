@@ -45,6 +45,11 @@ filas 2..19      lo visible (la 19 es el piso)
   Las IA no piensan en el wrap; la física sí. Está en una sola función, así que cambiarlo es fácil.
 - **Todos los proyectiles tienen duración máxima,** porque ya no mueren al salir de la pantalla.
 - **Excepción:** el ninja muerto (sale despedido y cae atravesando el escenario) no hace wrap.
+- **Sin agarre fuera de la pantalla:** mientras el centro del ninja está fuera de la vista, las paredes no lo frenan ni le dan salto ni dash.
+  Vale para cualquier nivel y no hace falta pintar nada.
+- **Corte vertical:** las dos filas ocultas están arriba y abajo de la pantalla no hay ninguna. Para que el cruce no se vea en ningún extremo,
+  el corte queda una fila más abajo: entre y = -16 y y = 304 (el mundo mide 320 px igual). Lo vertical mira el sentido del movimiento,
+  así lo que aparece cayendo desde más arriba, como el ninja al empezar, no cruza. Además, cada vuelta por un hueco tiene tope de velocidad.
 - **[Probar]** Prototipo temprano en un nivel de prueba antes de armar muchos niveles. El riesgo es la sensación de juego, no lo técnico.
 
 Todo esto vive en un módulo **Mundo**: teletransporta, mide distancias y direcciones, y maneja las excepciones.
