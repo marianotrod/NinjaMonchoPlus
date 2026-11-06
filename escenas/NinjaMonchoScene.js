@@ -5,7 +5,7 @@ import Enemigo from '../entidades/Enemigo.js';
 import Fantasma from '../entidades/Fantasma.js';
 import Jefe from '../entidades/Jefe.js';
 import { construirNivel } from '../mundo/CargadorNivel.js';
-import { bordeMasLejano, wrapear } from '../mundo/Mundo.js';
+import { bordeVerticalOpuesto, costadoLibre, wrapear } from '../mundo/Mundo.js';
 import { BANDO, CONFIG, DEBUG, FISICA, PAD } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
 import { MODS_GLOBAL_BASE, pactosVacios } from '../reglas/Pactos.js';
@@ -254,7 +254,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   finCaceria() {
-    if (this.fase !== 'caceria') return;
+    if (this.fase !== 'caceria' || this.cobrarCaidas()) return;
     this.terminarPersecucion();
     const bono = this.tiempoRestante * CONFIG.BONO_POR_SEGUNDO;
     this.jugadores.forEach(j => this.sumarPuntos(j.indice, bono));
@@ -283,7 +283,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   jefeDerrotado() {
-    if (this.fase !== 'jefe') return;
+    if (this.fase !== 'jefe' || this.cobrarCaidas()) return;
     this.jefe = null;
     this.collidersJefe.forEach(c => c.destroy());
     this.collidersJefe = [];
@@ -361,6 +361,20 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     });
   }
 
+  // Si la fase se gana mientras alguien todavía cae, esa vida igual se pierde. Devuelve si con eso terminó la partida.
+  cobrarCaidas() {
+    const vidas = this.partida.vidas;
+    this.jugadores.filter(j => j.muerto && !j.caidaAvisada).forEach(jugador => {
+      jugador.caidaAvisada = true;
+      vidas[jugador.indice] = Math.max(0, vidas[jugador.indice] - 1);
+      if (vidas[jugador.indice] === 0) jugador.retirar();
+    });
+    this.events.emit(EVENTOS.VIDAS, vidas);
+    if (!this.jugadores.every(j => j.eliminado)) return false;
+    this.perderPartida();
+    return true;
+  }
+
   // Nadie más en pie: fin de la partida
   perderPartida() {
     this.fase = 'perdiendoVida';
@@ -429,18 +443,21 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (this.reglas.recomienzoPorFantasma) this.aparecerFantasmas();
   }
 
-  // Uno por jugador en pie. Cada uno persigue al suyo, pero puede matar a cualquiera. Entran por el costado más lejano
-  // a los jugadores, a la altura de su objetivo, para dar el mayor tiempo posible. Nacen en el corte del wrap, pero no
-  // les afecta: los fantasmas no cruzan.
+  // Uno por jugador en pie. Cada uno persigue al suyo, pero puede matar a cualquiera. Para dar el mayor tiempo posible
+  // entran por el costado opuesto a los jugadores, a la altura de su objetivo. Si hay uno de cada lado, cada uno entra
+  // en la columna de su objetivo, por arriba o por abajo, lo más lejos de él. Nacen en el corte del wrap, pero no les
+  // afecta: los fantasmas no cruzan.
   aparecerFantasmas() {
     this.persecucion = true;
     Sonido.ritmoMusica(1.3);
     Sonido.beep(this, 110, 0.6, 0.15, 'sawtooth');
     const perseguidos = this.jugadores.filter(j => j.active && !j.muerto);
-    const x = bordeMasLejano(perseguidos.length > 0 ? perseguidos.map(j => j.x) : [0]);
+    const costado = costadoLibre(perseguidos.map(j => j.x));
     const objetivos = perseguidos.length > 0 ? perseguidos : [null];
     objetivos.forEach(objetivo => {
-      const y = objetivo ? Phaser.Math.Clamp(objetivo.y, 24, 264) : 144;
+      const x = costado ?? objetivo.x;
+      const altura = objetivo ? Phaser.Math.Clamp(objetivo.y, 24, 264) : 144;
+      const y = costado === null ? bordeVerticalOpuesto(objetivo.y) : altura;
       const fantasma = new Fantasma(this, x, y, objetivo);
       this.fantasmas.push(fantasma);
       this.jugadores.forEach(jugador => this.conectarFantasma(jugador, fantasma));
@@ -489,13 +506,15 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.jugadores.filter(j => j.muerto && j.caidaAvisada).forEach(j => j.respawnear(this.spawnDe(j)));
   }
 
+  // La física sigue andando: un último disparo que ya iba por el aire todavía puede ganar la fase
   recomenzar() {
+    const { fase } = this;
     const recomienzo = this.reglas.recomienzoPorFantasma;
-    this.fase = 'perdiendoVida';
     this.detenerTimers();
-    this.physics.pause();
     this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('otra_vez'), color: '#EF4444', duracion: CONFIG.ESPERA_RESPAWN, chico: true });
     this.time.delayedCall(CONFIG.ESPERA_RESPAWN, () => {
+      const jefeVencido = this.jefe && this.jefe.muerto;
+      if (this.fase !== fase || jefeVencido) return;
       if (recomienzo === RECOMIENZO.NIVEL) this.recomenzarNivel();
       else this.recomenzarCaceria();
     });
@@ -513,8 +532,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.partida.puntajes = [...this.puntajesCaceria];
     this.events.emit(EVENTOS.PUNTAJE, this.partida.puntajes);
     this.terminarPersecucion();
-    this.fase = 'caceria';
-    this.physics.resume();
     this.reaparecerLosQueEsperan();
     this.timerArmas.paused = false;
     this.arrancarCaceria();

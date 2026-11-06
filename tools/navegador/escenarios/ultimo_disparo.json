@@ -1,0 +1,41 @@
+{
+  "descripcion": "Último disparo: matar al último enemigo después de morir gana la fase, y la vida se pierde igual",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca: caso 1"},
+    {"wait": 300, "eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"wait": 1600, "eval": "(prueba.sinEnemigos(), prueba.crearEnemigo('demonio_caminante', 440, 264), prueba.proteger(1), prueba.ponerTiempo(1))"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "se acaba el tiempo"},
+    {"eval": "(prueba.quitarProteccion(1), prueba.golpear(1), prueba.matarEnemigos(1), true)"},
+    {"verificar": "mientras cae: se pasa de nivel y la vida se pierde igual", "eval": "prueba.estado()", "espera": {"fase": "nivelCompletado", "vidas": [2, 3], "fantasma": false}},
+
+    {"eval": "(location.reload(), true)"},
+    {"wait": 500},
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca: caso 2"},
+    {"wait": 300, "eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"wait": 1600, "eval": "(prueba.sinEnemigos(), prueba.crearEnemigo('demonio_caminante', 440, 264), prueba.proteger(1), prueba.ponerTiempo(1))"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "se acaba el tiempo"},
+    {"eval": "(prueba.quitarProteccion(1), prueba.golpear(1), true)"},
+    {"hasta": "prueba.estado().vidas[0] === 2", "timeout": 3000, "nombre": "J1 terminó de caer"},
+    {"wait": 500, "eval": "(prueba.matarEnemigos(1), true)"},
+    {"verificar": "ya caído, antes de recomenzar: también se pasa de nivel", "eval": "prueba.estado()", "espera": {"fase": "nivelCompletado", "vidas": [2, 3]}},
+    {"wait": 2200},
+    {"verificar": "y la fase no recomienza después", "eval": "prueba.estado().fase === 'nivelCompletado'"},
+
+    {"eval": "(location.reload(), true)"},
+    {"wait": 500},
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca: caso 3"},
+    {"wait": 300, "eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"wait": 1600, "eval": "(prueba.sinEnemigos(), prueba.crearEnemigo('demonio_caminante', 440, 264), prueba.proteger(1), prueba.ponerVidas(1, 1), prueba.ponerTiempo(1))"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "se acaba el tiempo"},
+    {"eval": "(prueba.quitarProteccion(1), prueba.golpear(1), prueba.matarEnemigos(1), true)"},
+    {"hasta": "prueba.estado().fase === 'fin'", "timeout": 4000, "nombre": "termina la partida"},
+    {"verificar": "si era la última vida, ganar la fase no salva: termina la partida", "eval": "prueba.estado().vidas[0] === 0"}
+  ]
+}

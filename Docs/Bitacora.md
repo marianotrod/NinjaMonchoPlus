@@ -8,7 +8,8 @@ El detalle fino de cada cambio está en `git log`.
 ## 2026-11-06 — Mariano y Claude: fantasmas y gráficos en archivos
 
 - El fantasma va siempre a toda velocidad y acelera sin tope: antes frenaba al acercarse y un ninja corriendo nunca era alcanzado. Valores en `config.js`.
-- Un fantasma por jugador en pie: cada uno persigue al suyo y cualquiera mata a cualquiera. Al morir un jugador, por la causa que sea, desaparece su fantasma. Entran por el costado más lejano a los jugadores.
+- Un fantasma por jugador en pie: cada uno persigue al suyo y cualquiera mata a cualquiera. Al morir un jugador, por la causa que sea, desaparece su fantasma. Entran por el costado opuesto a los jugadores; con uno de cada lado, por arriba o por abajo, lo más lejos de su jugador.
+- Si un disparo que ya iba por el aire gana la fase después de morir, se gana igual y la vida se pierde; si era la última de todos, termina la partida.
 - El parpadeo tras un golpe o un pisotón no protege del fantasma, para que no se pueda explotar. Solo protege la caída al aparecer.
 - Con el reloj en cero nadie reaparece hasta que el reloj vuelva a empezar. Si no queda nadie en pie, se repite: el nivel en la Recolección y con el jefe (sin los puntos ganados en él), la fase en la Cacería (con los puntos que había al empezarla, completando el cupo).
 - Cacería: al acabarse el tiempo aparece el fantasma y ya no se pasa de nivel sin matar a todos.

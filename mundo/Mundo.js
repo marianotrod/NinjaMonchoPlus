@@ -24,12 +24,16 @@ export function envolverX(x) {
   return x >= DERECHA ? x - ANCHO : x;
 }
 
-// El costado del mundo que deja más lejos al más cercano de estos puntos.
+// El costado opuesto a estos puntos, o null si hay alguno de cada lado.
 // Sirve de punto de entrada para lo que no hace wrap, como el fantasma.
-export function bordeMasLejano(xs) {
-  const distancia = (borde) => Math.min(...xs.map(x => Math.abs(x - borde)));
-  return distancia(IZQUIERDA) > distancia(DERECHA) ? IZQUIERDA : DERECHA;
+export function costadoLibre(xs) {
+  const mitad = ANCHO_VISIBLE / 2;
+  if (xs.every(x => x < mitad)) return DERECHA;
+  return xs.every(x => x >= mitad) ? IZQUIERDA : null;
 }
+
+// El borde de arriba o de abajo, el que quede más lejos de y
+export const bordeVerticalOpuesto = (y) => (y < ALTO_VISIBLE / 2 ? ABAJO : ARRIBA);
 
 export function wrapear(objeto) {
   const { velocity } = objeto.body;
