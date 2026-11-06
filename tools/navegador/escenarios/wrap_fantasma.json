@@ -1,0 +1,19 @@
+{
+  "descripcion": "El fantasma nace en el corte del wrap sin teletransportarse, siempre del lado opuesto al jugador",
+  "query": "?debug&nivel=3&mapa=n-wrap",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), prueba.ponerJugador(1, 40, 264), prueba.ponerTiempo(1))"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "aparece a la derecha"},
+    {"eval": "(async () => { const xs = []; for (let i = 0; i < 16; i++) { xs.push(prueba.fantasmas()[0].x); await new Promise(r => setTimeout(r, 25)); } window.recorrido = xs; return xs.length; })()"},
+    {"verificar": "jugador a la izquierda: entra por la derecha y avanza sin saltos", "eval": "({ primero: recorrido[0], ultimo: recorrido[recorrido.length - 1], salto: Math.max(...recorrido.slice(1).map((x, i) => Math.abs(x - recorrido[i]))) })", "espera": {"primero": {"min": 500}, "ultimo": {"min": 460, "max": 530}, "salto": {"max": 12}}},
+    {"hasta": "prueba.estado().vidas[0] === 2", "timeout": 16000, "nombre": "el fantasma alcanza a J1"},
+    {"hasta": "prueba.estado().fase === 'recoleccion' && prueba.estado().tiempo > 5", "timeout": 8000, "nombre": "el nivel recomienza"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso de nuevo"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), prueba.ponerJugador(1, 470, 264), prueba.ponerTiempo(1))"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "aparece a la izquierda"},
+    {"eval": "(async () => { const xs = []; for (let i = 0; i < 16; i++) { xs.push(prueba.fantasmas()[0].x); await new Promise(r => setTimeout(r, 25)); } window.recorrido = xs; return xs.length; })()"},
+    {"verificar": "jugador a la derecha: entra por la izquierda y avanza sin saltos", "eval": "({ primero: recorrido[0], ultimo: recorrido[recorrido.length - 1], salto: Math.max(...recorrido.slice(1).map((x, i) => Math.abs(x - recorrido[i]))) })", "espera": {"primero": {"max": 12}, "ultimo": {"min": -20, "max": 60}, "salto": {"max": 12}}}
+  ]
+}

@@ -47,7 +47,7 @@ export function instalarPuertaPruebas(game) {
         talismanes: s.contarInventario(),
         enemigos: s.enemigos.countActive(true),
         enemigosPorAparecer: s.enemigosPorAparecer,
-        fantasma: !!s.fantasma,
+        fantasma: s.fantasmas.length > 0,
         jefe: s.jefe ? { tipo: s.jefe.tipo, hp: s.jefe.hp, hpMax: s.jefe.hpMax, estado: s.jefe.estado } : null,
         listoParaContinuar: s.listoParaContinuar,
         jefePartida: s.partida.jefe
@@ -63,6 +63,9 @@ export function instalarPuertaPruebas(game) {
       const niveles = todosLosNiveles();
       return { cantidad: niveles.length, errores: niveles.flatMap(([id, nivel]) => validarNivel(id, nivel)) };
     },
+    fantasmas: () => juego().fantasmas.map(f => ({
+      x: redondear(f.x), y: redondear(f.y), velocidad: redondear(f.velocidad), objetivo: f.objetivo ? f.objetivo.indice + 1 : null
+    })),
     jugador: (n = 1) => estadoJugador(jugador(n)),
     enemigos: () => juego().enemigos.getChildren().map(estadoEnemigo),
     enemigo: (i = 0) => { const e = juego().enemigos.getChildren()[i]; return e ? estadoEnemigo(e) : null; },
@@ -137,6 +140,10 @@ export function instalarPuertaPruebas(game) {
     },
     ponerTiempo(t) {
       juego().tiempoRestante = t;
+      return true;
+    },
+    sumarPuntos(n, puntos) {
+      juego().sumarPuntos(n - 1, puntos);
       return true;
     },
     ponerVidas(n, vidas) {
@@ -223,10 +230,10 @@ export function instalarPuertaPruebas(game) {
       s.recolectarItem(jugador(n), item);
       return s.fase;
     },
-    completarRecoleccion() {
+    completarRecoleccion(n = 1) {
       const s = juego();
       s.inventario = ['cuadrado', 'cuadrado', 'cuadrado', 'triangulo', 'triangulo', 'triangulo', 'rombo', 'rombo'];
-      return window.prueba.tocarTalisman(1, 'rombo');
+      return window.prueba.tocarTalisman(n, 'rombo');
     },
     enfurecerEnemigos() {
       juego().enemigos.getChildren().forEach(e => e.enfurecer());
@@ -241,7 +248,10 @@ export function instalarPuertaPruebas(game) {
       const s = juego();
       s.enemigosPorAparecer = 0;
       if (limpio) window.prueba.matarEnemigos(1);
-      else s.finCaceria(false);
+      else {
+        window.prueba.sinEnemigos();
+        s.finCaceria();
+      }
       return s.fase;
     },
     ponerVidaEnemigo(i, hp) {

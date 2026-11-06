@@ -165,7 +165,11 @@ Cada fase es una **tabla de reglas**. El resto del código consulta la tabla y n
 
 - **Al aparecer** (inicio, respawn o rescate), el ninja es **intocable** un rato.
 - **En la Recolección nadie muere:** trampa, fuego y enemigos tienen el mismo efecto que un golpe común.
-- **La excepción es el fantasma:** aparece cuando se acaba el tiempo de la Recolección. Si se completan los talismanes antes de que mate a alguien, desaparece y se pasa a la Cacería. Si mata a un ninja, ese ninja pierde una vida y **el nivel recomienza**, y se pierden los puntos obtenidos en el nivel, para que morir y recomenzar no se pueda explotar. (En la v1 el nivel sigue y el fantasma se queda.) **[Pendiente]** Qué pasa en cooperativo y si los pergaminos o el "sobrevivir a la muerte" cambian algo.
+- **La excepción es el fantasma:** aparece cuando se acaba el tiempo de la Recolección, la Cacería o la pelea con el jefe. Hay uno por jugador en pie: cada uno persigue al suyo y cualquiera puede matar a cualquiera. Cuando un jugador muere, por la causa que sea, desaparece **su** fantasma, así que nunca quedan dos para uno. Entran por el costado más lejano a los jugadores, a la altura de su objetivo, y no hacen wrap. Acelera sin tope, así que tarde o temprano no se lo puede esquivar. Ignora el parpadeo tras un golpe o un pisotón; solo respeta la caída al aparecer.
+  - **Con el reloj en cero nadie reaparece,** en ninguna fase y por ninguna causa: quien muere espera, y el compañero todavía puede lograr el objetivo. Reaparece cuando el reloj vuelve a empezar, por cambio de fase o de nivel.
+  - **Si no queda nadie en pie, se repite:** en la Recolección y con el jefe recomienza el nivel, sin los puntos obtenidos en él, para que morir y recomenzar no se pueda explotar. En la Cacería recomienza la fase, con los puntos que había al empezarla. Vuelven los que tengan vidas.
+  - **Cacería:** ya no se pasa de nivel sin matar a todos.
+  - **[Pendiente]** Si los pergaminos o el "sobrevivir a la muerte" cambian algo.
 
 ### 5.3 Enemigos
 - **Enfurecido** = rojo, más rápido y más agresivo (por ejemplo, dispara más seguido). **Nada más.**

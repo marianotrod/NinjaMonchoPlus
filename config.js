@@ -41,6 +41,8 @@ export const LOGICA = { VACIO: 0, SOLIDO: 1, PASARELA: 2, TRAMPA: 3, FUEGO: 4 };
 
 export const CONFIG = {
   VIDAS_INICIALES: 3,          // Por jugador: las vidas no se comparten
+  FANTASMA_VELOCIDAD: 45,       // Velocidad con la que aparece el fantasma (px/s). No tiene tope
+  FANTASMA_ACELERACION: 6,      // Cuánto más rápido va por cada segundo que pasa (px/s por segundo)
   ESPERA_RESPAWN: 2000,         // Tras caer fuera de la pantalla, el ninja reaparece arriba después de esto (ms)
   INVUL_RESPAWN: 1500,          // Invulnerabilidad al reaparecer, desde que toca el piso (ms)
   TOTAL_NIVELES: 10,

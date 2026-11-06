@@ -24,6 +24,13 @@ export function envolverX(x) {
   return x >= DERECHA ? x - ANCHO : x;
 }
 
+// El costado del mundo que deja más lejos al más cercano de estos puntos.
+// Sirve de punto de entrada para lo que no hace wrap, como el fantasma.
+export function bordeMasLejano(xs) {
+  const distancia = (borde) => Math.min(...xs.map(x => Math.abs(x - borde)));
+  return distancia(IZQUIERDA) > distancia(DERECHA) ? IZQUIERDA : DERECHA;
+}
+
 export function wrapear(objeto) {
   const { velocity } = objeto.body;
   objeto.x = envolverX(objeto.x);

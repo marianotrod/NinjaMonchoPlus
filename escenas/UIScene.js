@@ -257,7 +257,6 @@ export default class UIScene extends Phaser.Scene {
     const lineas = [];
     if (datos.bonoExtra) lineas.push([`${i18n.t('bono_jefe')} +${datos.bonoExtra}`, '#FBBF24']);
     lineas.push([`${i18n.t('bono_tiempo')} +${datos.bonoTiempo}`, datos.bonoTiempo ? '#4ADE80' : '#9CA3AF']);
-    if (datos.limpio === false) lineas.push([i18n.t('caceria_incompleta'), '#9CA3AF']);
     lineas.push(['', '#FFFFFF'], ...this.lineasPuntaje(datos.puntajes, datos.jugadores));
     this.crearPanel(`${i18n.t('nivel')} ${datos.nivel}\n${i18n.t('completado')}`, '#4ADE80', lineas.slice(0, 6), i18n.t('continuar'));
   }

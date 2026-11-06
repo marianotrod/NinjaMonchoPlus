@@ -1,0 +1,22 @@
+{
+  "descripcion": "Jefe: con el reloj corriendo se reaparece; con el reloj en cero, si no queda nadie en pie, recomienza la pelea",
+  "query": "?debug&nivel=5&jefe=ogro",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'jefe'", "timeout": 10000, "nombre": "empieza la pelea"},
+    {"hasta": "prueba.listo(1) && prueba.estado().jefe.estado !== 'entrando'", "timeout": 8000, "nombre": "J1 en el piso y el jefe listo"},
+    {"eval": "(prueba.quitarProteccion(1), prueba.golpear(1), true)"},
+    {"hasta": "prueba.estado().vidas[0] === 2", "timeout": 3000, "nombre": "J1 pierde una vida"},
+    {"hasta": "!prueba.jugador(1).muerto", "timeout": 4000, "nombre": "con el reloj corriendo J1 reaparece"},
+    {"verificar": "con el reloj corriendo la pelea sigue", "eval": "prueba.estado()", "espera": {"fase": "jefe", "fantasma": false}},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"wait": 1600},
+    {"eval": "(prueba.danarJefe(2), window.hp = prueba.estado().jefe.hpMax, prueba.ponerTiempo(1))"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "aparece el fantasma"},
+    {"verificar": "el jefe está herido", "eval": "prueba.estado().jefe.hp < hp"},
+    {"eval": "(prueba.quitarProteccion(1), prueba.golpear(1), true)"},
+    {"verificar": "muera como muera, su fantasma desaparece", "eval": "prueba.estado().fantasma === false && prueba.jugador(1).muerto"},
+    {"hasta": "prueba.estado().vidas[0] === 1", "timeout": 3000, "nombre": "J1 pierde otra vida"},
+    {"hasta": "prueba.estado().fase === 'jefe' && prueba.estado().tiempo > 5", "timeout": 12000, "nombre": "recomienza la pelea"},
+    {"verificar": "con el reloj en cero y nadie en pie, la pelea recomienza con el jefe entero", "eval": "(() => { const { jefe, vidas } = prueba.estado(); return { hp: jefe.hp - hp, vidas }; })()", "espera": {"hp": 0, "vidas": [1, 3]}}
+  ]
+}

@@ -17,8 +17,8 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - `escenas/`: `BootScene` (carga todo, texturas, animaciones, preferencias) → `TitleScene` → `NinjaMonchoScene` (juego)
   con `UIScene` (HUD, carteles, paneles) y `PauseScene` encima; `PactSelectionScene` entre niveles; `HowToPlayScene`, `OptionsScene`, `CreditsScene`.
 - `entidades/`: `Ninja` (jugador, katana), `Enemigo` (rasgos saltarín/caminante/volador/lanzador), `Jefe`, `Fantasma`, `Armas` (proyectiles del jugador).
-- `datos/`: `Bestiario` (enemigos), `Eventos` (catálogo de eventos). `reglas/`: `Partida` (estado de la partida en el registry), `Pactos`, `Fases` (qué vale en cada fase), `Resolvedor` (qué hace cada golpe). `mundo/`: `Niveles` (carga y valida `public/niveles/`), `CargadorNivel` (arma el nivel en la escena), `Mundo` (wrap; por ahora solo en niveles con `"wrap": true`, como `n-wrap`).
-- `sistemas/`: `Texturas` (arte provisorio generado por código), `Sonido` (volúmenes, música, beeps WebAudio), `Guardado` (localStorage), `Estilo` (texto), `PuertaPruebas`. `entrada/`: `MenuInputManager`.
+- `datos/`: `Bestiario` (enemigos), `Eventos` (catálogo de eventos), `Graficos` (los PNG sueltos de `public/assets/graficos/`). `reglas/`: `Partida` (estado de la partida en el registry), `Pactos`, `Fases` (qué vale en cada fase), `Resolvedor` (qué hace cada golpe). `mundo/`: `Niveles` (carga y valida `public/niveles/`), `CargadorNivel` (arma el nivel en la escena), `Mundo` (wrap; por ahora solo en niveles con `"wrap": true`, como `n-wrap`).
+- `sistemas/`: `Sonido` (volúmenes, música, beeps WebAudio), `Guardado` (localStorage), `Estilo` (texto), `PuertaPruebas`. `entrada/`: `MenuInputManager`.
 - Fases de `NinjaMonchoScene`: intro → recoleccion → transicion → caceria → nivelCompletado (o intro → jefe → nivelCompletado);
   perdiendoVida y fin interrumpen. La UI se entera por eventos (`this.events.emit(...)`).
 - Reglas de juego: se consulta `this.reglas` (tabla de `reglas/Fases.js`), no `this.fase`. Todo golpe pasa por `resolverGolpe` (`reglas/Resolvedor.js`).

@@ -5,11 +5,11 @@ import Enemigo from '../entidades/Enemigo.js';
 import Fantasma from '../entidades/Fantasma.js';
 import Jefe from '../entidades/Jefe.js';
 import { construirNivel } from '../mundo/CargadorNivel.js';
-import { wrapear } from '../mundo/Mundo.js';
+import { bordeMasLejano, wrapear } from '../mundo/Mundo.js';
 import { BANDO, CONFIG, DEBUG, FISICA, PAD } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
 import { MODS_GLOBAL_BASE, pactosVacios } from '../reglas/Pactos.js';
-import { AL_ACABARSE_EL_TIEMPO, reglasDe } from '../reglas/Fases.js';
+import { RECOMIENZO, reglasDe } from '../reglas/Fases.js';
 import { PROTECCION, crearGolpe, resolverGolpe } from '../reglas/Resolvedor.js';
 import { ARMAS, TIPOS_ARMA, actualizarProyectiles, arrastrarItem } from '../entidades/Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
@@ -49,9 +49,10 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.fase = 'intro';
     this.listoParaContinuar = false;
     this.inventario = [];
-    this.fantasma = null;
+    this.fantasmas = [];
+    this.persecucion = false;  // Ya se acabó el tiempo y aparecieron los fantasmas
+    partida.puntajesAlEmpezar = [...partida.puntajes];
     this.jefe = null;
-    this.collidersFantasma = [];
     this.collidersJefe = [];
     this.enemigosPorAparecer = 0;
 
@@ -193,7 +194,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.fase = 'transicion';
     this.detenerTimers();
     Sonido.ritmoMusica(1);
-    this.quitarFantasma();
+    this.terminarPersecucion();
 
     // Cobro de la fase: bono por segundos restantes para cada jugador
     const bono = this.tiempoRestante * CONFIG.BONO_POR_SEGUNDO;
@@ -218,7 +219,15 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   iniciarCaceria() {
     if (this.fase !== 'transicion') return;
     this.fase = 'caceria';
+    this.puntajesCaceria = [...this.partida.puntajes];
+    this.reaparecerLosQueEsperan();
+    this.arrancarCaceria();
+  }
+
+  arrancarCaceria() {
     this.tiempoRestante = CONFIG.TIEMPO_CACERIA;
+    this.relojJuego.paused = false;
+    Sonido.ritmoMusica(1);
     this.events.emit(EVENTOS.TIEMPO, this.tiempoRestante);
     this.events.emit(EVENTOS.FASE, 'caceria');
     this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('caceria'), subtitulo: i18n.t('objetivo_caceria'), color: '#EF4444', duracion: 1400, chico: true });
@@ -226,8 +235,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     // Cupo de demonios a cazar: crece con el nivel
     const cupo = Math.min(CONFIG.CUPO_CACERIA_BASE + Math.floor(this.nivelActual / 2), CONFIG.CUPO_CACERIA_MAX);
     this.enemigosPorAparecer = Math.max(0, cupo - this.enemigos.countActive(true));
+    if (this.timerCaceria) this.timerCaceria.remove();
     if (this.enemigosPorAparecer > 0) {
-      this.time.addEvent({
+      this.timerCaceria = this.time.addEvent({
         delay: CONFIG.INTERVALO_CACERIA, repeat: this.enemigosPorAparecer - 1,
         callback: () => {
           if (this.fase !== 'caceria') return;
@@ -243,15 +253,12 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.timerArmas.paused = false;
   }
 
-  finCaceria(limpio) {
+  finCaceria() {
     if (this.fase !== 'caceria') return;
-    const bono = limpio ? this.tiempoRestante * CONFIG.BONO_POR_SEGUNDO : 0;
+    this.terminarPersecucion();
+    const bono = this.tiempoRestante * CONFIG.BONO_POR_SEGUNDO;
     this.jugadores.forEach(j => this.sumarPuntos(j.indice, bono));
-    this.enemigos.getChildren().slice().forEach(enemigo => {
-      this.efectoChispas(enemigo.x, enemigo.y, 0x9ca3af);
-      enemigo.morir();
-    });
-    this.completarNivel({ bonoTiempo: bono, limpio });
+    this.completarNivel({ bonoTiempo: bono });
   }
 
   iniciarFaseJefe() {
@@ -281,7 +288,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.collidersJefe.forEach(c => c.destroy());
     this.collidersJefe = [];
     this.detenerTimers();
-    this.quitarFantasma();
+    this.terminarPersecucion();
     this.enemigos.getChildren().slice().forEach(enemigo => enemigo.morir());
     this.proyectilesDe(BANDO.DEMONIOS).forEach(proyectil => proyectil.destroy());
 
@@ -331,23 +338,31 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     vidas[jugador.indice] = Math.max(0, vidas[jugador.indice] - 1);
     this.events.emit(EVENTOS.VIDAS, vidas);
 
-    if (vidas[jugador.indice] > 0) {
-      this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('vida_perdida'), color: '#EF4444', duracion: 900, chico: true });
-      const spawnX = jugador.indice === 0 ? this.spawnMonchoX : this.spawnCoopX;
-      this.time.delayedCall(CONFIG.ESPERA_RESPAWN, () => {
-        if (this.esFaseJugable() && jugador.active) jugador.respawnear(spawnX);
-      });
-      return;
+    const sinVidas = vidas[jugador.indice] === 0;
+    if (sinVidas) {
+      jugador.retirar();
+      this.events.emit(EVENTOS.ARMA, jugador.indice, null, 0);
+      if (this.jugadores.every(j => j.eliminado)) {
+        this.perderPartida();
+        return;
+      }
     }
 
-    jugador.retirar();
-    this.events.emit(EVENTOS.ARMA, jugador.indice, null, 0);
-    if (this.jugadores.some(j => !j.eliminado)) {
-      this.events.emit(EVENTOS.BANNER, { titulo: `J${jugador.indice + 1} ${i18n.t('eliminado')}`, color: '#EF4444', duracion: 1400, chico: true });
+    const titulo = sinVidas ? `J${jugador.indice + 1} ${i18n.t('eliminado')}` : i18n.t('vida_perdida');
+    this.events.emit(EVENTOS.BANNER, { titulo, color: '#EF4444', duracion: sinVidas ? 1400 : 900, chico: true });
+
+    if (this.debeRecomenzar()) {
+      this.recomenzar();
       return;
     }
+    if (sinVidas || this.persecucion) return;
+    this.time.delayedCall(CONFIG.ESPERA_RESPAWN, () => {
+      if (this.esFaseJugable() && jugador.active) jugador.respawnear(this.spawnDe(jugador));
+    });
+  }
 
-    // Nadie más en pie: fin de la partida
+  // Nadie más en pie: fin de la partida
+  perderPartida() {
     this.fase = 'perdiendoVida';
     this.detenerTimers();
     this.physics.pause();
@@ -399,7 +414,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // RELOJ, ALARMA Y FANTASMA
   // ==========================================
   tickReloj() {
-    if (this.fantasma) return;
+    if (this.persecucion) return;
     this.tiempoRestante = Math.max(0, this.tiempoRestante - 1);
     this.events.emit(EVENTOS.TIEMPO, this.tiempoRestante);
 
@@ -411,29 +426,102 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
     if (t > 0 || this.modoDiosActivo) return;
 
-    const { alAcabarseElTiempo } = this.reglas;
-    if (alAcabarseElTiempo === AL_ACABARSE_EL_TIEMPO.FIN_CACERIA) this.finCaceria(false);
-    else if (alAcabarseElTiempo === AL_ACABARSE_EL_TIEMPO.FANTASMA) this.aparecerFantasma();
+    if (this.reglas.recomienzoPorFantasma) this.aparecerFantasmas();
   }
 
-  aparecerFantasma() {
-    this.relojJuego.paused = true;
+  // Uno por jugador en pie. Cada uno persigue al suyo, pero puede matar a cualquiera. Entran por el costado más lejano
+  // a los jugadores, a la altura de su objetivo, para dar el mayor tiempo posible. Nacen en el corte del wrap, pero no
+  // les afecta: los fantasmas no cruzan.
+  aparecerFantasmas() {
+    this.persecucion = true;
     Sonido.ritmoMusica(1.3);
     Sonido.beep(this, 110, 0.6, 0.15, 'sawtooth');
-    this.fantasma = new Fantasma(this, 256, -24);
-    this.jugadores.forEach(j => this.conectarFantasma(j));
+    const perseguidos = this.jugadores.filter(j => j.active && !j.muerto);
+    const x = bordeMasLejano(perseguidos.length > 0 ? perseguidos.map(j => j.x) : [0]);
+    const objetivos = perseguidos.length > 0 ? perseguidos : [null];
+    objetivos.forEach(objetivo => {
+      const y = objetivo ? Phaser.Math.Clamp(objetivo.y, 24, 264) : 144;
+      const fantasma = new Fantasma(this, x, y, objetivo);
+      this.fantasmas.push(fantasma);
+      this.jugadores.forEach(jugador => this.conectarFantasma(jugador, fantasma));
+    });
     this.events.emit(EVENTOS.FANTASMA);
   }
 
-  quitarFantasma() {
-    if (!this.fantasma) return;
-    const fantasma = this.fantasma;
-    this.fantasma = null;
-    this.collidersFantasma.forEach(c => c.destroy());
-    this.collidersFantasma = [];
+  quitarFantasma(fantasma) {
+    this.fantasmas = this.fantasmas.filter(f => f !== fantasma);
+    fantasma.colliders.forEach(c => c.destroy());
     fantasma.body.enable = false;
     this.tweens.killTweensOf(fantasma);
     this.tweens.add({ targets: fantasma, alpha: 0, scale: 2, duration: 400, onComplete: () => fantasma.destroy() });
+  }
+
+  terminarPersecucion() {
+    this.persecucion = false;
+    this.fantasmas.forEach(fantasma => this.quitarFantasma(fantasma));
+  }
+
+  // Cada jugador tiene su fantasma: muera como muera, el suyo desaparece, y nunca quedan dos para uno solo
+  alMorirNinja(jugador) {
+    this.fantasmas.filter(fantasma => fantasma.objetivo === jugador).forEach(fantasma => this.quitarFantasma(fantasma));
+  }
+
+  // Solo le falta objetivo si apareció cuando no había nadie en pie
+  objetivoDeFantasma(fantasma) {
+    const { objetivo } = fantasma;
+    if (objetivo && objetivo.active && !objetivo.muerto) return objetivo;
+    fantasma.objetivo = this.jugadorMasCercano(fantasma.x, fantasma.y);
+    return fantasma.objetivo;
+  }
+
+  tocarFantasma(jugador, fantasma) {
+    if (jugador.muerto || !this.fantasmas.includes(fantasma)) return;
+    resolverGolpe(this, jugador, crearGolpe('fantasma', { bando: BANDO.DEMONIOS, fuenteX: fantasma.x }));
+  }
+
+  // Con el reloj en cero se juega a todo o nada. Se espera a que terminen de caer todos, para que cada uno pierda su vida.
+  debeRecomenzar() {
+    return this.persecucion && !this.jugadores.some(j => j.active && (!j.muerto || !j.caidaAvisada));
+  }
+
+  // Los que murieron con el reloj en cero vuelven cuando el reloj vuelve a empezar
+  reaparecerLosQueEsperan() {
+    this.jugadores.filter(j => j.muerto && j.caidaAvisada).forEach(j => j.respawnear(this.spawnDe(j)));
+  }
+
+  recomenzar() {
+    const recomienzo = this.reglas.recomienzoPorFantasma;
+    this.fase = 'perdiendoVida';
+    this.detenerTimers();
+    this.physics.pause();
+    this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('otra_vez'), color: '#EF4444', duracion: CONFIG.ESPERA_RESPAWN, chico: true });
+    this.time.delayedCall(CONFIG.ESPERA_RESPAWN, () => {
+      if (recomienzo === RECOMIENZO.NIVEL) this.recomenzarNivel();
+      else this.recomenzarCaceria();
+    });
+  }
+
+  // Se pierden los puntos del nivel: morir no puede ser una forma de sumar más
+  recomenzarNivel() {
+    this.partida.puntajes = [...this.partida.puntajesAlEmpezar];
+    this.scene.stop('UIScene');
+    this.scene.restart();
+  }
+
+  // Sigue con los enemigos que queden y completa el cupo. Por eso vuelven los puntos del comienzo de la fase.
+  recomenzarCaceria() {
+    this.partida.puntajes = [...this.puntajesCaceria];
+    this.events.emit(EVENTOS.PUNTAJE, this.partida.puntajes);
+    this.terminarPersecucion();
+    this.fase = 'caceria';
+    this.physics.resume();
+    this.reaparecerLosQueEsperan();
+    this.timerArmas.paused = false;
+    this.arrancarCaceria();
+  }
+
+  spawnDe(jugador) {
+    return jugador.indice === 0 ? this.spawnMonchoX : this.spawnCoopX;
   }
 
   // ==========================================
@@ -463,14 +551,12 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.physics.add.overlap(jugador, this.proyectiles, this.impactoProyectilEnemigo,
       (j, proyectil) => enJuego() && proyectil.bando === BANDO.DEMONIOS, this);
 
-    if (this.fantasma) this.conectarFantasma(jugador);
+    this.fantasmas.forEach(fantasma => this.conectarFantasma(jugador, fantasma));
     if (this.jefe) this.conectarJefe(jugador);
   }
 
-  conectarFantasma(jugador) {
-    this.collidersFantasma.push(this.physics.add.overlap(jugador, this.fantasma, () => {
-      if (this.fantasma) resolverGolpe(this, jugador, crearGolpe('fantasma', { bando: BANDO.DEMONIOS, fuenteX: this.fantasma.x }));
-    }, null, this));
+  conectarFantasma(jugador, fantasma) {
+    fantasma.colliders.push(this.physics.add.overlap(jugador, fantasma, () => this.tocarFantasma(jugador, fantasma)));
   }
 
   conectarJefe(jugador) {
@@ -706,7 +792,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     actualizarProyectiles(this);
     if (this.conWrap) this.aplicarWrap();
 
-    if (this.fantasma) this.fantasma.actualizar(this.jugadorMasCercano(this.fantasma.x, this.fantasma.y));
+    this.fantasmas.forEach(fantasma => fantasma.actualizar(this.objetivoDeFantasma(fantasma), delta));
     if (this.jefe && this.jefe.active) this.jefe.actualizar();
   }
 
@@ -976,7 +1062,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     if (this.reglas.cuentaBajas) {
       this.emitirEnemigosRestantes();
-      if (this.enemigos.countActive(true) === 0 && this.enemigosPorAparecer <= 0) this.finCaceria(true);
+      if (this.enemigos.countActive(true) === 0 && this.enemigosPorAparecer <= 0) this.finCaceria();
     }
   }
 

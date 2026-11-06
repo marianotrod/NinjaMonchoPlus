@@ -1,6 +1,6 @@
 import { i18n } from '../i18n.js';
 import { ARRANQUE_DEBUG } from '../config.js';
-import { Texturas } from '../sistemas/Texturas.js';
+import { GRAFICOS } from '../datos/Graficos.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { nuevaPartida } from '../reglas/Partida.js';
 import { cargarNiveles, registrarNiveles } from '../mundo/Niveles.js';
@@ -32,6 +32,8 @@ export default class BootScene extends Phaser.Scene {
     this.load.spritesheet('demonio', `${A}demonio.png`, { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('escudo_roto', `${A}escudo_roto-Sheet.png`, { frameWidth: 16, frameHeight: 16 });
 
+    GRAFICOS.forEach(clave => this.load.image(clave, `${A}graficos/${clave}.png`));
+
     this.load.audio('musica-fondo', [`${A}GameMusic.ogg`, `${A}GameMusic.mp3`]);
     this.load.audio('musica-cueva', [`${A}CaveMusic.mp3`]);
     this.load.audio('musica-agua', [`${A}WaterMusic.mp3`]);
@@ -49,7 +51,6 @@ export default class BootScene extends Phaser.Scene {
 
   create() {
     registrarNiveles(this.cache);
-    Texturas.generar(this);
     this.crearAnimaciones();
 
     i18n.setIdioma(Guardado.leer('idioma', 'es'));

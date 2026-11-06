@@ -493,6 +493,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     Sonido.efecto(this.sceneRef, 'snd-stun', 0.5);
 
     this.sceneRef.time.delayedCall(FISICA.duracionStun, () => {
+      if (this.muerto) return; // Lo mató el fantasma mientras estaba aturdido
       this.isStunned = false;
       this.sceneRef.tweens.add({
         targets: this,

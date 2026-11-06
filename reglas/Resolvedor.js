@@ -28,16 +28,20 @@ function golpearNinja(escena, ninja, golpe) {
   }
   const { reglas } = escena;
   if (!reglas.jugable || escena.modoDiosActivo) return;
-  if (ninja.muerto || ninja.eliminado || ninja.proteccion === PROTECCION.INTOCABLE) return;
+  if (ninja.muerto || ninja.eliminado) return;
 
-  // El fantasma es la excepción: mata en cualquier fase
-  const efecto = golpe.tipo === 'fantasma' ? GOLPE_AL_NINJA.VIDA : reglas.golpeAlNinja;
+  // El fantasma es la excepción: mata en cualquier fase y no le importa el parpadeo tras un golpe o un pisotón,
+  // que el jugador podría provocar a propósito. Solo respeta la caída al aparecer.
+  const esFantasma = golpe.tipo === 'fantasma';
+  if (esFantasma ? ninja.isSpawning : ninja.proteccion === PROTECCION.INTOCABLE) return;
+  const efecto = esFantasma ? GOLPE_AL_NINJA.VIDA : reglas.golpeAlNinja;
   if (efecto === GOLPE_AL_NINJA.NADA) return;
 
-  if (efecto === GOLPE_AL_NINJA.VIDA && ninja.proteccion === PROTECCION.NORMAL) {
+  if (efecto === GOLPE_AL_NINJA.VIDA && (esFantasma || ninja.proteccion === PROTECCION.NORMAL)) {
     // Sale despedido, atraviesa el escenario y cae fuera de la pantalla: recién ahí pierde la vida (jugadorCayoFuera)
     ninja.morir(golpe.fuenteX);
     escena.cameras.main.shake(250, 0.012);
+    escena.alMorirNinja(ninja);
   } else if (ninja.aplicarDaño(golpe.fuenteX)) {
     escena.cameras.main.shake(150, 0.008);
     escena.mostrarTextoFlotante(ninja.x, ninja.y, i18n.t('ouch'), '#EF4444');
