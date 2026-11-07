@@ -1,0 +1,27 @@
+{
+  "descripcion": "Armas: cooldown, rebotes, la misma arma suma munición y la munición se recarga en el nivel siguiente",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 2000, "eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), prueba.sinItems(), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"eval": "(prueba.ponerJugador(1, 200, 264), prueba.proteger(1), prueba.equipar(1, 'shuriken'), prueba.mirar(1, 1), true)"},
+    {"verificar": "el cooldown no deja disparar dos veces seguidas", "eval": "(prueba.disparar(1), prueba.disparar(1, true), prueba.jugador(1).municion) === 6"},
+    {"wait": 300},
+    {"verificar": "pasado el cooldown vuelve a disparar", "eval": "(prueba.disparar(1, true), prueba.jugador(1).municion) === 5"},
+    {"verificar": "la misma arma suma munición, ahora y para los niveles siguientes", "eval": "(prueba.equipar(1, 'shuriken'), { ahora: prueba.jugador(1).municion, porNivel: prueba.armaGuardada(1).municion })", "espera": {"ahora": 12, "porNivel": 14}},
+    {"eval": "(prueba.sinItems(), prueba.equipar(1, 'bumeran'), prueba.ponerJugador(1, 60, 264), prueba.mirar(1, -1), prueba.disparar(1), true)"},
+    {"wait": 250},
+    {"verificar": "el bumerán rebota contra la pared en lugar de atravesarla", "eval": "(() => { const b = prueba.proyectiles().jugador[0]; return !!b && b.x > 20; })()"},
+    {"eval": "(prueba.equipar(1, 'bumeran'), prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"wait": 300, "eval": "prueba.terminarCaceria(false)"},
+    {"hasta": "prueba.estado().listoParaContinuar", "timeout": 3000, "nombre": "se puede continuar"},
+    {"press": "Enter"},
+    {"hasta": "prueba.escenas().includes('PactSelectionScene')", "timeout": 3000, "nombre": "pantalla de pactos"},
+    {"wait": 700},
+    {"press": "Enter"},
+    {"hasta": "prueba.enJuego() && prueba.estado().nivel === 2", "timeout": 6000, "nombre": "arranca el nivel 2"},
+    {"verificar": "en el nivel siguiente el arma vuelve con la munición completa", "eval": "prueba.jugador(1)", "espera": {"arma": "bumeran", "municion": 10}}
+  ]
+}

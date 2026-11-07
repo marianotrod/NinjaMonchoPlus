@@ -23,8 +23,12 @@ const HERRAMIENTAS = [
   { id: 'lapiz', nombre: 'Lápiz', tecla: 'b' },
   { id: 'rectangulo', nombre: 'Rectángulo', tecla: 'r' },
   { id: 'borrar', nombre: 'Borrar', tecla: 'e' },
-  { id: 'cuentagotas', nombre: 'Cuentagotas', tecla: 'i' }
+  { id: 'cuentagotas', nombre: 'Cuentagotas', tecla: 'i' },
+  { id: 'copiar', nombre: 'Copiar bloque', tecla: 'c' },
+  { id: 'estampar', nombre: 'Estampar bloque', tecla: 'v' }
 ];
+// Las capas de tiles que se copian, con el valor que significa celda vacía
+const CAPAS_DE_BLOQUE = [['fondo', -1], ['skin', -1], ['logica', LOGICA.VACIO]];
 const TIPOS_LOGICA = [
   { valor: LOGICA.SOLIDO, nombre: 'Sólido', color: '#22c55e', letra: 'S' },
   { valor: LOGICA.PASARELA, nombre: 'Pasarela', color: '#3b82f6', letra: 'P' },
@@ -62,7 +66,8 @@ const estado = {
   sucio: false,
   recientes: [],
   cursor: null,
-  trazo: null
+  trazo: null,
+  bloque: null   // Lo último que se copió: { ancho, alto, capas: { skin: [[...]], ... } }. Sigue al cambiar de nivel.
 };
 
 const $ = (id) => document.getElementById(id);
@@ -168,11 +173,29 @@ function dibujarGrilla(lado) {
   ctx.stroke();
 }
 
+// Vista previa del bloque bajo el cursor: el dibujo semitransparente y el contorno
+function dibujarBloqueEn(cursor, lado) {
+  const { bloque } = estado;
+  ctx.globalAlpha = 0.6;
+  ['fondo', 'skin'].forEach(capa => {
+    const grilla = bloque.capas[capa];
+    if (!grilla) return;
+    grilla.forEach((fila, f) => fila.forEach((frame, c) => {
+      if (frame !== -1) dibujarTile(ctx, frame, (cursor.col + c) * lado, (cursor.fila + f) * lado, lado);
+    }));
+  });
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = '#facc15';
+  ctx.strokeRect(cursor.col * lado, cursor.fila * lado, bloque.ancho * lado, bloque.alto * lado);
+}
+
 function dibujarCursor(lado) {
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 2;
   const { trazo, cursor } = estado;
-  if (trazo && trazo.rectangulo) {
+  if (cursor && estado.herramienta === 'estampar' && estado.bloque) {
+    dibujarBloqueEn(cursor, lado);
+  } else if (trazo && trazo.rectangulo) {
     const r = rectanguloDe(trazo.inicio, cursor || trazo.inicio);
     ctx.strokeRect(r.c1 * lado, r.f1 * lado, (r.c2 - r.c1 + 1) * lado, (r.f2 - r.f1 + 1) * lado);
   } else if (cursor) {
@@ -290,6 +313,30 @@ function tomarDeCelda(col, fila) {
   dibujarPaleta();
 }
 
+// Copia las capas visibles: con la lógica a la vista, el bloque se lleva su colisión
+function copiarBloque({ c1, c2, f1, f2 }) {
+  const capas = {};
+  CAPAS_DE_BLOQUE.forEach(([capa]) => {
+    if (estado.visibles[capa]) capas[capa] = estado.nivel.capas[capa].slice(f1, f2 + 1).map(fila => fila.slice(c1, c2 + 1));
+  });
+  estado.bloque = { ancho: c2 - c1 + 1, alto: f2 - f1 + 1, capas };
+  avisar(`Bloque de ${estado.bloque.ancho}×${estado.bloque.alto} copiado: V lo estampa`, 'ok');
+  elegirHerramienta('estampar');
+}
+
+// Las celdas vacías del bloque no pisan lo que hay abajo. Lo que queda fuera del mapa se recorta.
+function estamparBloque({ col, fila }) {
+  const { bloque, nivel } = estado;
+  CAPAS_DE_BLOQUE.forEach(([capa, vacio]) => {
+    const grilla = bloque.capas[capa];
+    if (!grilla) return;
+    grilla.forEach((filaBloque, f) => filaBloque.forEach((valor, c) => {
+      const destino = nivel.capas[capa][fila + f];
+      if (valor !== vacio && destino && col + c < MUNDO.columnas) destino[col + c] = valor;
+    }));
+  });
+}
+
 function empezarTrazo(evento) {
   const celda = celdaDe(evento);
   if (!celda || !estado.nivel) return;
@@ -298,9 +345,21 @@ function empezarTrazo(evento) {
     tomarDeCelda(celda.col, celda.fila);
     return;
   }
-  const borrar = evento.button === 2 || estado.herramienta === 'borrar';
-  const rectangulo = estado.herramienta === 'rectangulo' && estado.capa !== 'objetos';
-  estado.trazo = { foto: fotoDelNivel(), borrar, rectangulo, inicio: celda };
+  const { herramienta } = estado;
+  if (herramienta === 'estampar') {
+    if (!estado.bloque) {
+      avisar('Primero copiá un bloque (C)', 'error');
+      return;
+    }
+    estado.trazo = { foto: fotoDelNivel(), estampa: true };
+    estamparBloque(celda);
+    dibujar();
+    return;
+  }
+  const borrar = evento.button === 2 || herramienta === 'borrar';
+  const copiar = herramienta === 'copiar';
+  const rectangulo = copiar || (herramienta === 'rectangulo' && estado.capa !== 'objetos');
+  estado.trazo = { foto: fotoDelNivel(), borrar, rectangulo, copiar, inicio: celda };
   if (!rectangulo) pintarCelda(celda.col, celda.fila, borrar);
   dibujar();
 }
@@ -309,7 +368,7 @@ function moverCursor(evento) {
   const celda = celdaDe(evento);
   estado.cursor = celda;
   const { trazo } = estado;
-  if (trazo && celda && !trazo.rectangulo) pintarCelda(celda.col, celda.fila, trazo.borrar);
+  if (trazo && celda && !trazo.rectangulo && !trazo.estampa) pintarCelda(celda.col, celda.fila, trazo.borrar);
   dibujar();
 }
 
@@ -318,7 +377,8 @@ function terminarTrazo() {
   if (!trazo) return;
   if (trazo.rectangulo) {
     const r = rectanguloDe(trazo.inicio, cursor || trazo.inicio);
-    for (let f = r.f1; f <= r.f2; f++) for (let c = r.c1; c <= r.c2; c++) pintarCelda(c, f, trazo.borrar);
+    if (trazo.copiar) copiarBloque(r);
+    else for (let f = r.f1; f <= r.f2; f++) for (let c = r.c1; c <= r.c2; c++) pintarCelda(c, f, trazo.borrar);
   }
   estado.trazo = null;
   if (fotoDelNivel() !== trazo.foto) {

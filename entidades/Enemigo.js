@@ -1,6 +1,6 @@
 // Enemigo.js
-import { BANDO } from '../config.js';
-import { envolverX } from '../mundo/Mundo.js';
+import { BANDO, CONFIG } from '../config.js';
+import { envolverX, fueraDeVista } from '../mundo/Mundo.js';
 
 export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, configConfiguracion) {
@@ -24,7 +24,36 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
     }
 
     // Este método se llama desde la escena DESPUÉS de agregarlo al grupo de físicas
+    // Mientras entra a la pantalla es intocable: no daña, no lo dañan y no lo mueven. Parpadea mientras dure.
+    get intocable() {
+        return this.entrando;
+    }
+
+    empezarEntrada() {
+        this.entrando = true;
+        this.finEntrada = null;
+        this.parpadeo = this.scene.tweens.add({ targets: this, alpha: 0.3, duration: 100, yoyo: true, repeat: -1 });
+    }
+
+    terminarEntrada() {
+        this.entrando = false;
+        if (this.parpadeo) this.parpadeo.remove();
+        this.parpadeo = null;
+        this.setAlpha(1);
+    }
+
+    actualizarEntrada() {
+        if (!this.entrando) return;
+        const ahora = this.scene.time.now;
+        if (this.finEntrada === null) {
+            if (!fueraDeVista(this)) this.finEntrada = ahora + CONFIG.ENTRADA_ENEMIGO;
+        } else if (ahora >= this.finEntrada) {
+            this.terminarEntrada();
+        }
+    }
+
     arrancar() {
+        this.empezarEntrada();
         // Variables internas para el rasgo [Saltarín]
         if (this.rasgos.saltarin.activo) {
             this.setBounce(1);
@@ -62,6 +91,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
     // Este método se llamará desde el update() de la escena principal
     actualizarComportamiento() {
         if (this.muerto) return;
+        this.actualizarEntrada();
 
         if (this.estrellaStun) {
             this.estrellaStun.setPosition(this.x + Math.sin(this.scene.time.now / 80) * 6, this.y - 12);

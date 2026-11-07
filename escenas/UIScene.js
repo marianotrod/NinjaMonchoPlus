@@ -57,6 +57,8 @@ export default class UIScene extends Phaser.Scene {
       { icono: this.add.image(500, 278, 'icono-shuriken').setVisible(false), texto: this.add.text(488, 278, '', estilo(8, '#86EFAC')).setOrigin(1, 0.5) }
     ];
     this.add.text(256, 282, `${i18n.t('nivel')} ${partida.nivel}/${CONFIG.TOTAL_NIVELES}`, estilo(8, '#9CA3AF')).setOrigin(0.5);
+    // El arma viene del nivel anterior
+    (juegoEscena.jugadores || []).forEach(j => this.mostrarArma(j.indice, j.arma, j.municion));
 
     // 7. Barra de vida del jefe
     this.barraJefe = this.add.container(256, 24).setVisible(false).setDepth(5);

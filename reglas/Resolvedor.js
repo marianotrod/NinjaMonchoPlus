@@ -5,7 +5,7 @@
 //   direccion: -1 o 1, para empujar con la fuerza propia de cada objetivo
 //   origen:    desde dónde empuja: los ítems se alejan de ese punto
 //   empuje:    { vx, vy }, para los golpes que empujan distinto a cada objetivo (explosiones)
-import { BANDO, CONFIG, FISICA } from '../config.js';
+import { BANDO, COLORES, CONFIG, FISICA } from '../config.js';
 import { i18n } from '../i18n.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { GOLPE_AL_NINJA } from './Fases.js';
@@ -27,11 +27,16 @@ function empujeDesde(origen, objetivo) {
   return { vx: Math.cos(angulo) * fuerza, vy: Math.min(subidaMinima, Math.sin(angulo) * fuerza) };
 }
 
-// Un proyectil propio o del compañero solo golpea si algún modificador lo permite
+// Un proyectil o una explosión de un jugador solo golpea a un jugador si algún modificador lo permite.
+// Con fuego amigo todo es negro y golpea a todos, incluido quien lo lanzó.
 export function golpeaAliado(escena, golpe, ninja) {
-  if (golpe.tipo !== 'proyectil') return false;
-  return golpe.duenio === ninja ? escena.modsGlobal.dañoPropio : escena.modsGlobal.fuegoAmigo;
+  if (golpe.tipo !== 'proyectil' && golpe.tipo !== 'explosion') return false;
+  const { fuegoAmigo, dañoPropio } = escena.modsGlobal;
+  return fuegoAmigo || (golpe.duenio === ninja && dañoPropio);
 }
+
+// El color de lo que lanza un jugador
+export const colorDeJugador = (escena) => (escena.modsGlobal.fuegoAmigo ? COLORES.TODOS : COLORES.JUGADORES);
 
 function golpearNinja(escena, ninja, golpe) {
   if (golpe.bando === ninja.bando && !golpeaAliado(escena, golpe, ninja)) {
@@ -66,7 +71,7 @@ function golpearNinja(escena, ninja, golpe) {
 }
 
 function golpearEnemigo(escena, enemigo, golpe) {
-  if (enemigo.muerto || golpe.bando === enemigo.bando) return;
+  if (enemigo.muerto || enemigo.intocable || golpe.bando === enemigo.bando) return;
   if (escena.reglas.enemigosVulnerables) {
     enemigo.hp -= golpe.daño;
     if (enemigo.hp <= 0) {
@@ -88,11 +93,12 @@ function golpearEnemigo(escena, enemigo, golpe) {
 }
 
 // Un ítem empujado pasa a ser un proyectil de quien lo empujó, hasta que frena
-function lanzarItem(item, golpe) {
+function lanzarItem(escena, item, golpe) {
   const { vx, vy } = golpe.empuje ?? empujeDesde(golpe.origen, item);
   item.setVelocity(vx, vy);
   item.lanzador = golpe.duenio ?? null;
   item.golpeados = new Set();
+  if (item.lanzador) item.setTint(colorDeJugador(escena));
 }
 
 export const itemLanzado = (item) =>
@@ -107,6 +113,6 @@ export function resolverGolpe(escena, objetivo, golpe) {
   } else if (objetivo.bando === BANDO.JUGADORES) {
     golpearNinja(escena, objetivo, golpe);
   } else {
-    lanzarItem(objetivo, golpe);
+    lanzarItem(escena, objetivo, golpe);
   }
 }

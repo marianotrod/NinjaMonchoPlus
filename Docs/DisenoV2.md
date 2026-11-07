@@ -274,9 +274,23 @@ El sonido, las partículas, el puntaje y la UI escuchan sin mezclarse con la ló
 - **No se ofrece** un pergamino que ya tienen todos los jugadores.
 - Se puede agarrar uno que ya tenés: no ganás nada, recibís el negativo y se lo bloqueás al compañero.
 - Cada negativo dice si afecta **solo al que lo agarró** o **a todos**.
-- Las armas ya no vienen en cajas: **se obtienen con pergaminos y usan cooldown** en lugar de munición
-  (**[Probar]** si hace falta combinar las dos cosas).
-- **Habilidades base:** moverse, saltar y katana (el parry incluido). Todo lo demás se desbloquea.
+- Las armas ya no vienen en cajas: **se obtienen con pergaminos y usan cooldown y munición** (decidido el 2026-11-07).
+  La munición se recarga al empezar cada nivel. Un arma por jugador: la misma suma munición, otra la reemplaza.
+  Cada arma tiene sus rebotes base (shuriken 0, bumerán 2, bomba 1) y se destruye en el golpe siguiente al último.
+- **Habilidades base:** moverse, saltar, katana y parry. El parry viene desde el principio: es útil y crea variedad.
+  Dash, doble salto, salto de pared, caída pesada y boulder se desbloquean con pergaminos, son acumulativos y tienen nivel 2.
+
+### 7.0 Decisiones del 2026-11-07
+- **Cada pergamino combina al azar un positivo y un negativo:** una carta de 2×4 tiles, mitad verde arriba (positivo) y mitad roja abajo (negativo), con texto chico en cada parte. La estética se ve después.
+- **Sala de pergaminos:** 3 cartas y dura **10 segundos** (calibrable).
+- A quién afecta cada efecto: lo aclara Mariano en la lista revisada.
+- **Colores de los proyectiles:** azul los de los jugadores (dañan a los enemigos), rojo los de los enemigos (dañan a los jugadores), negro dañan a todos, incluido quien los lanzó. Un ítem empujado toma el color de quien lo empujó.
+- **Bombas:** la azul (del jugador) no te daña; la negra sí. Las dos empujan.
+- **Fuego amigo:** todos los proyectiles de los jugadores pasan a negros. Los proyectiles enemigos **no** dañan a otros enemigos: si no, se podría terminar un nivel por casualidad.
+- **Lo intocable parpadea mientras lo es.** Los enemigos son intocables al entrar en la pantalla.
+- **Glow dorado** en lo que no puede morir durante la Recolección: los ninjas y los enemigos.
+- **Monedas:** se resquebrajan al perder valor, sin cambiar de color. Ponerse rojas pasa a ser un pergamino negativo.
+- **Tile de piedra** para el pergamino de pisar trampas: provisorio, Mariano lo reemplaza.
 
 ### 7.2 Cómo se define cada mitad
 ```js

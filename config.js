@@ -30,6 +30,9 @@ export const TRADUCCIONES = {
 // Grilla de los niveles: 34×20 tiles, con la pantalla de 32×18 al centro abajo (2 filas ocultas arriba y 1 columna a cada lado).
 export const BANDO = { JUGADORES: 'jugadores', DEMONIOS: 'demonios' };
 
+// Color de lo que golpea: azul daña a los enemigos, rojo a los jugadores y negro a todos (con fuego amigo)
+export const COLORES = { JUGADORES: 0x60a5fa, DEMONIOS: 0xf87171, TODOS: 0x4b5563, INMORTAL: 0xfacc15 };
+
 export const MUNDO = {
   columnas: 34, filas: 20, columnasOcultas: 1, filasOcultas: 2, tile: 16,
   caidaMaxima: 600,    // Tope de velocidad al caer por un hueco y volver a entrar por arriba (px/s)
@@ -50,6 +53,7 @@ export const CONFIG = {
   FUEGO_ESPERA_MIN: 3000,       // Tiempo entre bolas de un tile de fuego: al azar entre estos dos valores (ms)
   FUEGO_ESPERA_MAX: 7000,
   DURACION_LLAMA: 5000,         // Lo que dura encendida la llama que deja una bola al quedar quieta (ms)
+  ENTRADA_ENEMIGO: 500,         // Un enemigo es intocable mientras entra a la pantalla y esto más (ms)
   ESPERA_RESPAWN: 2000,         // Tras caer fuera de la pantalla, el ninja reaparece arriba después de esto (ms)
   INVUL_RESPAWN: 1500,          // Invulnerabilidad al reaparecer, desde que toca el piso (ms)
   TOTAL_NIVELES: 10,

@@ -23,13 +23,13 @@ export function instalarPuertaPruebas(game) {
     vx: redondear(j.body.velocity.x), vy: redondear(j.body.velocity.y),
     enPiso: j.body.blocked.down || j.body.touching.down,
     muerto: j.muerto, eliminado: j.eliminado,
-    estado: j.estado, aturdido: j.aturdido, invulnerable: j.proteccion !== PROTECCION.NORMAL, apareciendo: j.apareciendo,
+    estado: j.estado, brillo: !!j.conBrillo, alfa: Math.round(j.alpha * 10) / 10, aturdido: j.aturdido, invulnerable: j.proteccion !== PROTECCION.NORMAL, apareciendo: j.apareciendo,
     arma: j.arma, municion: j.municion
   } : null;
 
   const estadoEnemigo = (e) => ({
     clave: claveEnemigo(e), x: redondear(e.x), y: redondear(e.y),
-    enfurecido: e.enfurecido, aturdido: e.aturdido, muerto: e.muerto, hp: e.hp
+    enfurecido: e.enfurecido, aturdido: e.aturdido, muerto: e.muerto, hp: e.hp, intocable: e.intocable, brillo: !!e.conBrillo
   });
 
   window.prueba = {
@@ -138,6 +138,17 @@ export function instalarPuertaPruebas(game) {
       s.enemigosHabilitados = habilitados;
       if (x !== undefined) e.body.reset(x, y);
       e.setVelocity(0, 0);
+      e.terminarEntrada(); // Las pruebas lo ponen ya en juego; entrar() lo vuelve a la entrada normal
+      return s.enemigos.getChildren().indexOf(e);
+    },
+    // Crea un enemigo que entra como en el juego: desde arriba y fuera de la pantalla
+    enemigoEntrando(clave, x) {
+      const s = juego();
+      const habilitados = s.enemigosHabilitados;
+      s.enemigosHabilitados = true;
+      const e = s.crearEnemigo(clave);
+      s.enemigosHabilitados = habilitados;
+      e.body.reset(x, -8);
       return s.enemigos.getChildren().indexOf(e);
     },
     // Coloca un talismán o una moneda quieta en un lugar
@@ -156,6 +167,13 @@ export function instalarPuertaPruebas(game) {
     },
     ponerTiempo(t) {
       juego().tiempoRestante = t;
+      return true;
+    },
+    // Da movimientos especiales: una lista o 'todos', con su nivel
+    darHabilidades(n = 1, habilidades = 'todos', nivel = 1) {
+      const j = jugador(n);
+      const lista = habilidades === 'todos' ? Object.keys(j.habilidades) : habilidades;
+      lista.forEach(habilidad => { j.habilidades[habilidad] = nivel; });
       return true;
     },
     sinDobleSalto(n = 1) {
@@ -215,7 +233,9 @@ export function instalarPuertaPruebas(game) {
       jugador(n).equiparArma(arma);
       return true;
     },
-    disparar(n = 1) {
+    // Sin respetar el cooldown, salvo que se pida
+    disparar(n = 1, conCooldown = false) {
+      if (!conCooldown) jugador(n).proximoDisparo = 0;
       jugador(n).usarEspecial();
       return true;
     },
@@ -281,6 +301,8 @@ export function instalarPuertaPruebas(game) {
       return true;
     },
     reglas: () => ({ ...juego().reglas }),
+    habilidades: (n = 1) => ({ ...jugador(n).habilidades }),
+    armaGuardada: (n = 1) => juego().partida.armas[n - 1],
     proyectilEnemigo(x, y, vx, vy, gravedad = false) {
       return !!juego().dispararProyectilEnemigo(x, y, vx, vy, { gravedad });
     },

@@ -1,17 +1,22 @@
 // Armas.js
-// Armas secundarias (GDD §6): una sola ranura por jugador; recoger otra caja reemplaza el arma y su munición.
+// Armas especiales: una sola por jugador. Tienen cooldown entre tiros y munición por nivel, que se recarga al empezar
+// el siguiente. La misma arma suma munición; otra la reemplaza y vuelve a la munición base.
+// Rebotan contra el escenario tantas veces como dice "rebotes" y el golpe siguiente las destruye (la bomba explota).
 //   shuriken: proyectil rápido que cae muy poco (FISICA.caidaShuriken).
 //   bumeran:  va y vuelve; arrastra talismanes y monedas hacia el jugador y golpea varias veces.
-//   bomba:    tiro con rebote corto que explota y empuja todo lo que esté cerca.
+//   bomba:    tiro con rebote que explota por tiempo y empuja todo lo que esté cerca.
 import { BANDO, FISICA } from '../config.js';
 import { proyectilVencido } from '../mundo/Mundo.js';
+import { colorDeJugador } from '../reglas/Resolvedor.js';
 import { Sonido } from '../sistemas/Sonido.js';
 
 export const ARMAS = {
-  shuriken: { icono: 'icono-shuriken', municion: 12, velocidad: 300, giro: 900, duracion: 1500 },
-  bumeran: { icono: 'icono-bumeran', municion: 6, velocidad: 240, velocidadVuelta: 280, giro: 720, duracionIda: 380 },
+  shuriken: { icono: 'icono-shuriken', municion: 7, rebotes: 0, cooldown: 250, velocidad: 300, giro: 900, duracion: 1500 },
+  bumeran: {
+    icono: 'icono-bumeran', municion: 5, rebotes: 2, cooldown: 300, velocidad: 240, velocidadVuelta: 280, giro: 720, duracionIda: 380
+  },
   bomba: {
-    icono: 'icono-bomba', municion: 4, velocidadX: 160, velocidadY: -200, rebote: 0.4, giro: 300,
+    icono: 'icono-bomba', municion: 3, rebotes: 1, cooldown: 600, velocidadX: 160, velocidadY: -200, rebote: 0.4, giro: 300,
     espera: 1200, radio: 48, impulso: 300, impulsoMinimo: -150
   }
 };
@@ -20,6 +25,8 @@ export const TIPOS_ARMA = Object.keys(ARMAS);
 
 export function dispararArma(scene, ninja) {
   if (ninja.arma === 'bumeran' && ninja.bumeranActivo && ninja.bumeranActivo.active) return false;
+  if (scene.time.now < ninja.proximoDisparo) return false;
+  ninja.proximoDisparo = scene.time.now + ARMAS[ninja.arma].cooldown;
 
   const direccion = ninja.flipX ? -1 : 1;
   const datos = ARMAS[ninja.arma];
@@ -30,6 +37,9 @@ export function dispararArma(scene, ninja) {
   proyectil.duenio = ninja;
   proyectil.golpeados = new Set();
   proyectil.nacimiento = scene.time.now;
+  proyectil.rebotesRestantes = datos.rebotes + ninja.mods.rebotesExtra;
+  proyectil.setTint(colorDeJugador(scene));
+  proyectil.setBounce(1);
 
   if (ninja.arma === 'shuriken') {
     proyectil.body.setAllowGravity(false);
@@ -55,8 +65,21 @@ export function dispararArma(scene, ninja) {
   }
 
   if (!ninja.municionInfinita()) ninja.municion--;
-  if (ninja.municion <= 0 && !ninja.municionInfinita()) ninja.arma = null;
   return true;
+}
+
+// Un choque contra el escenario: gasta un rebote o, si no quedan, destruye el proyectil. Un mismo choque no cuenta
+// dos veces aunque siga apoyado varios cuadros.
+export function chocarProyectil(scene, proyectil) {
+  const ahora = scene.time.now;
+  if (ahora - (proyectil.ultimoChoque ?? -Infinity) < 120) return;
+  proyectil.ultimoChoque = ahora;
+  if (proyectil.rebotesRestantes > 0) {
+    proyectil.rebotesRestantes--;
+    return;
+  }
+  if (proyectil.tipo === 'bomba') scene.explotarBomba(proyectil);
+  else proyectil.destroy();
 }
 
 export function actualizarProyectiles(scene) {

@@ -48,6 +48,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.finAturdido = 0;
     this.finProteccion = 0;
     this.parpadeo = null;
+    this.alfaParpadeo = 0.2;
     this.reaparece = false;   // Aparece después de morir: al tocar el piso sigue protegido un rato
 
     // --- VARIABLES DE HABILIDADES Y CONTROL ---
@@ -76,13 +77,15 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     this.control = new Control(scene, teclas);
 
-    // --- SISTEMA DE HABILIDADES MODULARES ---
-    this.habilidades = {
-      dobleSalto: true,
-      dash: true,
-      wallJump: true,
-      caidaPesada: true
-    };
+    // Movimientos especiales: el nivel de cada uno (0 = no lo tiene). Es el mismo objeto que guarda la partida.
+    this.habilidades = scene.partida.habilidades[indice];
+    this.proximoDisparo = 0;
+    // El arma sigue de un nivel al otro, con la munición completa
+    const arma = scene.partida.armas[indice];
+    if (arma) {
+      this.arma = arma.tipo;
+      this.municion = arma.municion;
+    }
 
     this.estadoDebugHabilidades = 0;
     this.saltoExtraDisponible = false;
@@ -102,10 +105,20 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     return sinControl || this.sceneRef.time.now < this.finProteccion ? PROTECCION.INTOCABLE : PROTECCION.NORMAL;
   }
 
-  // Protección con parpadeo. Lo que dura está en finProteccion: el parpadeo es solo cómo se ve.
+  // Lo que dura está en finProteccion. El parpadeo solo lo muestra, y lo maneja actualizarParpadeo.
   proteger(ms, alfa = 0.2) {
     this.finProteccion = this.sceneRef.time.now + ms;
-    this.parpadear(alfa);
+    this.alfaParpadeo = alfa;
+  }
+
+  // Todo lo intocable parpadea mientras lo es
+  actualizarParpadeo() {
+    const intocable = !this.muerto && this.proteccion === PROTECCION.INTOCABLE;
+    if (intocable && !this.parpadeo) this.parpadear(this.alfaParpadeo);
+    else if (!intocable) {
+      this.dejarDeParpadear();
+      this.alfaParpadeo = 0.2;
+    }
   }
 
   parpadear(alfa) {
@@ -123,7 +136,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   tieneHabilidad(nombre) {
     if (this.estadoDebugHabilidades === 1) return true;
     if (this.estadoDebugHabilidades === 2) return false;
-    return this.habilidades[nombre];
+    return this.habilidades[nombre] > 0;
   }
 
   actualizarDebug() {
@@ -155,7 +168,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   update() {
     if (this.eliminado) return;
     if (DEBUG) this.actualizarDebug();
-    if (!this.apareciendo && this.sceneRef.time.now >= this.finProteccion) this.dejarDeParpadear();
+    this.actualizarParpadeo();
 
     if (this.muerto) {
       this.anims.play(`${this.animPrefix}-stun`, true);
@@ -398,7 +411,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   usarEspecial() {
-    if (!this.arma) {
+    if (!this.arma || this.municion <= 0) {
       Sonido.beep(this.sceneRef, 140, 0.08, 0.08);
       return;
     }
@@ -407,9 +420,14 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  // La misma arma suma munición, por este nivel y los siguientes. Otra la reemplaza con la munición base.
   equiparArma(tipo) {
+    const armas = this.sceneRef.partida.armas;
+    const base = ARMAS[tipo].municion;
+    const misma = armas[this.indice] && armas[this.indice].tipo === tipo;
+    armas[this.indice] = { tipo, municion: misma ? armas[this.indice].municion + base : base };
+    this.municion = misma && this.arma === tipo ? this.municion + base : armas[this.indice].municion;
     this.arma = tipo;
-    this.municion = ARMAS[tipo].municion;
     this.sceneRef.events.emit(EVENTOS.ARMA, this.indice, this.arma, this.municion);
   }
 
@@ -458,7 +476,6 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     this.body.reset(x, -32);
     this.dashDisponible = true;
-    this.parpadear(0.2);
   }
 
   // Sin vidas: deja de jugar y de ocupar lugar en la física

@@ -9,11 +9,12 @@ export const PACTOS = [
   { id: 'ligero', jugador: { salto: 1.25, knockback: 1.6 }, global: {} }
 ];
 
-export const MODS_JUGADOR_BASE = { velocidad: 1, salto: 1, knockback: 1, municionInfinitaCaceria: false };
+export const MODS_JUGADOR_BASE = { velocidad: 1, salto: 1, knockback: 1, municionInfinitaCaceria: false, rebotesExtra: 0 };
 export const MODS_GLOBAL_BASE = {
   tiempoExtra: 0, multPuntos: 1, velProyectiles: 1, enemigosInmunesStun: false,
   fuegoAmigo: false,   // Los proyectiles de un jugador golpean al otro
-  dañoPropio: false    // Los proyectiles de un jugador lo golpean a él mismo
+  dañoPropio: false,   // Los proyectiles de un jugador lo golpean a él mismo
+  monedasRojas: false  // Las monedas se ponen rojas al perder valor
 };
 
 export function pactosVacios() {
@@ -24,7 +25,7 @@ export function pactosVacios() {
 function combinar(destino, origen) {
   Object.entries(origen).forEach(([clave, valor]) => {
     if (typeof valor === 'boolean') destino[clave] = destino[clave] || valor;
-    else if (clave === 'tiempoExtra') destino[clave] += valor;
+    else if (clave === 'tiempoExtra' || clave === 'rebotesExtra') destino[clave] += valor;
     else destino[clave] *= valor;
   });
 }

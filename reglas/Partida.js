@@ -8,6 +8,10 @@ import { pactosVacios } from './Pactos.js';
 
 export const JEFES_INTERMEDIOS = ['ogro', 'oni', 'espectro'];
 
+// Movimientos especiales: 0 = no lo tiene. Se desbloquean con pergaminos y pueden llegar a nivel 2.
+export const HABILIDADES = ['dash', 'dobleSalto', 'wallJump', 'caidaPesada'];
+const habilidadesIniciales = () => Object.fromEntries(HABILIDADES.map(habilidad => [habilidad, 0]));
+
 export function nuevaPartida(jugadores, nivel = 1) {
   return {
     jugadores,
@@ -17,7 +21,10 @@ export function nuevaPartida(jugadores, nivel = 1) {
     pool: idsDeTipo('normal'),
     datosNivel: null,
     jefe: null,
-    pactos: pactosVacios()
+    pactos: pactosVacios(),
+    // Lo que cada jugador conserva entre niveles. El arma guarda su tipo y la munición con la que arranca cada nivel.
+    habilidades: [habilidadesIniciales(), habilidadesIniciales()],
+    armas: [null, null]
   };
 }
 

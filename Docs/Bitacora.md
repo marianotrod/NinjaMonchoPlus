@@ -5,6 +5,21 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-07 — Mariano y Claude: lista de pergaminos y etapa 7 (primera parte)
+
+- Mariano pasó la lista de pergaminos, con a quién afecta cada uno: `Docs/Pergaminos_borrador.md`. Las decisiones están en `DisenoV2.md` (7.0).
+- Editor: herramientas Copiar bloque (C) y Estampar bloque (V). Copia las capas visibles y sus celdas vacías no borran al estampar.
+- 7c, kit base: el ninja arranca con caminar, saltar, katana y parry. Dash, doble salto, salto de pared y caída pesada quedan para los pergaminos (`partida.habilidades`, con nivel).
+- 7b, armas: cooldown y munición por nivel. Se recarga en cada nivel, la misma arma suma y otra la reemplaza. Rebotes propios: shuriken 0, bumerán 2, bomba 1.
+- 7a, lo visual: lo intocable parpadea, los enemigos son intocables al entrar, brillo dorado en la Recolección, colores azul, rojo y negro, y monedas que se resquebrajan (rojas solo con el pergamino).
+- Banco de pruebas: 255 de 255.
+
+**Pendientes**
+- Mariano: revisar si los niveles se pueden recorrer sin movimientos especiales, y probar el brillo y los colores.
+- 7d y 7e: sistema de pergaminos y sala de pergaminos. Después, 7f: el primer lote de efectos.
+
+---
+
 ## 2026-11-06 — Claude: etapa 8 de la v2, estados del ninja y controles
 
 - La 7 espera la lista de pergaminos de Mariano, así que se hizo antes la 8.
