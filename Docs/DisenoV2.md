@@ -309,6 +309,12 @@ El sonido, las partículas, el puntaje y la UI escuchan sin mezclarse con la ló
 ```
 Si el efecto ya existe, agregar un pergamino es agregar un dato. Si el efecto es nuevo, se programa una sola vez.
 
+### 7.4 Estado del catálogo (2026-11-07)
+Todos los de la lista revisada están en `datos/Pergaminos.js`; cada nivel de un movimiento es su propio pergamino.
+Todavía no hacen nada, y la carta los muestra con "(X)": el boulder y su nivel 2 (falta definir "caer de muy alto"). "La katana empuja más fuerte" se sacó.
+- **Plataforma fantasma:** es una pasarela temporal. Se coloca alineada a la grilla, en una celda entera como cualquier pasarela, no en el píxel exacto donde se generó.
+- Las reglas de aparición se evalúan al armar cada sala con los jugadores en juego: el J2 cuenta desde que entra por hotjoin y deja de contar sin vidas. En la sala no hay hotjoin.
+
 ### 7.3 Lista actual (borrador de Mariano; la revisa y la completa)
 **Positivos**
 - Tus proyectiles rebotan 1 vez más (apilable).
@@ -371,7 +377,7 @@ tools/editor/    editor de niveles
 | 4 | ✔ Mundo de 34×20 + wrap + nivel de prueba | Hecho: `n-wrap`; solo en niveles con `"wrap": true` hasta decidir si es permanente |
 | 5 | ✔ Reglas por fase, golpe, bando, protección y HP de los enemigos | Hecho: mismo comportamiento, código centralizado |
 | 6 | ✔ Tiles de trampa y fuego | Hecho: funcionan en `n-peligros` |
-| 7 | Pergaminos permanentes + nivel de pergaminos + armas con cooldown | Una partida completa con pergaminos |
+| 7 | ✔ Pergaminos permanentes + sala de pergaminos + armas con cooldown y munición | Hecho el primer lote; faltan los que piden sistemas nuevos (ver 7.4) |
 | 8 | ✔ Ninja como máquina de estados + input unificado | Hecho: `entrada/Control.js`, estados en `Ninja`, mismas medidas de movimiento |
 | 9 | Rescate (llave y vórtice), pisar proyectiles, parry | Probar las variantes |
 | 10 | Contenido: niveles, enemigos, pergaminos, jefes, balance | — |

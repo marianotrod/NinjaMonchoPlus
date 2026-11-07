@@ -1,6 +1,7 @@
 import { i18n } from '../i18n.js';
 import { ARRANQUE_DEBUG, TILES } from '../config.js';
 import { GRAFICOS, GRAFICOS_ANIMADOS } from '../datos/Graficos.js';
+import { armarCartas } from '../reglas/Pergaminos.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { nuevaPartida } from '../reglas/Partida.js';
 import { cargarNiveles, registrarNiveles } from '../mundo/Niveles.js';
@@ -62,7 +63,14 @@ export default class BootScene extends Phaser.Scene {
     if (ARRANQUE_DEBUG.nivel) {
       const partida = nuevaPartida(ARRANQUE_DEBUG.jugadores, ARRANQUE_DEBUG.nivel);
       partida.jefeForzado = ARRANQUE_DEBUG.jefe;
-      partida.mapaForzado = ARRANQUE_DEBUG.mapa;
+      if (ARRANQUE_DEBUG.sala) {
+        // Probar una sala: arranca en ella y después sigue el nivel pedido, sin forzar el mapa
+        partida.enSala = true;
+        partida.salaForzada = ARRANQUE_DEBUG.mapa;
+        partida.cartas = armarCartas(partida);
+      } else {
+        partida.mapaForzado = ARRANQUE_DEBUG.mapa;
+      }
       this.registry.set('partida', partida);
       this.scene.start('NinjaMonchoScene');
     } else {
@@ -70,9 +78,12 @@ export default class BootScene extends Phaser.Scene {
     }
   }
 
-  // Los cuadros de un tile animado siguen en la hoja hasta el primer tile vacío
+  // Los cuadros de un tile animado siguen en la hoja hasta el primer tile vacío o el final de su fila
   ultimoCuadroDelTile(inicio) {
-    const total = this.textures.get('MapTileSet').frameTotal - 1; // No cuenta el cuadro __BASE de Phaser
+    const textura = this.textures.get('MapTileSet');
+    const columnas = textura.getSourceImage().width / 16;
+    const finFila = (Math.floor(inicio / columnas) + 1) * columnas;
+    const total = Math.min(textura.frameTotal - 1, finFila); // frameTotal cuenta el cuadro __BASE de Phaser
     const vacio = (cuadro) => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {

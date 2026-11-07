@@ -29,12 +29,11 @@
     {"hasta": "prueba.estado().listoParaContinuar", "timeout": 3000, "nombre": "se puede continuar"},
     {"eval": "window.puntajeNivel1 = prueba.estado().puntajes[0]"},
     {"press": "Enter"},
-    {"hasta": "prueba.escenas().includes('PactSelectionScene')", "timeout": 3000, "nombre": "pantalla de pergaminos"},
-    {"wait": 700},
-    {"press": "Enter"},
-    {"hasta": "prueba.enJuego() && prueba.estado().nivel === 2", "timeout": 5000, "nombre": "arranca el nivel 2"},
+    {"hasta": "prueba.enJuego() && prueba.estado().fase === 'sala'", "timeout": 8000, "nombre": "sala de pergaminos"},
+    {"eval": "prueba.tocarCarta(1, 0)"},
+    {"hasta": "prueba.enJuego() && prueba.estado().nivel === 2 && prueba.estado().fase !== 'sala'", "timeout": 5000, "nombre": "arranca el nivel 2"},
     {"verificar": "el nivel 2 conserva puntaje y vidas", "eval": "(() => { const e = prueba.estado(); return { nivel: e.nivel, vidas: e.vidas, puntaje: e.puntajes[0] === puntajeNivel1 }; })()", "espera": {"nivel": 2, "vidas": [3, 3], "puntaje": true}},
-    {"verificar": "el pergamino elegido quedó aplicado", "eval": "(() => { const p = prueba.pactos(); const base = { velocidad: 1, salto: 1, knockback: 1, municionInfinitaCaceria: false }; const baseG = { tiempoExtra: 0, multPuntos: 1, velProyectiles: 1, enemigosInmunesStun: false }; return JSON.stringify(p.jugadores[0]) !== JSON.stringify(base) || JSON.stringify(p.global) !== JSON.stringify(baseG); })()"},
+    {"verificar": "la carta elegida quedó aplicada: un positivo y un negativo para J1", "eval": "Object.values(prueba.tomados()).filter(v => v[0] === 1).length === 2"},
     {"shot": "nivel2"}
   ]
 }

@@ -5,9 +5,8 @@
 import { BANDO, CONFIG, DEBUG, FISICA } from '../config.js';
 import Control from '../entrada/Control.js';
 import { fueraDeVista } from '../mundo/Mundo.js';
-import { MODS_JUGADOR_BASE } from '../reglas/Pactos.js';
 import { PROTECCION } from '../reglas/Resolvedor.js';
-import { ARMAS, dispararArma } from './Armas.js';
+import { ARMAS, dispararArma, equiparEnPartida } from './Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { EVENTOS } from '../datos/Eventos.js';
 
@@ -33,9 +32,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.animPrefix = animPrefix;
     this.indice = indice; // 0 = Jugador 1, 1 = Jugador 2
 
-    // Modificadores de los Pergaminos de Pacto elegidos para este nivel
-    const pactos = scene.partida ? scene.partida.pactos.jugadores[indice] : {};
-    this.mods = { ...MODS_JUGADOR_BASE, ...pactos };
+    // El build de este jugador: lo que le dieron los pergaminos. Es el mismo objeto que guarda la partida.
+    this.mods = scene.partida.mods.jugadores[indice];
     this.factorSalto = Math.sqrt(this.mods.salto); // +25 % de altura = velocidad * raíz(1,25)
 
     this.setGravityY(FISICA.gravedadJugador);
@@ -102,7 +100,9 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   get proteccion() {
     const sinControl = this.apareciendo || this.aturdido || this.muerto;
-    return sinControl || this.sceneRef.time.now < this.finProteccion ? PROTECCION.INTOCABLE : PROTECCION.NORMAL;
+    const saltoProtegido = this.enSaltoPared && this.habilidades.wallJump >= 2; // Salto de pared nivel 2
+    const protegido = sinControl || saltoProtegido || this.sceneRef.time.now < this.finProteccion;
+    return protegido ? PROTECCION.INTOCABLE : PROTECCION.NORMAL;
   }
 
   // Lo que dura está en finProteccion. El parpadeo solo lo muestra, y lo maneja actualizarParpadeo.
@@ -135,7 +135,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   tieneHabilidad(nombre) {
     if (this.estadoDebugHabilidades === 1) return true;
-    if (this.estadoDebugHabilidades === 2) return false;
+    if (this.estadoDebugHabilidades === 2 || this.sceneRef.reglas.soloBasico) return false;
     return this.habilidades[nombre] > 0;
   }
 
@@ -191,6 +191,12 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (this.apareciendo && !this.terminoDeAparecer()) return;
     if (this.aturdido && !this.terminoAturdimiento()) return;
     if (this.estado === ESTADO.DASH) return;
+    // Ya eligió su pergamino: espera quieto a que termine la sala
+    if (this.congelado) {
+      this.setVelocityX(0);
+      this.anims.play(`${this.animPrefix}-idle`, true);
+      return;
+    }
 
     this.actuar(input);
   }
@@ -260,6 +266,12 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     if (!enElPiso && input.abajo && !this.bloquearCaidaPesada && this.tieneHabilidad('caidaPesada')) {
       this.setVelocityY(FISICA.caidaRapida);
+      this.enCaidaPesada = true;
+    }
+    // Caída pesada nivel 2: al golpear el piso salen dos bolas celestes
+    if (enElPiso && this.enCaidaPesada) {
+      this.enCaidaPesada = false;
+      if (this.habilidades.caidaPesada >= 2 && !this.sceneRef.reglas.soloBasico) this.sceneRef.soltarBolasCelestes(this);
     }
 
     if (!enElPiso && !this.tieneControlAereo && !input.izquierda && !input.derecha) {
@@ -351,6 +363,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   intentarDobleSalto() {
     if (!this.quiereSaltar || !this.saltoExtraDisponible || !this.tieneHabilidad('dobleSalto')) return;
+    // Doble salto nivel 2: deja una plataforma fantasma bajo los pies
+    if (this.habilidades.dobleSalto >= 2 && !this.sceneRef.reglas.soloBasico) this.sceneRef.dejarPlataforma(this);
     this.setVelocityY(FISICA.dobleSalto * this.factorSalto);
     this.saltoExtraDisponible = false;
     this.bufferSaltoTimer = 0;
@@ -411,7 +425,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   usarEspecial() {
-    if (!this.arma || this.municion <= 0) {
+    if (!this.arma || this.municion <= 0 || this.sceneRef.reglas.soloBasico) {
       Sonido.beep(this.sceneRef, 140, 0.08, 0.08);
       return;
     }
@@ -422,11 +436,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   // La misma arma suma munición, por este nivel y los siguientes. Otra la reemplaza con la munición base.
   equiparArma(tipo) {
-    const armas = this.sceneRef.partida.armas;
-    const base = ARMAS[tipo].municion;
-    const misma = armas[this.indice] && armas[this.indice].tipo === tipo;
-    armas[this.indice] = { tipo, municion: misma ? armas[this.indice].municion + base : base };
-    this.municion = misma && this.arma === tipo ? this.municion + base : armas[this.indice].municion;
+    const misma = equiparEnPartida(this.sceneRef.partida, this.indice, tipo) && this.arma === tipo;
+    this.municion = misma ? this.municion + ARMAS[tipo].municion : this.sceneRef.partida.armas[this.indice].municion;
     this.arma = tipo;
     this.sceneRef.events.emit(EVENTOS.ARMA, this.indice, this.arma, this.municion);
   }
@@ -469,12 +480,12 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   // Vuelve a caer desde arriba como al empezar el nivel, y titila protegido un rato después de tocar el piso
-  respawnear(x) {
+  respawnear({ x, y }) {
     this.estado = ESTADO.APARECIENDO;
     this.reaparece = true;
     this.setDepth(10).setAlpha(1);
     this.setCollideWorldBounds(true);
-    this.body.reset(x, -32);
+    this.body.reset(x, y);
     this.dashDisponible = true;
   }
 
@@ -504,7 +515,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.saltoExtraDisponible = this.tieneHabilidad('dobleSalto');
     this.saltoCortable = false;
 
-    this.setVelocityY(FISICA.pisoton * this.factorSalto);
+    // Pergamino: saltar justo al pisar lleva más alto
+    const saltado = this.mods.saltoPisoton && this.quiereSaltar;
+    if (saltado) this.bufferSaltoTimer = 0;
+    this.setVelocityY((saltado ? FISICA.pisotonSaltado : FISICA.pisoton) * this.factorSalto);
     Sonido.efecto(this.sceneRef, 'snd-salto', 1);
 
     this.proteger(FISICA.parpadeoPisoton, 0.5);

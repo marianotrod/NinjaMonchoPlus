@@ -18,10 +18,9 @@
     {"wait": 300, "eval": "prueba.terminarCaceria(false)"},
     {"hasta": "prueba.estado().listoParaContinuar", "timeout": 3000, "nombre": "se puede continuar"},
     {"press": "Enter"},
-    {"hasta": "prueba.escenas().includes('PactSelectionScene')", "timeout": 3000, "nombre": "pantalla de pactos"},
-    {"wait": 700},
-    {"press": "Enter"},
-    {"hasta": "prueba.enJuego() && prueba.estado().nivel === 2", "timeout": 6000, "nombre": "arranca el nivel 2"},
+    {"hasta": "prueba.enJuego() && prueba.estado().fase === 'sala'", "timeout": 8000, "nombre": "sala de pergaminos"},
+    {"eval": "prueba.terminarSala()"},
+    {"hasta": "prueba.enJuego() && prueba.estado().nivel === 2 && prueba.estado().fase !== 'sala'", "timeout": 6000, "nombre": "arranca el nivel 2"},
     {"verificar": "en el nivel siguiente el arma vuelve con la munición completa", "eval": "prueba.jugador(1)", "espera": {"arma": "bumeran", "municion": 10}}
   ]
 }

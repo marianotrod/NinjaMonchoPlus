@@ -1,0 +1,11 @@
+{
+  "descripcion": "Probar la sala desde el editor: arranca en la sala pedida y después sigue un nivel común",
+  "query": "?debug&nivel=2&sala&mapa=sala-pergaminos",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'sala'", "timeout": 8000, "nombre": "arranca en la sala"},
+    {"verificar": "es la sala, con sus cartas", "eval": "({ id: prueba.nivel().id, cartas: prueba.cartas().length })", "espera": {"id": "sala-pergaminos", "cartas": 3}},
+    {"eval": "prueba.terminarSala()"},
+    {"hasta": "prueba.enJuego() && prueba.estado().fase !== 'sala' && prueba.estado().fase !== 'transicion'", "timeout": 6000, "nombre": "sigue el nivel"},
+    {"verificar": "después de la sala sigue un nivel común, no la sala otra vez", "eval": "prueba.nivel().id !== 'sala-pergaminos' && prueba.estado().nivel === 2"}
+  ]
+}

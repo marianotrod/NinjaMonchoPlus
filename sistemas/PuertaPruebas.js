@@ -4,12 +4,12 @@
 // Así, cuando se reorganiza el código, se adapta este archivo y los escenarios siguen sirviendo para verificar
 // que el juego se comporte igual. Los jugadores se numeran 1 y 2, como en pantalla.
 import { Bestiario } from '../datos/Bestiario.js';
-import { ARMAS } from '../entidades/Armas.js';
 import { ESTADO } from '../entidades/Ninja.js';
-import { BANDO } from '../config.js';
+import { BANDO, CONFIG } from '../config.js';
 import { PROTECCION, crearGolpe, resolverGolpe } from '../reglas/Resolvedor.js';
 import { todosLosNiveles, validarNivel } from '../mundo/Niveles.js';
 import { crearBola, escupirFuego } from '../mundo/Fuego.js';
+import { tomarEfecto } from '../reglas/Pergaminos.js';
 import { EVENTOS } from '../datos/Eventos.js';
 
 export function instalarPuertaPruebas(game) {
@@ -29,7 +29,8 @@ export function instalarPuertaPruebas(game) {
 
   const estadoEnemigo = (e) => ({
     clave: claveEnemigo(e), x: redondear(e.x), y: redondear(e.y),
-    enfurecido: e.enfurecido, aturdido: e.aturdido, muerto: e.muerto, hp: e.hp, intocable: e.intocable, brillo: !!e.conBrillo
+    enfurecido: e.enfurecido, aturdido: e.aturdido, muerto: e.muerto, hp: e.hp, intocable: e.intocable, brillo: !!e.conBrillo,
+    escudo: !!e.escudo
   });
 
   window.prueba = {
@@ -93,12 +94,60 @@ export function instalarPuertaPruebas(game) {
       talisman: i.esTalisman, tipo: i.texture.key, x: redondear(i.x), y: redondear(i.y),
       vx: redondear(i.body.velocity.x), vy: redondear(i.body.velocity.y), valor: i.valorPuntos
     })),
-    cajasArmas: () => juego().cajasArmas.countActive(true),
-    pactos: () => JSON.parse(JSON.stringify(juego().partida.pactos)),
+    cajasArmas: () => 0,   // Ya no hay cajas: las armas salen de los pergaminos
     modsJugador: (n = 1) => ({ ...jugador(n).mods }),
     modsGlobal: () => ({ ...juego().modsGlobal }),
-    // En la pantalla de pergaminos: qué pergamino (0, 1 o 2) fijó cada jugador
-    eleccionesPergaminos: () => [...game.scene.getScene('PactSelectionScene').elecciones],
+    // Sala de pergaminos: las cartas que siguen en juego, y quién está congelado porque ya eligió
+    cartas: () => (juego().cartas ? juego().cartas.getChildren().map(c => ({ ...c.datos, x: Math.round(c.x), y: Math.round(c.y), encadenada: !!c.encadenada })) : []),
+    tomados: () => JSON.parse(JSON.stringify(juego().partida.tomados)),
+    spawn: (n = 1) => ({ ...juego().spawns[n - 1] }),
+    peligros: () => juego().peligros.getChildren().map(p => ({ tipo: p.texture.key, x: Math.round(p.x), y: Math.round(p.y) })),
+    soltarPeligro(tipo, x, y) {
+      juego().soltarPeligro(tipo, x, y);
+      return true;
+    },
+    // Cambia un valor de config.js mientras dura la prueba (por ejemplo, para no esperar 6 segundos de furia)
+    configurar(clave, valor) {
+      CONFIG[clave] = valor;
+      return true;
+    },
+    // Pisa al enemigo que tenga debajo; con salto, como si hubiera apretado saltar justo a tiempo
+    pisotear(n = 1, conSalto = false) {
+      const j = jugador(n);
+      if (conSalto) j.bufferSaltoTimer = juego().time.now + 200;
+      j.hacerPisoton();
+      return Math.round(j.body.velocity.y);
+    },
+    enfurecerEnemigo(i) {
+      juego().enemigos.getChildren()[i].enfurecer();
+      return true;
+    },
+    reiniciarPrimerEnemigo() {
+      juego().primerEnemigoCreado = false;
+      return true;
+    },
+    tomarEfecto(n, id) {
+      tomarEfecto(juego().partida, id, n - 1);
+      return true;
+    },
+    // La lógica de una celda del nivel en juego, y cuántas hay de un tipo
+    tile: (col, fila) => juego().logica[fila][col],
+    contarTiles: (tipo) => juego().logica.flat().filter(t => t === tipo).length,
+    tocarCarta(n, i) {
+      const s = juego();
+      const carta = s.cartas.getChildren()[i];
+      if (!carta) return false;
+      s.tocarCarta(jugador(n), carta);
+      return true;
+    },
+    terminarSala() {
+      juego().terminarSala();
+      return true;
+    },
+    ponerCartas(cartas) {
+      juego().partida.cartas = cartas;
+      return true;
+    },
 
     // El jugador terminó de aparecer y está parado en el piso
     listo: (n = 1) => {
@@ -119,13 +168,7 @@ export function instalarPuertaPruebas(game) {
       juego().enemigosHabilitados = true;
       return true;
     },
-    sinCajasArmas() {
-      const s = juego();
-      s.timerArmas.paused = true;
-      s.cajasArmas.clear(true, true);
-      s.spawnearCajaArma = () => {};
-      return true;
-    },
+    sinCajasArmas: () => true,
     sinItems() {
       juego().items.clear(true, true);
       return true;
@@ -159,11 +202,6 @@ export function instalarPuertaPruebas(game) {
       item.body.reset(x, y);
       item.setVelocity(0, 0);
       return s.items.getChildren().length - 1;
-    },
-    crearCajaArma(tipo, x, y) {
-      const caja = juego().cajasArmas.create(x, y, ARMAS[tipo].icono);
-      caja.tipoArma = tipo;
-      return true;
     },
     ponerTiempo(t) {
       juego().tiempoRestante = t;

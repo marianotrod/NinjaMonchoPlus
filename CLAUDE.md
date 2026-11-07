@@ -8,6 +8,7 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - VS Code Live Server (puerto 5501, ver `.vscode/settings.json`), o
 - `python -m http.server 5501` desde la raíz del repo, y abrir http://localhost:5501
 - Modo desarrollo: `?debug` (teclas de prueba) y `?debug&nivel=5&jugadores=2&jefe=oni` para arrancar en un nivel (`&mapa=n-valle` elige el mapa).
+  `?debug&nivel=2&sala&mapa=sala-pergaminos` arranca en una sala de pergaminos.
 
 ## Estructura
 - `main.js`: configuración de Phaser (512x288, arcade physics, gamepad), lista de escenas y escalado entero del canvas.
@@ -15,9 +16,10 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - `i18n.js`: textos es/en. Todo texto visible pasa por `i18n.t()` (que quita tildes de mayúsculas: la fuente no las tiene).
   En `v2` los textos salen solo de `i18n.js`. La API de Traducila fue un pedido para la entrega y quedó apagada (`TRADUCCIONES.activa` en `config.js`); `main` la sigue usando.
 - `escenas/`: `BootScene` (carga todo, texturas, animaciones, preferencias) → `TitleScene` → `NinjaMonchoScene` (juego)
-  con `UIScene` (HUD, carteles, paneles) y `PauseScene` encima; `PactSelectionScene` entre niveles; `HowToPlayScene`, `OptionsScene`, `CreditsScene`.
+  con `UIScene` (HUD, carteles, paneles) y `PauseScene` encima; `HowToPlayScene`, `OptionsScene`, `CreditsScene`.
+  Entre un nivel y el siguiente, `NinjaMonchoScene` arma la sala de pergaminos (nivel `sala-pergaminos`, fase `sala`).
 - `entidades/`: `Ninja` (jugador, katana; máquina de estados `ESTADO` y protección en un solo lugar), `Enemigo` (rasgos saltarín/caminante/volador/lanzador), `Jefe`, `Fantasma`, `Armas` (proyectiles del jugador).
-- `datos/`: `Bestiario` (enemigos), `Eventos` (catálogo de eventos), `Graficos` (los PNG sueltos de `public/assets/graficos/`). `reglas/`: `Partida` (estado de la partida en el registry), `Pactos`, `Fases` (qué vale en cada fase), `Resolvedor` (qué hace cada golpe). `mundo/`: `Niveles` (carga y valida `public/niveles/`), `CargadorNivel` (arma el nivel en la escena), `Mundo` (wrap; por ahora solo en niveles con `"wrap": true`, como `n-wrap`), `Fuego` (tiles de fuego, bolas y llamas).
+- `datos/`: `Bestiario` (enemigos), `Eventos` (catálogo de eventos), `Graficos` (los PNG sueltos de `public/assets/graficos/`), `Pergaminos` (catálogo de efectos: agregar uno es agregar una entrada). `reglas/`: `Partida` (estado de la partida en el registry, con el build), `Pergaminos` (modificadores, qué puede salir y armado de cartas), `Fases` (qué vale en cada fase), `Resolvedor` (qué hace cada golpe). `mundo/`: `Niveles` (carga y valida `public/niveles/`), `CargadorNivel` (arma el nivel en la escena), `Mundo` (wrap; por ahora solo en niveles con `"wrap": true`, como `n-wrap`), `Fuego` (tiles de fuego, bolas y llamas).
 - `sistemas/`: `Sonido` (volúmenes, música, beeps WebAudio), `Guardado` (localStorage), `Estilo` (texto), `PuertaPruebas`. `entrada/`: `Control` (teclado y joystick de cada jugador en acciones; teclas en `TECLAS` de `config.js`), `MenuInputManager`.
 - Fases de `NinjaMonchoScene`: intro → recoleccion → transicion → caceria → nivelCompletado (o intro → jefe → nivelCompletado);
   perdiendoVida y fin interrumpen. La UI se entera por eventos (`this.events.emit(...)`).

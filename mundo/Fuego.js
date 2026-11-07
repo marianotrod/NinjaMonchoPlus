@@ -37,6 +37,27 @@ export function escupirFuego(escena, tile) {
   const y = tile.y + cara.fila * SALIDA;
   tile.bola = crearBola(escena, x, y, vx, cara.vy);
   escena.efectoChispas(x, y, 0xf97316);
+  // Pergamino: a veces sale una más
+  if (escena.modsGlobal.bolaExtra && Math.random() < CONFIG.PROB_BOLA_EXTRA) crearBola(escena, x, y, -vx, cara.vy);
+}
+
+// Caída pesada nivel 2: una bola como las del tile de fuego, pero del jugador: celeste y solo daña a los enemigos.
+// No deja llama: rebota unas veces y se apaga.
+export function crearBolaCeleste(escena, duenio, x, y, vx, vy) {
+  const bola = escena.proyectiles.create(x, y, 'bola-fuego');
+  bola.bando = BANDO.JUGADORES;
+  bola.tipo = 'bolaCeleste';
+  bola.duenio = duenio;
+  bola.golpeados = new Set();
+  bola.nacimiento = escena.time.now;
+  bola.rebotesRestantes = 3;
+  bola.body.setAllowGravity(true);
+  bola.body.setGravityY(200); // La misma caída que las bolas del tile de fuego
+  bola.body.setCircle(RADIO_BOLA, 1, 1);
+  bola.setBounce(REBOTE_BOLA);
+  bola.setVelocity(vx, vy);
+  bola.setTint(0x7dd3fc);
+  return bola;
 }
 
 function encenderLlama(escena, x, piso) {
@@ -47,6 +68,10 @@ function encenderLlama(escena, x, piso) {
   escena.time.delayedCall(CONFIG.DURACION_LLAMA, () => {
     if (!llama.active) return;
     if (llama.body) llama.body.enable = false;
+    // Pergamino: al apagarse puede escupir otra bola
+    if (escena.modsGlobal.llamaBola && Math.random() < CONFIG.PROB_LLAMA_BOLA) {
+      crearBola(escena, llama.x, llama.y - 4, Phaser.Math.Between(-80, 80), -220);
+    }
     escena.tweens.add({ targets: llama, alpha: 0, duration: 300, onComplete: () => llama.destroy() });
   });
 }

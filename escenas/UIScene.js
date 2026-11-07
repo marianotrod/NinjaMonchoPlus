@@ -164,6 +164,7 @@ export default class UIScene extends Phaser.Scene {
     this.vineta.setAlpha(0);
     if (fase === 'caceria') this.textoCentro.setColor('#EF4444');
     if (fase === 'jefe') this.textoCentro.setColor('#FBBF24');
+    if (fase === 'sala') this.textoCentro.setText(i18n.t('sala_titulo')).setColor('#4ADE80');
   }
 
   // Alarma: desde 10 s el reloj se pone rojo y titila; desde 5 s además late y se marca el borde de la pantalla.

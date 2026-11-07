@@ -56,7 +56,15 @@ function golpearNinja(escena, ninja, golpe) {
   const efecto = esFantasma ? GOLPE_AL_NINJA.VIDA : reglas.golpeAlNinja;
   if (efecto === GOLPE_AL_NINJA.NADA) return;
 
-  if (efecto === GOLPE_AL_NINJA.VIDA && (esFantasma || ninja.proteccion === PROTECCION.NORMAL)) {
+  let muere = efecto === GOLPE_AL_NINJA.VIDA && (esFantasma || ninja.proteccion === PROTECCION.NORMAL);
+  // Pergamino: el escudo se gasta y salva de una muerte. Al fantasma no le importa.
+  if (muere && !esFantasma && ninja.mods.escudos > 0) {
+    ninja.mods.escudos--;
+    escena.mostrarTextoFlotante(ninja.x, ninja.y - 16, i18n.t('escudo_usado'), '#93C5FD');
+    muere = false;
+  }
+
+  if (muere) {
     // Sale despedido, atraviesa el escenario y cae fuera de la pantalla: recién ahí pierde la vida (jugadorCayoFuera)
     ninja.morir(golpe.fuenteX);
     escena.cameras.main.shake(250, 0.012);
@@ -72,6 +80,12 @@ function golpearNinja(escena, ninja, golpe) {
 
 function golpearEnemigo(escena, enemigo, golpe) {
   if (enemigo.muerto || enemigo.intocable || golpe.bando === enemigo.bando) return;
+  // Pergamino: el primer demonio del nivel tiene un escudo que se rompe con el primer golpe
+  if (enemigo.escudo) {
+    enemigo.romperEscudo();
+    escena.efectoChispas(enemigo.x, enemigo.y, 0x93c5fd);
+    return;
+  }
   if (escena.reglas.enemigosVulnerables) {
     enemigo.hp -= golpe.daño;
     if (enemigo.hp <= 0) {

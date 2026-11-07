@@ -247,8 +247,32 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
+    // Pergamino: el primer demonio del nivel aguanta un golpe
+    ponerEscudo() {
+        this.escudo = true;
+        this.setTint(0x93c5fd);
+    }
+
+    romperEscudo() {
+        this.escudo = false;
+        if (this.enfurecido) this.setTint(0xff9999); else this.clearTint();
+    }
+
+    // Pergamino: la furia se pasa con el tiempo
+    calmar() {
+        if (!this.enfurecido || this.muerto) return;
+        this.enfurecido = false;
+        this.setVelocityX(this.body.velocity.x / this.multVelocidad);
+        this.multVelocidad = 1;
+        if (!this.aturdido && !this.escudo) this.clearTint();
+    }
+
     enfurecer(multiplicador = 1.5) {
         if (this.enfurecido || this.muerto) return;
+        if (this.scene.modsGlobal.furiaTemporal) {
+            if (this.timerFuria) this.timerFuria.remove();
+            this.timerFuria = this.scene.time.delayedCall(CONFIG.DURACION_FURIA, () => this.calmar());
+        }
         this.enfurecido = true;
         this.multVelocidad = multiplicador;
         this.setVelocityX(this.body.velocity.x * multiplicador);
@@ -290,6 +314,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
 
     destroy(fromScene) {
         if (this.timerStun) this.timerStun.remove();
+        if (this.timerFuria) this.timerFuria.remove();
         if (this.estrellaStun) this.estrellaStun.destroy();
         if (this.textoDebug) this.textoDebug.destroy();
         this.estrellaStun = null;

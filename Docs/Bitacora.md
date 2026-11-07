@@ -5,6 +5,43 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-07 — Claude: pergaminos pendientes, mientras Mariano no estaba
+
+- Funcionan cuatro de los que tenían "(X)": doble salto nivel 2 (plataforma fantasma, una pasarela temporal alineada a la grilla, de 3 tiles y 3 segundos),
+  caída pesada nivel 2 (dos bolas celestes al tocar el piso, que solo dañan a los demonios y no dejan llama), dash nivel 2 (parry durante el dash),
+  y minas y bombas especiales (a veces caen en lugar de una moneda, solo dañan a los jugadores, se rompen con proyectiles y siguen en la Cacería).
+- Sigue con "(X)" el boulder y su nivel 2: falta definir "caer de muy alto".
+- El botón Probar del editor abre la sala como sala cuando el nivel es de tipo "pergaminos" (`?debug&nivel=2&sala&mapa=...`).
+- Gráficos nuevos y reemplazables: `plataforma-fantasma.png`, `mina.png`, `bomba-especial.png`. Banco de pruebas: 309 de 309.
+
+**Pendientes**
+- Mariano: probar la sala y estos pergaminos. Calibrar en `config.js` (`PLATAFORMA_*`, `BOLA_CELESTE_DURACION`, `PROB_MINA`, `PROB_BOMBA_ESPECIAL`, `ESPERA_BOMBA_ESPECIAL`).
+- Definir el boulder.
+
+---
+
+## 2026-11-07 — Claude: etapa 7 (segunda parte), pergaminos y sala
+
+- 7d: `datos/Pergaminos.js` (catálogo de efectos) y `reglas/Pergaminos.js` (build permanente, qué puede salir y armado de cartas).
+  Reglas: "si ambos", "si alguno", máximo, peso que decae (vida extra), incompatibles (±1 segundo) y movimientos con nivel.
+- 7e: sala de pergaminos (`sala-pergaminos`, editable): cuenta regresiva, 3 cartas, 10 segundos, el primero que toca se la lleva y queda quieto.
+  Se juega con lo básico. Reemplaza a la pantalla de pactos, que se borró junto con `reglas/Pactos.js`. Se fueron las cajas de armas.
+- 7f: el primer lote de efectos, con pruebas en `efectos_*.json`. Faltan los que piden sistemas nuevos (ver `DisenoV2.md` 7.4).
+- Shuriken con 4 s de vida (antes 1,5), para que le alcance el tiempo de rebotar. Tile de piedra (100) en una fila nueva.
+- Banco de pruebas: 291 de 291.
+
+**Pendientes**
+- Mariano: probar la sala y los pergaminos, y calibrar.
+- La katana que empuja más fuerte se sacó: quedó en la lista por error (Mariano).
+- Todos los pergaminos de la lista están en el catálogo; los que todavía no hacen nada muestran "(X)". Cada nivel de un movimiento es su propio pergamino.
+- Las reglas se recalculan al armar cada sala, así que contemplan al J2 que entra por hotjoin y al que se queda sin vidas. En la sala no hay hotjoin.
+- Arreglado: al pasar de nivel quedaba la referencia al cartel de hotjoin del nivel anterior. 295 de 295.
+- Arreglado: tocar una carta no la agarraba (la conexión se armaba antes de que existieran las cartas; la prueba usaba un atajo). Ahora la prueba la toca de verdad.
+- El ninja aparece en la celda de su spawn, también en la fila, y desde ahí cae. Los niveles con el spawn en la fila 0 se ven igual que antes. 296 de 296.
+- Después: armas y saltos para calibrar, y los pergaminos que esperan sistemas (nivel 2, boulder, minas).
+
+---
+
 ## 2026-11-07 — Mariano y Claude: lista de pergaminos y etapa 7 (primera parte)
 
 - Mariano pasó la lista de pergaminos, con a quién afecta cada uno: `Docs/Pergaminos_borrador.md`. Las decisiones están en `DisenoV2.md` (7.0).

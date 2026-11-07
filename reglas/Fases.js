@@ -16,6 +16,8 @@ const BASE = {
   invocaAyudantes: false,       // El jefe puede invocar enemigos
   escupeFuego: false,           // Los tiles de fuego escupen bolas
   brilloInmortal: false,        // Ninjas y enemigos brillan en dorado: en esta fase no pueden morir
+  soloBasico: false,            // Sin movimientos especiales ni armas (la sala de pergaminos)
+  terminaConElTiempo: false,    // Al llegar a cero termina, sin fantasma (la sala)
   // Al acabarse el tiempo aparecen los fantasmas y nadie reaparece. Esto es lo que se repite si no queda nadie en pie.
   recomienzoPorFantasma: null
 };
@@ -27,6 +29,7 @@ const REGLAS = {
     recomienzoPorFantasma: NIVEL, brilloInmortal: true
   },
   transicion: { ...BASE, jugable: true, enemigosVulnerables: true },
+  sala: { ...BASE, jugable: true, soloBasico: true, terminaConElTiempo: true },
   caceria: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: VIDA, cuentaBajas: true, escupeFuego: true, recomienzoPorFantasma: FASE },
   jefe: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: VIDA, invocaAyudantes: true, escupeFuego: true, recomienzoPorFantasma: NIVEL }
 };

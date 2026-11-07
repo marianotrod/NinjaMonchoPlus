@@ -1,15 +1,15 @@
 // Partida.js
-// Estado de una partida completa (vidas, puntajes, nivel, mapa, pactos). Vive en el registry de Phaser
-// para que sobreviva a los reinicios de NinjaMonchoScene y lo puedan leer la UI y la pantalla de pactos.
+// Estado de una partida completa (vidas, puntajes, nivel, mapa y build). Vive en el registry de Phaser
+// para que sobreviva a los reinicios de NinjaMonchoScene y lo pueda leer la UI.
 
 import { CONFIG } from '../config.js';
 import { idsDeTipo, nivelPorId } from '../mundo/Niveles.js';
-import { pactosVacios } from './Pactos.js';
+import { modsIniciales } from './Pergaminos.js';
 
 export const JEFES_INTERMEDIOS = ['ogro', 'oni', 'espectro'];
 
 // Movimientos especiales: 0 = no lo tiene. Se desbloquean con pergaminos y pueden llegar a nivel 2.
-export const HABILIDADES = ['dash', 'dobleSalto', 'wallJump', 'caidaPesada'];
+export const HABILIDADES = ['dash', 'dobleSalto', 'wallJump', 'caidaPesada', 'boulder'];
 const habilidadesIniciales = () => Object.fromEntries(HABILIDADES.map(habilidad => [habilidad, 0]));
 
 export function nuevaPartida(jugadores, nivel = 1) {
@@ -21,7 +21,10 @@ export function nuevaPartida(jugadores, nivel = 1) {
     pool: idsDeTipo('normal'),
     datosNivel: null,
     jefe: null,
-    pactos: pactosVacios(),
+    mods: modsIniciales(),   // El build: lo que dieron los pergaminos, para siempre
+    tomados: {},             // Cuántas veces tomó cada jugador cada efecto: { id: [J1, J2] }
+    enSala: false,           // Entre un nivel y el siguiente se pasa por la sala de pergaminos
+    cartas: null,
     // Lo que cada jugador conserva entre niveles. El arma guarda su tipo y la munición con la que arranca cada nivel.
     habilidades: [habilidadesIniciales(), habilidadesIniciales()],
     armas: [null, null]
@@ -48,6 +51,10 @@ function elegirNivel(partida) {
 
 export function prepararNivel(partida) {
   if (partida.datosNivel) return;
+  if (partida.enSala) {
+    partida.datosNivel = nivelPorId(partida.salaForzada || CONFIG.NIVEL_SALA);
+    return;
+  }
   const nivel = partida.nivel;
   partida.jefe = null;
   if (esNivelJefe(nivel)) {

@@ -13,7 +13,8 @@ export const ARRANQUE_DEBUG = {
   jugadores: DEBUG && parametros.get('jugadores') ? parseInt(parametros.get('jugadores'), 10) : 1,
   jefe: DEBUG ? parametros.get('jefe') : null,  // ogro | oni | espectro (solo en niveles de jefe intermedio)
   mapa: DEBUG ? parametros.get('mapa') : null,  // id de un nivel de public/niveles (para probarlo)
-  borrador: DEBUG && parametros.has('borrador') // usa el nivel que mandó el editor online (ver mundo/Niveles.js)
+  borrador: DEBUG && parametros.has('borrador'), // usa el nivel que mandó el editor online (ver mundo/Niveles.js)
+  sala: DEBUG && parametros.has('sala')          // arranca en la sala de pergaminos; con &mapa= usa esa sala
 };
 
 // Traducciones por API (Traducila: https://traducila.vercel.app). Sin proyecto cargado, o si la API falla,
@@ -44,7 +45,7 @@ export const LOGICA = { VACIO: 0, SOLIDO: 1, PASARELA: 2, TRAMPA: 3, FUEGO: 4 };
 
 // Tiles con significado propio en MapTileSet.png. El fuego es el último: sus cuadros se animan solos desde este
 // hasta el primer tile vacío, así que para agregar uno alcanza con dibujarlo a continuación.
-export const TILES = { TRAMPA: 90, FUEGO: 91 };
+export const TILES = { TRAMPA: 90, FUEGO: 91, PIEDRA: 100 };
 
 export const CONFIG = {
   VIDAS_INICIALES: 3,          // Por jugador: las vidas no se comparten
@@ -54,6 +55,21 @@ export const CONFIG = {
   FUEGO_ESPERA_MAX: 7000,
   DURACION_LLAMA: 5000,         // Lo que dura encendida la llama que deja una bola al quedar quieta (ms)
   ENTRADA_ENEMIGO: 500,         // Un enemigo es intocable mientras entra a la pantalla y esto más (ms)
+  // Pergaminos
+  DURACION_FURIA: 6000,         // Con "la furia se pasa": lo que dura enfurecido un demonio (ms)
+  RADIO_IMAN: 72,               // Distancia a la que el imán atrae talismanes (px)
+  FUERZA_IMAN: 500,             // Aceleración hacia el ninja (px/s²)
+  PROB_MUNICION_GRATIS: 0.2,
+  PROB_PARRY_RECARGA: 0.2,
+  PROB_LLAMA_BOLA: 0.3,         // Una llama que se apaga escupe otra bola
+  PROB_BOLA_EXTRA: 0.2,
+  ESPERA_EXTENSION_TRAMPA: 1500, // Una trampa se extiende como mucho una vez cada este tiempo (ms)
+  PLATAFORMA_ANCHO: 3,          // Doble salto nivel 2: tiles de la plataforma fantasma
+  PLATAFORMA_DURACION: 3000,    // Lo que dura la plataforma fantasma (ms); el último segundo titila
+  BOLA_CELESTE_DURACION: 2500,  // Caída pesada nivel 2: lo que vive cada bola celeste (ms)
+  PROB_MINA: 0.25,              // Con el pergamino: probabilidad de que caiga una mina en vez de una moneda
+  PROB_BOMBA_ESPECIAL: 0.25,    // Con el pergamino: lo mismo con la bomba especial
+  ESPERA_BOMBA_ESPECIAL: 4000,  // La bomba especial explota sola después de esto (ms)
   ESPERA_RESPAWN: 2000,         // Tras caer fuera de la pantalla, el ninja reaparece arriba después de esto (ms)
   INVUL_RESPAWN: 1500,          // Invulnerabilidad al reaparecer, desde que toca el piso (ms)
   TOTAL_NIVELES: 10,
@@ -61,8 +77,12 @@ export const CONFIG = {
   NIVELES_FIJOS: { 1: 'inicio', 2: 'aprendizaje' }, // Número de nivel → id; el resto sale del pool
 
   TIEMPO_RECOLECCION: 60,
-  TIEMPO_MINIMO: 15,            // Piso del tiempo de un nivel aunque los pactos lo recorten
-  TIEMPO_CACERIA: 30,
+  TIEMPO_MINIMO: 15,            // Piso del tiempo de un nivel aunque los pergaminos lo recorten
+  DURACION_SALA: 10,            // Segundos de la sala de pergaminos
+  CUENTA_SALA: 600,             // Lo que dura cada número de la cuenta regresiva de la sala (ms)
+  SALA_OCULTA: 3000,            // Pergaminos negativos de la sala: tiempo con textos ocultos (ms)
+  SALA_CADENA: 5000,            // Tiempo que una carta queda encadenada (ms)
+  NIVEL_SALA: 'sala-pergaminos',  TIEMPO_CACERIA: 30,
   TIEMPO_JEFE: 99,
   ALARMA_TIEMPO: 10,            // Desde acá el reloj se pone rojo y suena el tic
   ALARMA_URGENTE: 5,
@@ -84,10 +104,6 @@ export const CONFIG = {
   INTERVALO_CACERIA: 500,
   INTERVALO_TALISMANES: 150,
   INTERVALO_DEMONIOS: 2000,
-  INTERVALO_ARMAS: 12000,
-  INTERVALO_ARMAS_JEFE: 7000,
-  VIDA_PICKUP_ARMA: 10000,
-  PRIMERA_CAJA_ARMAS: 5000,
 
   // Vida que le saca cada cosa a un jefe
   DAÑO_GOLPE: { katana: 1, proyectil: 1, pisoton: 2, explosion: 3 }
@@ -108,6 +124,7 @@ export const FISICA = {
   saltoPared: -300,
   empujePared: 260,
   pisoton: -380,
+  pisotonSaltado: -520,         // Con el pergamino: saltar justo al pisar lleva más alto
   trampolin: -420,              // Rebote sobre la cabeza del compañero
   caidaRapida: 480,
 

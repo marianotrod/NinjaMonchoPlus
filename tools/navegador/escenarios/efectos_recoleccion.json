@@ -1,0 +1,80 @@
+{
+  "descripcion": "Efectos de los pergaminos en la Recolección: trampas, imán, munición, parry, pisotón, furia, escudos y fuego",
+  "query": "?debug&nivel=3&mapa=n-peligros",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"wait": 2200},
+    {"eval": "(window.tilesFuego = window.game.scene.getScene('NinjaMonchoScene').tilesFuego, prueba.sinEnemigos(), prueba.sinFuego(), prueba.sinItems(), prueba.ponerTiempo(90), window.azarReal = Math.random, true)"},
+
+    {"eval": "(prueba.tomarEfecto(1, 'trampaPiedra'), prueba.quitarProteccion(1), prueba.ponerJugador(1, 376, 250, 0, 100), true)"},
+    {"hasta": "prueba.tile(24, 19) === 1", "timeout": 1000, "nombre": "J1 pisa una trampa"},
+    {"verificar": "con trampas en piedra, pisar una la vuelve piedra y no golpea", "eval": "prueba.jugador(1).aturdido === false"},
+
+    {"eval": "(prueba.proteger(1), prueba.ponerJugador(1, 100, 264), prueba.ponerModGlobal('trampaSeExtiende', true), window.trampas = prueba.contarTiles(3), prueba.crearEnemigo('demonio_caminante', 344, 250), true)"},
+    {"hasta": "prueba.contarTiles(3) > trampas", "timeout": 1500, "nombre": "un enemigo toca una trampa"},
+    {"verificar": "con trampas que se extienden, tocar una contagia un bloque vecino", "eval": "prueba.enemigo(0).enfurecido"},
+    {"eval": "(prueba.ponerModGlobal('trampaSeExtiende', false), prueba.sinEnemigos(), true)"},
+
+    {"eval": "(prueba.tomarEfecto(1, 'iman'), prueba.ponerJugador(1, 200, 264), prueba.crearItem('cuadrado', 250, 264), window.x0 = prueba.items()[0].x, true)"},
+    {"wait": 300},
+    {"verificar": "el imán atrae los talismanes cercanos", "eval": "prueba.items().length === 0 || prueba.items()[0].x < x0 - 5"},
+    {"eval": "(prueba.sinItems(), true)"},
+
+    {"eval": "(prueba.equipar(1, 'shuriken'), prueba.tomarEfecto(1, 'municionGratis'), Math.random = () => 0, prueba.mirar(1, 1), prueba.disparar(1), Math.random = azarReal, true)"},
+    {"verificar": "con munición gratis, a veces disparar no gasta", "eval": "prueba.jugador(1).municion === 7"},
+
+    {"eval": "(prueba.tomarEfecto(1, 'parryRecarga'), Math.random = () => 0, prueba.ponerJugador(1, 200, 264), prueba.mirar(1, 1), prueba.proyectilEnemigo(214, 262, 0, 0), prueba.atacar(1), true)"},
+    {"wait": 80},
+    {"verificar": "con el parry que recarga, hacerle parry a un proyectil puede sumar un tiro", "eval": "(Math.random = azarReal, prueba.jugador(1).municion === 8 && prueba.proyectiles().enemigos === 0)"},
+
+
+    {"verificar": "sin el pergamino, saltar al pisar no cambia el rebote", "eval": "prueba.pisotear(1, true) === -380"},
+    {"verificar": "con el pergamino, saltar justo al pisar lleva más alto", "eval": "(prueba.tomarEfecto(1, 'saltoPisoton'), prueba.pisotear(1, true)) === -520"},
+    {"wait": 900},
+
+    {"eval": "(prueba.tomarEfecto(1, 'pisarEnfurece'), prueba.crearEnemigo('demonio_caminante', 200, 264), prueba.quitarProteccion(1), prueba.ponerJugador(1, 200, 236, 0, 250), true)"},
+    {"hasta": "prueba.enemigo(0).enfurecido", "timeout": 1000, "nombre": "J1 pisa al demonio"},
+    {"verificar": "pisar demonios los enfurece, pero en la Recolección siguen sin morir", "eval": "prueba.enemigo(0).muerto === false"},
+    {"eval": "(prueba.sinEnemigos(), prueba.ponerJugador(1, 60, 264), true)"},
+
+    {"eval": "(prueba.ponerModGlobal('contagio', true), prueba.crearEnemigo('demonio_caminante', 300, 264), prueba.crearEnemigo('demonio_caminante', 304, 264), prueba.enfurecerEnemigo(0), true)"},
+    {"hasta": "prueba.enemigo(1).enfurecido", "timeout": 1000, "nombre": "el demonio furioso toca al otro"},
+    {"verificar": "la furia se contagia entre demonios", "eval": "prueba.enemigo(0).enfurecido && prueba.enemigo(1).enfurecido"},
+    {"eval": "(prueba.ponerModGlobal('contagio', false), prueba.sinEnemigos(), true)"},
+
+    {"eval": "(prueba.configurar('DURACION_FURIA', 300), prueba.ponerModGlobal('furiaTemporal', true), prueba.crearEnemigo('demonio_caminante', 250, 264), prueba.enfurecerEnemigo(0), true)"},
+    {"wait": 500},
+    {"verificar": "con la furia que se pasa, el demonio se calma solo", "eval": "prueba.enemigo(0).enfurecido === false"},
+    {"eval": "(prueba.ponerModGlobal('furiaTemporal', false), prueba.sinEnemigos(), true)"},
+
+    {"eval": "(prueba.ponerModGlobal('primerEnemigoEscudo', true), prueba.reiniciarPrimerEnemigo(), prueba.crearEnemigo('demonio_caminante', 214, 264), prueba.crearEnemigo('demonio_caminante', 400, 264), true)"},
+    {"verificar": "el primer demonio del nivel tiene escudo y el segundo no", "eval": "prueba.enemigo(0).escudo && !prueba.enemigo(1).escudo"},
+    {"eval": "(prueba.ponerJugador(1, 200, 264), prueba.mirar(1, 1), prueba.atacar(1), true)"},
+    {"wait": 80},
+    {"verificar": "el primer golpe solo rompe el escudo", "eval": "prueba.enemigo(0)", "espera": {"escudo": false, "aturdido": false}},
+    {"eval": "(prueba.ponerModGlobal('primerEnemigoEscudo', false), prueba.sinEnemigos(), true)"},
+
+    {"eval": "(prueba.ponerModGlobal('rebotesEnemigos', 1), prueba.ponerJugador(1, 300, 264), prueba.proyectilEnemigo(60, 250, -250, 0), true)"},
+    {"wait": 350},
+    {"verificar": "con un rebote más, el proyectil enemigo rebota contra la pared en lugar de romperse", "eval": "prueba.proyectiles().enemigos === 1"},
+    {"eval": "(prueba.ponerModGlobal('rebotesEnemigos', 0), prueba.ponerModGlobal('proyectilDejaBola', true), prueba.proyectilEnemigo(60, 250, -250, 0), true)"},
+    {"hasta": "prueba.fuego().bolas > 0", "timeout": 1500, "nombre": "el proyectil se rompe"},
+    {"verificar": "con el pergamino, un proyectil enemigo roto deja una bola de fuego", "eval": "prueba.fuego().bolas > 0"},
+    {"eval": "(prueba.ponerModGlobal('proyectilDejaBola', false), window.game.scene.getScene('NinjaMonchoScene').proyectiles.clear(true, true), true)"},
+
+    {"eval": "(window.game.scene.getScene('NinjaMonchoScene').tilesFuego = tilesFuego, prueba.ponerModGlobal('bolaExtra', true), Math.random = () => 0, prueba.escupirFuego(0), Math.random = azarReal, prueba.sinFuego(), true)"},
+    {"verificar": "con más bolas de fuego, a veces sale una más", "eval": "prueba.fuego().bolas === 2"},
+    {"eval": "(prueba.ponerModGlobal('bolaExtra', false), window.game.scene.getScene('NinjaMonchoScene').proyectiles.clear(true, true), true)"},
+
+    {"eval": "(window.game.scene.getScene('NinjaMonchoScene').llamas.clear(true, true), prueba.configurar('DURACION_LLAMA', 300), prueba.ponerModGlobal('llamaBola', true), Math.random = () => 0, prueba.ponerJugador(1, 60, 264), prueba.crearBola(200, 250, 0, 0), true)"},
+    {"hasta": "prueba.fuego().llamas === 1", "timeout": 3000, "nombre": "la bola queda quieta y se vuelve llama"},
+    {"hasta": "prueba.fuego().bolas > 0", "timeout": 2000, "nombre": "la llama se apaga"},
+    {"verificar": "con el pergamino, una llama que se apaga escupe otra bola", "eval": "(Math.random = azarReal, prueba.fuego().bolas > 0)"},
+    {"eval": "(prueba.ponerModGlobal('llamaBola', false), prueba.configurar('DURACION_LLAMA', 5000), true)"},
+
+    {"eval": "(prueba.tomarEfecto(1, 'fantasmaRapido'), prueba.ponerJugador(1, 60, 264), prueba.ponerTiempo(1), true)"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "aparece el fantasma"},
+    {"verificar": "con el fantasma rápido, el tuyo arranca al doble", "eval": "prueba.fantasmas()[0].velocidad >= 89"}
+  ]
+}

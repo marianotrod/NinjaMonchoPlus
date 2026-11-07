@@ -1,0 +1,19 @@
+{
+  "descripcion": "Sala de pergaminos con un jugador: no se puede entrar como J2 y el cartel de hotjoin no aparece",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"verificar": "en un nivel común está el cartel de hotjoin", "eval": "!!window.game.scene.getScene('NinjaMonchoScene').uiHotJoin"},
+    {"eval": "(prueba.sinEnemigos(), prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"wait": 300, "eval": "prueba.terminarCaceria(false)"},
+    {"hasta": "prueba.estado().listoParaContinuar", "timeout": 3000, "nombre": "se puede continuar"},
+    {"press": "Enter"},
+    {"hasta": "prueba.enJuego() && prueba.estado().fase === 'sala'", "timeout": 8000, "nombre": "sala de pergaminos"},
+    {"verificar": "en la sala no está el cartel de hotjoin", "eval": "!window.game.scene.getScene('NinjaMonchoScene').uiHotJoin"},
+    {"down": "KeyW"},
+    {"wait": 1300},
+    {"up": "KeyW"},
+    {"verificar": "mantener las teclas del J2 no lo hace entrar", "eval": "prueba.estado().jugadores === 1"}
+  ]
+}

@@ -28,10 +28,10 @@
     {"hasta": "prueba.estado().fase === 'nivelCompletado' && prueba.estado().listoParaContinuar", "timeout": 4000, "nombre": "nivel completado"},
     {"shot": "nivel_completado"},
     {"press": "Enter"},
-    {"hasta": "prueba.escenas().includes('PactSelectionScene')", "timeout": 3000, "nombre": "pergaminos"},
+    {"hasta": "prueba.enJuego() && prueba.estado().fase === 'sala'", "timeout": 8000, "nombre": "sala de pergaminos"},
     {"wait": 700},
     {"shot": "pergaminos"},
-    {"press": "Enter"},
+    {"eval": "prueba.tocarCarta(1, 0)"},
     {"hasta": "prueba.enJuego() && prueba.estado().nivel === 2", "timeout": 5000, "nombre": "nivel 2"},
     {"verificar": "el nivel 2 arranca con el puntaje del nivel 1", "eval": "prueba.estado().puntajes[0] > 0"},
     {"shot": "nivel2"}

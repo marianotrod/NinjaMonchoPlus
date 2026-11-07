@@ -1,0 +1,36 @@
+{
+  "descripcion": "Efectos de los pergaminos en la Cacería y los que cambian la partida: escudo, bomba al morir, explosiones, salto de pared nivel 2, vidas y tiempo",
+  "query": "?debug&nivel=3&mapa=n-peligros",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinFuego(), prueba.sinItems(), true)"},
+    {"verificar": "+1 vida suma una vida", "eval": "(prueba.tomarEfecto(1, 'vidaExtra'), prueba.estado().vidas[0]) === 4"},
+    {"verificar": "+1 segundo suma tiempo a los niveles siguientes", "eval": "(prueba.tomarEfecto(1, 'masTiempo'), prueba.modsGlobal().tiempoExtra) === 1"},
+    {"eval": "(prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"wait": 1600, "eval": "(prueba.sinEnemigos(), prueba.ponerTiempo(90), true)"},
+
+    {"eval": "(prueba.tomarEfecto(1, 'escudo'), prueba.quitarProteccion(1), prueba.ponerJugador(1, 200, 264), prueba.golpear(1), true)"},
+    {"verificar": "con el escudo, un golpe que mataba solo aturde, y el escudo se gasta", "eval": "({ ...prueba.jugador(1), escudos: prueba.modsJugador(1).escudos })", "espera": {"muerto": false, "aturdido": true, "escudos": 0}},
+    {"hasta": "!prueba.jugador(1).invulnerable", "timeout": 3000, "nombre": "termina el parpadeo"},
+
+    {"eval": "(prueba.tomarEfecto(1, 'bombaAlMorir'), prueba.quitarProteccion(1), prueba.golpear(1), true)"},
+    {"verificar": "sin escudo, el golpe mata; con el pergamino, al morir suelta una bomba", "eval": "prueba.jugador(1).muerto && prueba.proyectiles().jugador.some(p => p.tipo === 'bomba')"},
+    {"hasta": "!prueba.jugador(1).muerto && prueba.listo(1)", "timeout": 6000, "nombre": "J1 vuelve"},
+    {"eval": "(window.game.scene.getScene('NinjaMonchoScene').proyectiles.clear(true, true), prueba.ponerModGlobal('explotanAlMorir', true), prueba.sinEnemigos(), prueba.crearEnemigo('demonio_caminante', 214, 264), prueba.crearEnemigo('demonio_caminante', 460, 264), prueba.enfurecerEnemigo(0), prueba.quitarProteccion(1), prueba.ponerJugador(1, 200, 264), true)"},
+    {"eval": "(window.game.scene.getScene('NinjaMonchoScene').matarEnemigo(window.game.scene.getScene('NinjaMonchoScene').enemigos.getChildren()[0], null), true)"},
+    {"verificar": "con el pergamino, un demonio furioso explota al morir y golpea al que está cerca", "eval": "prueba.jugador(1).muerto"},
+    {"eval": "(prueba.sinEnemigos(), true)"},
+    {"hasta": "!prueba.jugador(1).muerto && prueba.listo(1)", "timeout": 6000, "nombre": "J1 vuelve"},
+    {"eval": "(prueba.ponerModGlobal('explotanAlMorir', false), prueba.proteger(1), true)"},
+
+    {"eval": "(prueba.darHabilidades(1, ['wallJump'], 2), prueba.ponerJugador(1, 22, 150, -60, 40), true)"},
+    {"down": "ArrowLeft"},
+    {"wait": 60},
+    {"eval": "(prueba.quitarProteccion(1), true)"},
+    {"press": "ArrowUp", "delay": 60},
+    {"verificar": "salto de pared nivel 2: mientras salta de la pared es intocable", "eval": "prueba.jugador(1)", "espera": {"estado": "saltoPared", "invulnerable": true}},
+    {"up": "ArrowLeft"}
+  ]
+}

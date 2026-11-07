@@ -1,5 +1,5 @@
 {
-  "descripcion": "Cajas de armas, munición, shuriken, bumerán y bomba",
+  "descripcion": "Armas: munición, shuriken, bumerán y bomba",
   "query": "?debug&nivel=1",
   "pasos": [
     {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
@@ -8,9 +8,9 @@
     {"eval": "(prueba.ponerJugador(1, 60, 264), prueba.proteger(1))"},
     {"wait": 300},
     {"verificar": "sin arma, el botón especial no dispara nada", "eval": "(prueba.disparar(1), prueba.proyectiles().jugador.length === 0)"},
-    {"eval": "prueba.crearCajaArma('shuriken', 60, 262)"},
+    {"eval": "prueba.equipar(1, 'shuriken')"},
     {"wait": 150},
-    {"verificar": "tocar una caja da el arma con su munición y la caja desaparece", "eval": "({ ...prueba.jugador(1), cajas: prueba.cajasArmas() })", "espera": {"arma": "shuriken", "municion": 7, "cajas": 0}},
+    {"verificar": "equipar un arma la da con su munición base", "eval": "({ ...prueba.jugador(1), cajas: prueba.cajasArmas() })", "espera": {"arma": "shuriken", "municion": 7, "cajas": 0}},
     {"eval": "(prueba.mirar(1, -1), prueba.disparar(1))"},
     {"verificar": "disparar gasta un tiro y crea un shuriken", "eval": "({ municion: prueba.jugador(1).municion, shurikens: prueba.proyectiles().jugador.filter(p => p.tipo === 'shuriken').length })", "espera": {"municion": 6, "shurikens": 1}},
     {"wait": 400},

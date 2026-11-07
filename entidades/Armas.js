@@ -5,13 +5,13 @@
 //   shuriken: proyectil rápido que cae muy poco (FISICA.caidaShuriken).
 //   bumeran:  va y vuelve; arrastra talismanes y monedas hacia el jugador y golpea varias veces.
 //   bomba:    tiro con rebote que explota por tiempo y empuja todo lo que esté cerca.
-import { BANDO, FISICA } from '../config.js';
+import { BANDO, CONFIG, FISICA } from '../config.js';
 import { proyectilVencido } from '../mundo/Mundo.js';
 import { colorDeJugador } from '../reglas/Resolvedor.js';
 import { Sonido } from '../sistemas/Sonido.js';
 
 export const ARMAS = {
-  shuriken: { icono: 'icono-shuriken', municion: 7, rebotes: 0, cooldown: 250, velocidad: 300, giro: 900, duracion: 1500 },
+  shuriken: { icono: 'icono-shuriken', municion: 7, rebotes: 0, cooldown: 250, velocidad: 300, giro: 900, duracion: 4000 },
   bumeran: {
     icono: 'icono-bumeran', municion: 5, rebotes: 2, cooldown: 300, velocidad: 240, velocidadVuelta: 280, giro: 720, duracionIda: 380
   },
@@ -23,6 +23,14 @@ export const ARMAS = {
 
 export const TIPOS_ARMA = Object.keys(ARMAS);
 
+// La misma arma suma munición; otra la reemplaza con la munición base. Devuelve si era la misma.
+export function equiparEnPartida(partida, j, tipo) {
+  const actual = partida.armas[j];
+  const misma = !!actual && actual.tipo === tipo;
+  partida.armas[j] = { tipo, municion: ARMAS[tipo].municion + (misma ? actual.municion : 0) };
+  return misma;
+}
+
 export function dispararArma(scene, ninja) {
   if (ninja.arma === 'bumeran' && ninja.bumeranActivo && ninja.bumeranActivo.active) return false;
   if (scene.time.now < ninja.proximoDisparo) return false;
@@ -30,16 +38,7 @@ export function dispararArma(scene, ninja) {
 
   const direccion = ninja.flipX ? -1 : 1;
   const datos = ARMAS[ninja.arma];
-  const proyectil = scene.proyectiles.create(ninja.x + direccion * 8, ninja.y - 2, ninja.arma);
-  proyectil.bando = BANDO.JUGADORES;
-  proyectil.body.setSize(10, 10); // El dibujo es de 16x16 pero el área de impacto es más chica (si no, roza el piso al tirar)
-  proyectil.tipo = ninja.arma;
-  proyectil.duenio = ninja;
-  proyectil.golpeados = new Set();
-  proyectil.nacimiento = scene.time.now;
-  proyectil.rebotesRestantes = datos.rebotes + ninja.mods.rebotesExtra;
-  proyectil.setTint(colorDeJugador(scene));
-  proyectil.setBounce(1);
+  const proyectil = crearProyectil(scene, ninja.arma, ninja.x + direccion * 8, ninja.y - 2, ninja);
 
   if (ninja.arma === 'shuriken') {
     proyectil.body.setAllowGravity(false);
@@ -56,16 +55,40 @@ export function dispararArma(scene, ninja) {
     ninja.bumeranActivo = proyectil;
     Sonido.efecto(scene, 'snd-shuriken', 0.3, { rate: 0.7 });
   } else {
-    proyectil.body.setAllowGravity(true);
-    proyectil.setVelocity(direccion * datos.velocidadX, datos.velocidadY);
-    proyectil.setBounce(datos.rebote);
+    armarBomba(scene, proyectil, direccion * datos.velocidadX, datos.velocidadY);
     proyectil.setAngularVelocity(direccion * datos.giro);
-    scene.time.delayedCall(datos.espera, () => { if (proyectil.active) scene.explotarBomba(proyectil); });
     Sonido.beep(scene, 330, 0.1, 0.08, 'triangle');
   }
 
-  if (!ninja.municionInfinita()) ninja.municion--;
+  const gratis = ninja.mods.municionGratis && Math.random() < CONFIG.PROB_MUNICION_GRATIS;
+  if (!ninja.municionInfinita() && !gratis) ninja.municion--;
   return true;
+}
+
+function crearProyectil(scene, tipo, x, y, duenio) {
+  const proyectil = scene.proyectiles.create(x, y, tipo);
+  proyectil.bando = BANDO.JUGADORES;
+  proyectil.body.setSize(10, 10); // El dibujo es de 16x16 pero el área de impacto es más chica (si no, roza el piso al tirar)
+  proyectil.tipo = tipo;
+  proyectil.duenio = duenio;
+  proyectil.golpeados = new Set();
+  proyectil.nacimiento = scene.time.now;
+  proyectil.rebotesRestantes = ARMAS[tipo].rebotes + duenio.mods.rebotesExtra;
+  proyectil.setBounce(1);
+  proyectil.setTint(colorDeJugador(scene));
+  return proyectil;
+}
+
+function armarBomba(scene, bomba, vx, vy) {
+  bomba.body.setAllowGravity(true);
+  bomba.setVelocity(vx, vy);
+  bomba.setBounce(ARMAS.bomba.rebote);
+  scene.time.delayedCall(ARMAS.bomba.espera, () => { if (bomba.active) scene.explotarBomba(bomba); });
+}
+
+// Pergamino: al morir el ninja suelta una bomba donde estaba
+export function soltarBomba(scene, ninja) {
+  armarBomba(scene, crearProyectil(scene, 'bomba', ninja.x, ninja.y, ninja), 0, -150);
 }
 
 // Un choque contra el escenario: gasta un rebote o, si no quedan, destruye el proyectil. Un mismo choque no cuenta
@@ -116,7 +139,9 @@ export function actualizarProyectiles(scene) {
     }
 
     const vencido = scene.conWrap && proyectilVencido(p, ahora);
-    if (fuera || vencido || (p.tipo === 'shuriken' && ahora - p.nacimiento > ARMAS.shuriken.duracion)) p.destroy();
+    const vieja = (p.tipo === 'shuriken' && ahora - p.nacimiento > ARMAS.shuriken.duracion)
+      || (p.tipo === 'bolaCeleste' && ahora - p.nacimiento > CONFIG.BOLA_CELESTE_DURACION);
+    if (fuera || vencido || vieja) p.destroy();
   });
 }
 

@@ -1,0 +1,12 @@
+{
+  "descripcion": "Pergamino de trampas al azar: al empezar el nivel, bloques sólidos se vuelven trampas, nunca en las paredes ni tapados",
+  "query": "?debug&nivel=3&mapa=n-peligros",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego()", "timeout": 8000, "nombre": "arranca el nivel"},
+    {"eval": "(window.base = prueba.contarTiles(3), prueba.ponerModGlobal('trampasAlAzar', 3), window.game.scene.getScene('NinjaMonchoScene').scene.restart(), true)"},
+    {"wait": 500},
+    {"hasta": "window.prueba && prueba.enJuego()", "timeout": 8000, "nombre": "recomienza el nivel"},
+    {"verificar": "aparecen 3 trampas más", "eval": "prueba.contarTiles(3) === base + 3"},
+    {"verificar": "ninguna en las paredes de los costados ni debajo de otro bloque", "eval": "(() => { const s = window.game.scene.getScene('NinjaMonchoScene'); const malas = []; s.logica.forEach((fila, f) => fila.forEach((t, c) => { if (t === 3 && f < 19 && (c <= 1 || c >= 32 || s.logica[f - 1][c] !== 0)) malas.push([c, f]); })); return malas.length === 0; })()"}
+  ]
+}

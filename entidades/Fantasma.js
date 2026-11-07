@@ -13,7 +13,9 @@ export default class Fantasma extends Phaser.Physics.Arcade.Sprite {
     this.body.setAllowGravity(false);
     this.body.setSize(12, 12);
     this.setDepth(80).setAlpha(0.85);
-    this.velocidad = CONFIG.FANTASMA_VELOCIDAD;
+    // Pergamino: el fantasma de un jugador puede ir al doble
+    this.factor = objetivo && objetivo.mods.fantasmaRapido ? 2 : 1;
+    this.velocidad = CONFIG.FANTASMA_VELOCIDAD * this.factor;
     this.objetivo = objetivo;
     this.colliders = [];
 
@@ -25,7 +27,7 @@ export default class Fantasma extends Phaser.Physics.Arcade.Sprite {
       this.setVelocity(0, 0);
       return;
     }
-    this.velocidad += CONFIG.FANTASMA_ACELERACION * delta / 1000;
+    this.velocidad += CONFIG.FANTASMA_ACELERACION * this.factor * delta / 1000;
     const angulo = Math.atan2(objetivo.y - this.y, objetivo.x - this.x);
     this.setVelocity(Math.cos(angulo) * this.velocidad, Math.sin(angulo) * this.velocidad);
     this.setFlipX(objetivo.x < this.x);

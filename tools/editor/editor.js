@@ -605,7 +605,7 @@ async function guardar() {
 // El número de nivel solo importa para que el juego arme una pelea de jefe o un nivel común
 function direccionDePrueba(extra = '') {
   const { id, tipo, jefe } = estado.nivel;
-  const parametros = tipo === 'jefe' ? `nivel=5${jefe && jefe !== 'rey' ? `&jefe=${jefe}` : ''}` : 'nivel=3';
+  const parametros = tipo === 'jefe' ? `nivel=5${jefe && jefe !== 'rey' ? `&jefe=${jefe}` : ''}` : (tipo === 'pergaminos' ? 'nivel=2&sala' : 'nivel=3');
   return `../../index.html?debug&${parametros}&mapa=${id}${extra}`;
 }
 

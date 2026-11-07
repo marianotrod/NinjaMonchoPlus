@@ -5,7 +5,6 @@ import HowToPlayScene from './escenas/HowToPlayScene.js';
 import NinjaMonchoScene from './escenas/NinjaMonchoScene.js';
 import UIScene from './escenas/UIScene.js';
 import PauseScene from './escenas/PauseScene.js';
-import PactSelectionScene from './escenas/PactSelectionScene.js';
 import CreditsScene from './escenas/CreditsScene.js';
 import { DEBUG, FISICA } from './config.js';
 import { instalarPuertaPruebas } from './sistemas/PuertaPruebas.js';
@@ -36,7 +35,7 @@ const config = {
     },
   },
   // BootScene carga todo y arranca el título. UIScene y PauseScene se dibujan encima de NinjaMonchoScene.
-  scene: [BootScene, TitleScene, OptionsScene, HowToPlayScene, CreditsScene, NinjaMonchoScene, UIScene, PauseScene, PactSelectionScene],
+  scene: [BootScene, TitleScene, OptionsScene, HowToPlayScene, CreditsScene, NinjaMonchoScene, UIScene, PauseScene],
 };
 
 // Función para calcular y aplicar el multiplicador entero exacto (1x, 2x, 3x, 4x...)
