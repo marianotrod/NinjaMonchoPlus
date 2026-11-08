@@ -8,7 +8,7 @@
     {"verificar": "el jugador cae donde dice el archivo", "eval": "prueba.jugador(1).x === 88"},
     {"hasta": "prueba.estado().fase === 'recoleccion'", "timeout": 4000, "nombre": "arranca la Recolección"},
     {"verificar": "un nivel que no se pudo cargar no rompe la lista", "eval": "(async () => { const { registrarNiveles, idsDeTipo } = await import('./mundo/Niveles.js'); const cache = { json: { get: (clave) => (clave === 'indice-niveles' ? { niveles: [{ id: 'no-llego' }] } : undefined) } }; registrarNiveles(cache); return idsDeTipo('normal').length > 0; })()"},
-    {"verificar": "todos los gráficos sueltos cargaron", "eval": "(async () => { const { GRAFICOS } = await import('./datos/Graficos.js'); return { cantidad: GRAFICOS.length, faltan: GRAFICOS.filter(clave => !window.game.textures.exists(clave)) }; })()", "espera": {"cantidad": 28, "faltan": []}},
+    {"verificar": "todos los gráficos sueltos cargaron", "eval": "(async () => { const { GRAFICOS } = await import('./datos/Graficos.js'); return { cantidad: GRAFICOS.length, faltan: GRAFICOS.filter(clave => !window.game.textures.exists(clave)) }; })()", "espera": {"cantidad": 30, "faltan": []}},
     {"shot": "valle"}
   ]
 }

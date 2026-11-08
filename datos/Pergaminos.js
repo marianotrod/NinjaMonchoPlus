@@ -13,6 +13,7 @@
 //   incompatible: ids con los que no puede salir en la misma carta
 //   aplicar:     (partida, j) cambia la partida. "j" es quien tomó la carta (0 = J1, 1 = J2).
 //   pendiente:   todavía no hace nada; la carta lo muestra con "(X)" adelante
+//   texto:       (partida, jugadores en juego) → clave del texto, si cambia según la partida (los movimientos)
 //
 // Las reglas se evalúan cada vez que se arma la sala, con los jugadores en juego en ese momento: el J2 cuenta desde que
 // entra (también por hotjoin) y deja de contar cuando se queda sin vidas.
@@ -28,14 +29,16 @@ export const TOPE_TIEMPO_EXTRA = 10;  // Los segundos de más o de menos dejan d
 const jugador = (partida, j) => partida.mods.jugadores[j];
 const global = (partida) => partida.mods.global;
 
-// Un movimiento especial tiene un pergamino por nivel. Sale mientras algún jugador en juego esté en el nivel anterior.
-// Tomarlo sube un nivel a quien lo toma, hasta 2, sea cual sea la carta.
+// Un movimiento especial es un solo pergamino: tomarlo sube un nivel a quien lo toma, hasta 2. Sale mientras algún
+// jugador en juego no lo tenga al máximo. La carta dice "nivel 2" solo si todos los jugadores en juego ya lo tienen
+// (si no, quien lo toma podría estar sacando el nivel 1).
 const NIVEL_MAXIMO = 2;
-const habilidad = (habilidadId, nivel, pendiente = false) => ({
-  id: nivel === 1 ? habilidadId : `${habilidadId}${nivel}`, tipo: POSITIVO, pendiente,
-  disponible: (partida, enJuego) => enJuego.some(j => partida.habilidades[j][habilidadId] === nivel - 1),
+const habilidad = (id, pendiente = false) => ({
+  id, tipo: POSITIVO, pendiente,
+  disponible: (partida, enJuego) => enJuego.some(j => partida.habilidades[j][id] < NIVEL_MAXIMO),
+  texto: (partida, enJuego) => (enJuego.every(j => partida.habilidades[j][id] >= 1) ? `${id}2` : id),
   aplicar: (partida, j) => {
-    partida.habilidades[j][habilidadId] = Math.min(NIVEL_MAXIMO, partida.habilidades[j][habilidadId] + 1);
+    partida.habilidades[j][id] = Math.min(NIVEL_MAXIMO, partida.habilidades[j][id] + 1);
   }
 });
 
@@ -50,16 +53,14 @@ const marca = (id, tipo, alcance, noAparece, pendiente = false) => ({
 export const EFECTOS = [
   // --- Positivos ---
   { id: 'rebotes', tipo: POSITIVO, aplicar: (partida, j) => { jugador(partida, j).rebotesExtra++; } },
-  habilidad('dobleSalto', 1),
-  habilidad('dobleSalto', 2),         // Plataforma fantasma: una pasarela temporal, alineada a la grilla como las demás
-  habilidad('dash', 1),
-  habilidad('dash', 2),               // Parry durante el dash
-  habilidad('caidaPesada', 1),
-  habilidad('caidaPesada', 2),        // Bolas celestes al golpear el piso
-  habilidad('wallJump', 1),
-  habilidad('wallJump', 2),           // Intocable durante el salto de pared (no para el fantasma)
-  habilidad('boulder', 1, true),
-  habilidad('boulder', 2, true),
+  // Nivel 2 de cada uno: doble salto → plataforma fantasma (una pasarela temporal alineada a la grilla);
+  // dash → katanazo durante el dash; caída pesada → bolas celestes al golpear el piso;
+  // salto de pared → intocable durante el salto (no para el fantasma); boulder → los enemigos salen disparados
+  habilidad('dobleSalto'),
+  habilidad('dash'),
+  habilidad('caidaPesada'),
+  habilidad('wallJump'),
+  habilidad('boulder'),
   {
     id: 'vidaExtra', tipo: POSITIVO, peso: 3, decae: 0.5,
     aplicar: (partida, j) => { partida.vidas[j]++; }
@@ -80,6 +81,9 @@ export const EFECTOS = [
   marca('bombaAlMorir', POSITIVO, 'jugador', 'ambos'),
   marca('saltoPisoton', POSITIVO, 'jugador', 'ambos'),
   marca('parryRecarga', POSITIVO, 'jugador', 'ambos'),
+  marca('katanaLarga', POSITIVO, 'jugador', 'ambos'),
+  marca('katanaAlta', POSITIVO, 'jugador', 'ambos'),
+  marca('parry360', POSITIVO, 'jugador', 'ambos'),
 
   // --- Negativos ---
   { id: 'rebotesEnemigos', tipo: NEGATIVO, aplicar: (partida) => { global(partida).rebotesEnemigos++; } },

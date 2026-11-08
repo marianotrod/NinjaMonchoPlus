@@ -1,6 +1,6 @@
 import { i18n } from '../i18n.js';
 import { ARRANQUE_DEBUG, TILES } from '../config.js';
-import { GRAFICOS, GRAFICOS_ANIMADOS } from '../datos/Graficos.js';
+import { GRAFICOS, GRAFICOS_ANIMADOS, GRAFICOS_CUADROS } from '../datos/Graficos.js';
 import { armarCartas } from '../reglas/Pergaminos.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { nuevaPartida } from '../reglas/Partida.js';
@@ -34,7 +34,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.spritesheet('escudo_roto', `${A}escudo_roto-Sheet.png`, { frameWidth: 16, frameHeight: 16 });
 
     GRAFICOS.forEach(clave => this.load.image(clave, `${A}graficos/${clave}.png`));
-    GRAFICOS_ANIMADOS.forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 16, frameHeight: 16 }));
+    [...GRAFICOS_ANIMADOS, ...GRAFICOS_CUADROS].forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 16, frameHeight: 16 }));
 
     this.load.audio('musica-fondo', [`${A}GameMusic.ogg`, `${A}GameMusic.mp3`]);
     this.load.audio('musica-cueva', [`${A}CaveMusic.mp3`]);

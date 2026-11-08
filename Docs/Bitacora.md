@@ -5,6 +5,32 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-08 — Claude: notas de la partida de prueba de Mariano
+
+- Tiempos: intocable al aparecer 1,5 s al empezar el nivel y 2,5 s al reaparecer (`INVUL_INICIO`, `INVUL_RESPAWN`);
+  enemigos intocables 1,2 s después de entrar (`ENTRADA_ENEMIGO`). El katanazo dura 230 ms (antes 150).
+- Control aéreo: en el aire responde más rápido al cambiar de dirección y frena un poco al soltar (`FISICA.suavizadoAire`, `frenadoAire`).
+- Brillo dorado: se apaga en proporción a los talismanes juntados (los que sobran de una forma no cuentan).
+- Pergaminos nuevos: katana un tile más larga, katana un tile más alta, parry en 360 (con un aro, `parry-circular.png`).
+  Dash nivel 2: ahora es un katanazo que dura todo el dash.
+- Fantasma: se lo puede pisar una vez; se frena 0,8 s y se enoja (rojo, 1,3 veces más rápido, ya no se deja pisar).
+- Cacería: siguen cayendo monedas, hasta 3; al agarrar una cae otra (`TOPE_MONEDAS_CACERIA`, `INTERVALO_MONEDAS_CACERIA`).
+- Nivel completado: el bono pasa al puntaje de a poco, con un tic que sube de tono y un salto al final.
+- Enemigos nuevos: esqueleto (reemplaza al caminante) y samurái, ver `DisenoV2.md` 5.3. Gráficos provisorios y reemplazables:
+  `esqueleto.png`, `samurai.png` (hojas de cuadros), `cuchilla.png`.
+- Pruebas nuevas: `notas_ninja`, `notas_caceria`, `enemigos_nuevos`.
+- Caer de muy alto (`CONFIG.CAIDA_ALTA`, se apaga con `activa: false`): se mide la altura caída (190 px, 2/3 de pantalla).
+  Al tocar el piso desde ahí, 400 ms sin control. Boulder (`CONFIG.BOULDER`): saltar en los últimos 100 ms → rueda 600 ms,
+  intocable, golpeando lo que toca; entre 100 y 250 ms → aterriza sin castigo. Nivel 2: los enemigos que toca salen disparados
+  y golpean a los otros; en la Cacería mueren al terminar. Ya no tiene "(X)". Prueba: `boulder`.
+- Cada movimiento es un solo pergamino que sube un nivel; la carta dice "nivel 2" solo si todos los jugadores en juego ya lo tienen.
+
+**Pendientes**
+- Mariano: probar todo y calibrar. Los valores de los enemigos están en `datos/Bestiario.js`; el resto en `config.js`.
+- Redibujar los gráficos provisorios del esqueleto, el samurái y la cuchilla.
+
+---
+
 ## 2026-11-07 — Claude: pergaminos pendientes, mientras Mariano no estaba
 
 - Funcionan cuatro de los que tenían "(X)": doble salto nivel 2 (plataforma fantasma, una pasarela temporal alineada a la grilla, de 3 tiles y 3 segundos),

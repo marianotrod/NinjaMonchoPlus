@@ -177,6 +177,14 @@ Cada fase es una **tabla de reglas**. El resto del código consulta la tabla y n
 - La **vulnerabilidad la decide la fase:** en la Recolección nunca se los puede matar; en la Cacería, siempre.
 - **Tienen HP:** cada golpe resta su daño y mueren al llegar a 0. Por ahora los valores están balanceados para morir de un golpe.
 - Lo que los enfurece: el paso a la Cacería, la trampa, la llama y algunos pergaminos negativos.
+- Al entrar a la pantalla son intocables mientras entran y 1,2 s más (`ENTRADA_ENEMIGO`).
+- **Esqueleto** (reemplaza al demonio caminante, que queda en el bestiario con peso 0 para las pruebas): camina, a veces
+  frena, a veces salta unos 2,5 tiles (así sube escalones y no se traba), a veces baja de una pasarela y de vez en cuando
+  tira una cuchilla hacia adelante con una curva chica, avisando antes con un cuadro. En un tile suelto no camina: se da vuelta.
+- **Samurái:** camina igual pero no tira nada. Si un ninja pasa por delante, a su altura y cerca, se prepara y corre.
+  La katana rebota si no está aturdido; proyectiles, explosiones y pisotones lo aturden sin dañarlo. Aturdido, muere como cualquiera.
+- Los dos tienen gravedad propia y su comportamiento se calibra en `datos/Bestiario.js`. Gráficos: `esqueleto.png`,
+  `samurai.png` (hojas de cuadros) y `cuchilla.png`.
 
 ### 5.4 Fin de partida y rescate
 - La partida termina cuando **todos** los jugadores se quedan sin vidas.
@@ -310,10 +318,18 @@ El sonido, las partículas, el puntaje y la UI escuchan sin mezclarse con la ló
 Si el efecto ya existe, agregar un pergamino es agregar un dato. Si el efecto es nuevo, se programa una sola vez.
 
 ### 7.4 Estado del catálogo (2026-11-07)
-Todos los de la lista revisada están en `datos/Pergaminos.js`; cada nivel de un movimiento es su propio pergamino.
-Todavía no hacen nada, y la carta los muestra con "(X)": el boulder y su nivel 2 (falta definir "caer de muy alto"). "La katana empuja más fuerte" se sacó.
+Todos los de la lista revisada están en `datos/Pergaminos.js` y todos funcionan. "La katana empuja más fuerte" se sacó.
+- **Movimientos:** cada uno es un solo pergamino que sube un nivel a quien lo toma, hasta 2. La carta dice "nivel 2" solo si
+  todos los jugadores en juego ya lo tienen (si no, quien lo toma podría estar sacando el nivel 1).
+- **Caer de muy alto** (`CONFIG.CAIDA_ALTA`, se puede apagar): se mide la altura caída, 190 px (2/3 de la pantalla); se sigue
+  sumando si se cae por un hueco y se entra por arriba. Al tocar el piso desde ahí, 400 ms sin control.
+- **Boulder:** saltar en los últimos 100 ms antes de tocar el piso desde muy alto → rueda 600 ms hacia donde mira, intocable,
+  golpeando a lo que toca. Entre 100 y 250 ms → aterriza sin castigo. Mientras cae alto y cerca del piso, saltar no gasta el
+  doble salto. Nivel 2: los enemigos que toca salen disparados y golpean a los otros; en la Cacería mueren al terminar el vuelo.
 - **Plataforma fantasma:** es una pasarela temporal. Se coloca alineada a la grilla, en una celda entera como cualquier pasarela, no en el píxel exacto donde se generó.
 - Las reglas de aparición se evalúan al armar cada sala con los jugadores en juego: el J2 cuenta desde que entra por hotjoin y deja de contar sin vidas. En la sala no hay hotjoin.
+- Agregados el 2026-11-08: katana un tile más larga, katana un tile más alta y parry en 360 (solo el parry; el ataque sigue igual).
+  El dash nivel 2 pasó a ser un katanazo durante el dash (golpea y hace parry).
 
 ### 7.3 Lista actual (borrador de Mariano; la revisa y la completa)
 **Positivos**

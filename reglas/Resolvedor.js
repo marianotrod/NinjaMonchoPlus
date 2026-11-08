@@ -1,7 +1,8 @@
 // Resolvedor.js
 // Todo contacto que hace algo es un golpe, y acá se decide qué provoca según las reglas de la fase, el bando y la protección.
 // Un golpe es { tipo, bando, duenio, fuenteX, daño, direccion, origen, empuje }:
-//   tipo:      katana | proyectil | pisoton | explosion | contacto | trampa | llama | fantasma
+//   tipo:      katana | proyectil | pisoton | explosion | contacto | trampa | llama | fantasma | boulder
+//   lanza:     boulder nivel 2: el enemigo sale disparado como proyectil en vez de recibir el golpe
 //   direccion: -1 o 1, para empujar con la fuerza propia de cada objetivo
 //   origen:    desde dónde empuja: los ítems se alejan de ese punto
 //   empuje:    { vx, vy }, para los golpes que empujan distinto a cada objetivo (explosiones)
@@ -84,6 +85,23 @@ function golpearEnemigo(escena, enemigo, golpe) {
   if (enemigo.escudo) {
     enemigo.romperEscudo();
     escena.efectoChispas(enemigo.x, enemigo.y, 0x93c5fd);
+    return;
+  }
+  // Samurái: hasta que no está aturdido, la katana rebota y lo demás solo lo aturde
+  if (enemigo.config.necesitaStun && !enemigo.aturdido) {
+    if (golpe.tipo === 'katana') {
+      Sonido.efecto(escena, 'snd-parry', 0.5, { rate: 0.7 });
+      escena.efectoChispas(enemigo.x, enemigo.y, 0xffffff);
+      if (golpe.duenio) golpe.duenio.empujar(-(golpe.direccion ?? 1) * 150, -100);
+      return;
+    }
+    const { vx, vy } = empujeDe(golpe, FISICA.empujeEnemigo);
+    enemigo.aturdir(enemigo.config.duracionStun, golpe.tipo === 'pisoton' ? 0 : vx, golpe.tipo === 'pisoton' ? 100 : vy);
+    escena.efectoChispas(enemigo.x, enemigo.y, 0x7dd3fc);
+    return;
+  }
+  if (golpe.lanza) {
+    escena.lanzarEnemigo(enemigo, golpe);
     return;
   }
   if (escena.reglas.enemigosVulnerables) {

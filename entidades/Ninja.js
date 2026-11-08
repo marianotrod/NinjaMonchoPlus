@@ -2,7 +2,7 @@
 // El jugador. Cada momento está en un solo estado (ESTADO): update() atiende el estado y, si el ninja está libre, actuar()
 // aplica los controles en un orden fijo que importa para la sensación del movimiento.
 // La protección también vive en un solo lugar: el estado y finProteccion, que lee el getter proteccion.
-import { BANDO, CONFIG, DEBUG, FISICA } from '../config.js';
+import { BANDO, CONFIG, DEBUG, FISICA, MUNDO } from '../config.js';
 import Control from '../entrada/Control.js';
 import { fueraDeVista } from '../mundo/Mundo.js';
 import { PROTECCION } from '../reglas/Resolvedor.js';
@@ -16,6 +16,8 @@ export const ESTADO = {
   DASH: 'dash',
   SALTO_PARED: 'saltoPared',    // Un instante sin control horizontal después de saltar de la pared
   ATURDIDO: 'aturdido',
+  ATERRIZANDO: 'aterrizando',   // Cayó de muy alto: un momento sin control
+  RODANDO: 'rodando',           // Boulder: rueda dañando a lo que toca, intocable
   MUERTO: 'muerto',             // Golpe que costó una vida: cae fuera de la pantalla atravesando el escenario
   ELIMINADO: 'eliminado'        // Sin vidas: queda fuera de la partida
 };
@@ -56,6 +58,9 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.dropThroughTimer = 0;
     this.tiempoUltimoTap = { left: 0, right: 0 };
     this.saltoCortable = false;
+    this.alturaCaida = 0;      // Lo que lleva cayendo desde que empezó a bajar (px)
+    this.enAire = false;
+    this.ultimoSalto = -9999;  // Cuándo apretó saltar por última vez: para el boulder
 
     // El dash pide dos cosas: que haya pasado el cooldown y que se haya recargado tocando piso, pared o un enemigo
     this.dashDisponible = true;
@@ -97,9 +102,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   get eliminado() { return this.estado === ESTADO.ELIMINADO; }
   get apareciendo() { return this.estado === ESTADO.APARECIENDO; }
   get aturdido() { return this.estado === ESTADO.ATURDIDO; }
+  get rodando() { return this.estado === ESTADO.RODANDO; }
 
   get proteccion() {
-    const sinControl = this.apareciendo || this.aturdido || this.muerto;
+    const sinControl = this.apareciendo || this.aturdido || this.muerto || this.rodando;
     const saltoProtegido = this.enSaltoPared && this.habilidades.wallJump >= 2; // Salto de pared nivel 2
     const protegido = sinControl || saltoProtegido || this.sceneRef.time.now < this.finProteccion;
     return protegido ? PROTECCION.INTOCABLE : PROTECCION.NORMAL;
@@ -182,14 +188,18 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     const input = this.control.leer();
 
     if (this.katana) {
-      const direccion = this.flipX ? -1 : 1;
-      this.katana.setPosition(this.x + direccion * 12, this.y).setFlipX(direccion < 0);
+      this.posicionarKatana();
       this.sceneRef.procesarKatana(this);
     }
 
     // Cada estado sin control decide si ya terminó; si terminó, en este mismo cuadro el ninja actúa
     if (this.apareciendo && !this.terminoDeAparecer()) return;
     if (this.aturdido && !this.terminoAturdimiento()) return;
+    if (this.estado === ESTADO.ATERRIZANDO && !this.terminoAterrizaje()) return;
+    if (this.rodando) {
+      this.seguirRodando();
+      return;
+    }
     if (this.estado === ESTADO.DASH) return;
     // Ya eligió su pergamino: espera quieto a que termine la sala
     if (this.congelado) {
@@ -206,10 +216,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.anims.play(`${this.animPrefix}-caer`, true);
     if (!this.body.touching.down && !this.body.blocked.down) return false;
     this.estado = ESTADO.LIBRE;
-    if (this.reaparece) {
-      this.reaparece = false;
-      this.finProteccion = this.sceneRef.time.now + CONFIG.INVUL_RESPAWN;
-    }
+    this.finProteccion = this.sceneRef.time.now + (this.reaparece ? CONFIG.INVUL_RESPAWN : CONFIG.INVUL_INICIO);
+    this.reaparece = false;
     return true;
   }
 
@@ -237,7 +245,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (input.recienEspecial) this.usarEspecial();
 
     const ahora = this.sceneRef.time.now;
-    if (input.recienSalto) this.bufferSaltoTimer = ahora + FISICA.bufferSalto;
+    if (input.recienSalto) {
+      this.bufferSaltoTimer = ahora + FISICA.bufferSalto;
+      this.ultimoSalto = ahora;
+    }
     this.cortarSaltoSiSuelta(input);
 
     let enElPiso = this.body.touching.down || this.body.blocked.down;
@@ -246,6 +257,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     const paredIzquierda = hayAgarre && (this.body.blocked.left || this.body.touching.left);
     const paredDerecha = hayAgarre && (this.body.blocked.right || this.body.touching.right);
     const tocandoPared = paredIzquierda || paredDerecha;
+
+    this.medirCaida(enElPiso, tocandoPared);
+    if (enElPiso && this.enAire && this.aterrizar(ahora)) return;
+    this.enAire = !enElPiso;
 
     if (enElPiso || tocandoPared) this.dashDisponible = true;
     if (this.intentarDash(input, ahora)) return;
@@ -354,15 +369,19 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     const tope = FISICA.velocidadCarrera * this.mods.velocidad;
     if (input.izquierda || input.derecha) {
       this.setFlipX(input.izquierda);
-      this.setVelocityX(Phaser.Math.Linear(velocity.x, input.izquierda ? -tope : tope, FISICA.suavizado));
-    } else if (enElPiso) {
-      const frenando = Phaser.Math.Linear(velocity.x, 0, FISICA.suavizado);
+      const suavizado = enElPiso ? FISICA.suavizado : FISICA.suavizadoAire;
+      this.setVelocityX(Phaser.Math.Linear(velocity.x, input.izquierda ? -tope : tope, suavizado));
+    } else {
+      // En el aire también frena al soltar, pero menos que en el piso
+      const frenando = Phaser.Math.Linear(velocity.x, 0, enElPiso ? FISICA.suavizado : FISICA.frenadoAire);
       this.setVelocityX(Math.abs(frenando) < 5 ? 0 : frenando);
     }
   }
 
   intentarDobleSalto() {
     if (!this.quiereSaltar || !this.saltoExtraDisponible || !this.tieneHabilidad('dobleSalto')) return;
+    // Con el boulder, saltar justo antes de tocar el piso desde muy alto es para rodar, no para el doble salto
+    if (this.esperandoBoulder()) return;
     // Doble salto nivel 2: deja una plataforma fantasma bajo los pies
     if (this.habilidades.dobleSalto >= 2 && !this.sceneRef.reglas.soloBasico) this.sceneRef.dejarPlataforma(this);
     this.setVelocityY(FISICA.dobleSalto * this.factorSalto);
@@ -372,6 +391,97 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     Sonido.efecto(this.sceneRef, 'snd-salto', 1.2);
     this.setAlpha(0.5);
     this.sceneRef.time.delayedCall(150, () => this.setAlpha(1));
+  }
+
+  // --- CAER DE MUY ALTO Y BOULDER (CONFIG.CAIDA_ALTA y CONFIG.BOULDER) ---
+  // Suma lo que baja. Subir o agarrarse de una pared lo reinicia. El salto del wrap (de abajo a arriba) no resta.
+  medirCaida(enElPiso, tocandoPared) {
+    const dy = this.body.deltaY();
+    this.alturaAlAterrizar = enElPiso ? this.alturaCaida : 0;
+    if (enElPiso || tocandoPared || this.body.velocity.y <= 0) this.alturaCaida = 0;
+    else if (dy > 0 && dy < MUNDO.tile * 2) this.alturaCaida += dy;
+  }
+
+  get cayendoAlto() {
+    return CONFIG.CAIDA_ALTA.activa && this.alturaCaida >= CONFIG.CAIDA_ALTA.altura;
+  }
+
+  // Hay piso a menos de "ms" de caída
+  pisoCerca(ms) {
+    const alto = Math.max(4, this.body.velocity.y * ms / 1000);
+    return this.sceneRef.physics.overlapRect(this.body.left, this.body.bottom, this.body.width, alto, false, true).length > 0;
+  }
+
+  esperandoBoulder() {
+    return this.cayendoAlto && this.tieneHabilidad('boulder') && this.pisoCerca(CONFIG.CAIDA_ALTA.ventanaCasi);
+  }
+
+  // Al tocar el piso desde muy alto: con el boulder y el salto justo, rueda; casi justo, aterriza bien; si no, pesado.
+  // Devuelve true si el ninja deja de estar libre.
+  aterrizar(ahora) {
+    const alto = this.alturaAlAterrizar >= CONFIG.CAIDA_ALTA.altura && CONFIG.CAIDA_ALTA.activa;
+    if (!alto) return false;
+    const { ventanaPerfecta, ventanaCasi, castigo } = CONFIG.CAIDA_ALTA;
+    const antes = ahora - this.ultimoSalto;
+    this.bufferSaltoTimer = 0;  // Desde muy alto no sale un salto guardado: se aterriza
+    if (this.tieneHabilidad('boulder')) {
+      if (antes <= ventanaPerfecta) {
+        this.rodar();
+        return true;
+      }
+      if (antes <= ventanaCasi) return false;
+    }
+    this.aterrizarPesado(castigo);
+    return true;
+  }
+
+  aterrizarPesado(ms) {
+    this.estado = ESTADO.ATERRIZANDO;
+    this.finAterrizaje = this.sceneRef.time.now + ms;
+    this.saltoCortable = false;
+    this.setVelocityX(0);
+    this.sceneRef.cameras.main.shake(120, 0.006);
+    Sonido.ruido(this.sceneRef, 0.12, 0.15);
+    this.sceneRef.tweens.add({ targets: this, scaleY: 0.7, scaleX: 1.2, duration: 90, yoyo: true });
+  }
+
+  terminoAterrizaje() {
+    if (this.sceneRef.time.now < this.finAterrizaje) {
+      this.setVelocityX(0);
+      this.anims.play(`${this.animPrefix}-idle`, true);
+      return false;
+    }
+    this.estado = ESTADO.LIBRE;
+    return true;
+  }
+
+  rodar() {
+    this.estado = ESTADO.RODANDO;
+    this.direccionRodar = this.flipX ? -1 : 1;
+    this.rodarGolpeados = new Set();
+    this.saltoCortable = false;
+    this.setVelocityX(this.direccionRodar * CONFIG.BOULDER.velocidad * this.mods.velocidad);
+    Sonido.ruido(this.sceneRef, 0.3, 0.2);
+    this.sceneRef.cameras.main.shake(100, 0.005);
+    // Con un temporizador, como el dash
+    this.sceneRef.time.delayedCall(CONFIG.BOULDER.duracion, () => this.dejarDeRodar());
+  }
+
+  seguirRodando() {
+    if (this.body.blocked.left || this.body.blocked.right) {
+      this.dejarDeRodar();
+      return;
+    }
+    this.setVelocityX(this.direccionRodar * CONFIG.BOULDER.velocidad * this.mods.velocidad);
+    this.setAngle(this.angle + this.direccionRodar * 24);
+    this.anims.play(`${this.animPrefix}-saltar`, true);
+  }
+
+  dejarDeRodar() {
+    if (!this.rodando) return;
+    this.estado = ESTADO.LIBRE;
+    this.setAngle(0);
+    this.setVelocityX(this.body.velocity.x * 0.4);
   }
 
   animar(enElPiso) {
@@ -385,6 +495,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   ejecutarDash(direccion) {
     this.estado = ESTADO.DASH;
+    this.alturaCaida = 0;
     this.dashDisponible = false;
     this.ultimoDashTimer = this.sceneRef.time.now + FISICA.dashCooldown;
     this.saltoCortable = false;
@@ -394,6 +505,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.setVelocityX(direccion * FISICA.dash * this.mods.velocidad);
     this.setFlipX(direccion === -1);
     this.setAlpha(0.6);
+    // Dash nivel 2: sale con un katanazo que dura todo el dash
+    if (this.habilidades.dash >= 2 && !this.sceneRef.reglas.soloBasico) this.atacar({ forzar: true, duracion: FISICA.dashDuracion });
 
     // Con un temporizador y no comparando la hora: un cuadro de diferencia cambia unos 6 px el largo del dash
     this.sceneRef.time.delayedCall(FISICA.dashDuracion, () => {
@@ -406,22 +519,41 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   // --- KATANA: tajo corto delante del ninja. Lo que toca lo resuelve la escena en procesarKatana() ---
-  atacar() {
+  atacar({ forzar = false, duracion = FISICA.katanaDuracion } = {}) {
     const ahora = this.sceneRef.time.now;
-    if (ahora < this.ultimoAtaque + FISICA.katanaCooldown) return;
+    if (!forzar && ahora < this.ultimoAtaque + FISICA.katanaCooldown) return;
     this.ultimoAtaque = ahora;
 
-    const direccion = this.flipX ? -1 : 1;
+    if (this.katana) this.katana.destroy();
     this.katanaGolpeados = new Set();
-    this.katana = this.sceneRef.add.image(this.x + direccion * 12, this.y, 'katana-corte').setFlipX(direccion < 0).setDepth(15);
+    // Pergaminos: la katana llega un tile más adelante o un tile más arriba. La zona del golpe es el dibujo estirado.
+    const { katanaExtra } = FISICA;
+    this.katana = this.sceneRef.add.image(this.x, this.y, 'katana-corte').setDepth(15);
+    if (this.mods.katanaLarga) this.katana.scaleX = (this.katana.width + katanaExtra) / this.katana.width;
+    if (this.mods.katanaAlta) this.katana.scaleY = (this.katana.height + katanaExtra) / this.katana.height;
+    this.posicionarKatana();
     Sonido.ruido(this.sceneRef, 0.06, 0.12);
+    // Pergamino: el parry alcanza alrededor del ninja. Se ve un aro.
+    if (this.mods.parry360) {
+      const aro = this.sceneRef.add.image(this.x, this.y, 'parry-circular').setDepth(14).setAlpha(0.8);
+      this.sceneRef.tweens.add({ targets: aro, alpha: 0, scale: 1.2, duration: duracion, onUpdate: () => aro.setPosition(this.x, this.y), onComplete: () => aro.destroy() });
+    }
 
-    this.sceneRef.time.delayedCall(FISICA.katanaDuracion, () => {
-      if (this.katana) {
-        this.katana.destroy();
-        this.katana = null;
-      }
+    const katana = this.katana;
+    this.sceneRef.time.delayedCall(duracion, () => {
+      if (this.katana !== katana) return;
+      katana.destroy();
+      this.katana = null;
     });
+  }
+
+  // La katana sigue al ninja: delante, y más arriba si es más alta (crece hacia arriba desde la altura del ninja)
+  posicionarKatana() {
+    const direccion = this.flipX ? -1 : 1;
+    const { katanaExtra } = FISICA;
+    const adelante = 12 + (this.mods.katanaLarga ? katanaExtra / 2 : 0);
+    const arriba = this.mods.katanaAlta ? katanaExtra / 2 : 0;
+    this.katana.setPosition(this.x + direccion * adelante, this.y - arriba).setFlipX(direccion < 0);
   }
 
   usarEspecial() {
@@ -450,6 +582,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (this.sceneRef.modoDiosActivo || this.proteccion === PROTECCION.INTOCABLE) return false;
 
     this.estado = ESTADO.ATURDIDO;
+    this.alturaCaida = 0;
+    this.setAngle(0);
     this.finAturdido = this.sceneRef.time.now + FISICA.duracionStun;
     this.body.allowGravity = true;
     this.saltoCortable = false;
@@ -463,6 +597,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   // bordes del mundo, así cae fuera de la pantalla. La escena descuenta la vida cuando termina de caer.
   morir(fuenteX) {
     this.estado = ESTADO.MUERTO;
+    this.setAngle(0);
     this.caidaAvisada = false;
     this.saltoCortable = false;
     if (this.katana) {
@@ -482,6 +617,9 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   // Vuelve a caer desde arriba como al empezar el nivel, y titila protegido un rato después de tocar el piso
   respawnear({ x, y }) {
     this.estado = ESTADO.APARECIENDO;
+    this.alturaCaida = 0;
+    this.enAire = false;
+    this.setAngle(0);
     this.reaparece = true;
     this.setDepth(10).setAlpha(1);
     this.setCollideWorldBounds(true);

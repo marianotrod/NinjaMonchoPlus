@@ -1,0 +1,58 @@
+{
+  "descripcion": "Notas de la partida de prueba: protección al aparecer, katana más larga y más alta, parry en 360, katanazo del dash 2, brillo según talismanes",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.listo(1)", "timeout": 8000, "nombre": "J1 toca el piso al empezar"},
+    {"verificar": "al aparecer al empezar el nivel queda intocable un rato", "eval": "prueba.jugador(1).invulnerable"},
+    {"hasta": "prueba.estado().fase === 'recoleccion'", "timeout": 4000, "nombre": "arranca la Recolección"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.ponerTiempo(90), true)"},
+    {"hasta": "!prueba.jugador(1).invulnerable", "timeout": 3000, "nombre": "termina la protección del comienzo"},
+
+    {"eval": "(prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), prueba.atacar(1), window.base = prueba.jugador(1).katana, true)"},
+    {"verificar": "el katanazo dura más que antes", "eval": "(window.base !== null)"},
+    {"wait": 180},
+    {"verificar": "a los 180 ms la katana sigue ahí", "eval": "prueba.jugador(1).katana !== null"},
+    {"wait": 200},
+    {"eval": "(prueba.tomarEfecto(1, 'katanaLarga'), prueba.atacar(1), true)"},
+    {"verificar": "pergamino: la katana llega un tile más adelante", "eval": "({ v: prueba.jugador(1).katana.ancho - base.ancho })", "espera": {"v": 16}},
+    {"wait": 400},
+    {"eval": "(prueba.tomarEfecto(1, 'katanaAlta'), prueba.atacar(1), true)"},
+    {"verificar": "pergamino: la katana llega un tile más arriba, y no más abajo", "eval": "({ alto: prueba.jugador(1).katana.alto - base.alto, arriba: base.top - prueba.jugador(1).katana.top })", "espera": {"alto": 16, "arriba": 16}},
+    {"wait": 400},
+
+    {"eval": "(prueba.quitarProteccion(1), prueba.ponerJugador(1, 200, 264), prueba.mirar(1, 1), prueba.proyectilEnemigo(190, 262, 30, 0), prueba.atacar(1), true)"},
+    {"wait": 150},
+    {"verificar": "sin el pergamino, el parry no alcanza lo que viene de atrás", "eval": "prueba.jugador(1).aturdido"},
+    {"hasta": "!prueba.jugador(1).invulnerable", "timeout": 3000, "nombre": "termina el parpadeo"},
+    {"eval": "(prueba.tomarEfecto(1, 'parry360'), prueba.ponerJugador(1, 200, 264), prueba.mirar(1, 1), prueba.proyectilEnemigo(190, 262, 30, 0), prueba.atacar(1), true)"},
+    {"wait": 100},
+    {"verificar": "pergamino: el parry alcanza en todas las direcciones", "eval": "({ proyectiles: prueba.proyectiles().enemigos, aturdido: prueba.jugador(1).aturdido })", "espera": {"proyectiles": 0, "aturdido": false}},
+    {"wait": 400},
+
+    {"eval": "(prueba.darHabilidades(1, ['dash'], 2), prueba.proteger(1), prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), prueba.crearEnemigo('demonio_caminante', 170, 264), prueba.sinDecisiones(0), true)"},
+    {"wait": 100},
+    {"press": "ArrowRight", "delay": 30},
+    {"wait": 40},
+    {"press": "ArrowRight", "delay": 30},
+    {"wait": 30},
+    {"verificar": "dash nivel 2: sale con la katana", "eval": "prueba.jugador(1).katana !== null"},
+    {"wait": 200},
+    {"verificar": "y el katanazo del dash golpea al demonio", "eval": "prueba.enemigo(0).aturdido"},
+    {"eval": "(prueba.sinEnemigos(), true)"},
+
+    {"eval": "(prueba.vaciarTalismanes(), prueba.jugador(1).intensidadBrillo)"},
+    {"verificar": "Recolección: el brillo está entero sin talismanes", "eval": "({ v: prueba.jugador(1).intensidadBrillo })", "espera": {"v": 1}},
+    {"eval": "prueba.juntarTalismanes({cuadrado: 3, rombo: 1})"},
+    {"verificar": "y se apaga en proporción a los talismanes juntados (4 de 9)", "eval": "({ v: prueba.jugador(1).intensidadBrillo })", "espera": {"v": 0.56}},
+    {"eval": "prueba.juntarTalismanes({cuadrado: 2})"},
+    {"verificar": "los que sobran de una forma no cuentan", "eval": "({ v: prueba.jugador(1).intensidadBrillo })", "espera": {"v": 0.56}},
+    {"eval": "(prueba.quitarProteccion(1), prueba.golpear(1), true)"},
+    {"verificar": "al perder los talismanes vuelve a brillar entero", "eval": "({ v: prueba.jugador(1).intensidadBrillo })", "espera": {"v": 1}},
+
+    {"eval": "(prueba.enemigoEntrando('demonio_saltarin', 300), true)"},
+    {"hasta": "prueba.enemigo(0) && prueba.enemigo(0).y > 20", "timeout": 3000, "nombre": "el demonio entra a la pantalla"},
+    {"wait": 900},
+    {"verificar": "un enemigo sigue intocable un buen rato después de entrar", "eval": "prueba.enemigo(0).intocable"},
+    {"hasta": "!prueba.enemigo(0).intocable", "timeout": 1500, "nombre": "deja de ser intocable"}
+  ]
+}

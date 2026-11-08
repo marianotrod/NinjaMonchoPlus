@@ -69,8 +69,16 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
 
         // Variables para el rasgo [Caminante]
         if (this.rasgos.caminante.activo) {
+            const config = this.rasgos.caminante;
             const direccion = Phaser.Math.RND.pick([-1, 1]);
-            this.setVelocityX(this.rasgos.caminante.velocidadX * direccion);
+            this.setVelocityX(config.velocidadX * direccion);
+            this.setFlipX(direccion < 0);
+            if (config.gravedad) this.body.setGravityY(config.gravedad);
+            this.accion = null;          // pausa | aviso | preparar | carga: mientras dura, manda sobre el caminar
+            this.proximaDecision = this.scene.time.now + this.esperaDecision();
+            this.proximoGiro = 0;
+            this.proximaCarga = 0;
+            this.atravesando = 0;        // Hasta cuándo atraviesa las pasarelas (para bajar de una)
         }
 
         // Variables para el rasgo [Volador]
@@ -92,6 +100,15 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
     actualizarComportamiento() {
         if (this.muerto) return;
         this.actualizarEntrada();
+
+        // Boulder nivel 2: disparado, golpea a los otros hasta que se le acaba el impulso
+        if (this.lanzado && this.scene.time.now >= this.lanzado.fin) {
+            const { duenio } = this.lanzado;
+            this.lanzado = null;
+            if (this.aturdido) this.setTint(0x88ccff);
+            this.scene.terminarLanzamiento(this, duenio);
+            if (this.muerto) return;
+        }
 
         if (this.estrellaStun) {
             this.estrellaStun.setPosition(this.x + Math.sin(this.scene.time.now / 80) * 6, this.y - 12);
@@ -177,9 +194,16 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
     }
 
     logicaCaminante() {
-        const velocidad = this.rasgos.caminante.velocidadX * this.multVelocidad;
+        const config = this.rasgos.caminante;
+        const ahora = this.scene.time.now;
         const enPiso = this.body.blocked.down || this.body.touching.down;
 
+        if (this.accion && this.seguirAccion(config, ahora, enPiso)) {
+            this.animarCaminante(enPiso);
+            return;
+        }
+
+        const velocidad = config.velocidadX * this.multVelocidad;
         // Invierte la dirección si choca contra una pared
         if (this.body.blocked.left || this.body.touching.left) {
             this.setVelocityX(velocidad);
@@ -187,15 +211,125 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
             this.setVelocityX(-velocidad);
         } else if (enPiso) {
             // ...o si se acaba la plataforma: miramos si hay un bloque justo delante y debajo de los pies
-            const direccion = Math.sign(this.body.velocity.x) || 1;
-            const xAdelante = direccion > 0 ? this.body.right + 1 : this.body.left - 3;
-            const xPiso = this.scene.conWrap ? envolverX(xAdelante) : xAdelante;
-            const hayPiso = this.scene.physics.overlapRect(xPiso, this.body.bottom + 1, 2, 4, false, true).length > 0;
-            this.setVelocityX((hayPiso ? direccion : -direccion) * velocidad);
+            const direccion = this.direccion;
+            if (this.hayPisoHacia(direccion)) {
+                this.setVelocityX(direccion * velocidad);
+            } else if (!config.decision || this.hayPisoHacia(-direccion)) {
+                this.setVelocityX(-direccion * velocidad);
+            } else if (ahora >= this.proximoGiro) {
+                // Parado en un tile suelto no puede caminar: solo se da vuelta de vez en cuando
+                this.setVelocityX(0);
+                this.setFlipX(!this.flipX);
+                this.proximoGiro = ahora + 1000;
+            } else {
+                this.setVelocityX(0);
+            }
         }
 
         if (this.body.velocity.x < 0) this.setFlipX(true);
         else if (this.body.velocity.x > 0) this.setFlipX(false);
+
+        if (enPiso && config.carga) this.buscarCarga(config.carga, ahora);
+        if (enPiso && config.decision && !this.accion && ahora >= this.proximaDecision) this.decidir(config, ahora);
+        this.animarCaminante(enPiso);
+    }
+
+    // Hacia dónde mira: la velocidad manda; quieto, lo que muestra el dibujo
+    get direccion() {
+        return Math.sign(this.body.velocity.x) || (this.flipX ? -1 : 1);
+    }
+
+    hayPisoHacia(direccion) {
+        const xAdelante = direccion > 0 ? this.body.right + 1 : this.body.left - 3;
+        const xPiso = this.scene.conWrap ? envolverX(xAdelante) : xAdelante;
+        return this.scene.physics.overlapRect(xPiso, this.body.bottom + 1, 2, 4, false, true).length > 0;
+    }
+
+    sobrePasarela() {
+        const bloques = this.scene.physics.overlapRect(this.body.left + 2, this.body.bottom + 1, this.body.width - 4, 4, false, true);
+        return bloques.length > 0 && bloques.every(cuerpo => cuerpo.gameObject && cuerpo.gameObject.esOneWay);
+    }
+
+    esperaDecision() {
+        const [minimo, maximo] = this.rasgos.caminante.decision || [1000, 1000];
+        return Phaser.Math.Between(minimo, maximo);
+    }
+
+    // Elige al azar, según los pesos, qué hace un rato: seguir, frenar, saltar, bajar de la pasarela o tirar la cuchilla
+    decidir(config, ahora) {
+        this.proximaDecision = ahora + this.esperaDecision();
+        const opciones = Object.entries(config.pesos).filter(([opcion]) => opcion !== 'bajar' || this.sobrePasarela());
+        const total = opciones.reduce((suma, [, peso]) => suma + peso, 0);
+        let tirada = Math.random() * total;
+        const [opcion] = opciones.find(([, peso]) => (tirada -= peso) < 0) || ['seguir'];
+
+        if (opcion === 'pausa') {
+            this.accion = { tipo: 'pausa', fin: ahora + config.pausa };
+        } else if (opcion === 'salto') {
+            this.setVelocityY(config.salto);
+        } else if (opcion === 'bajar') {
+            this.atravesando = ahora + 300;
+        } else if (opcion === 'lanzar' && config.lanza) {
+            this.accion = { tipo: 'aviso', fin: ahora + config.lanza.aviso };
+        }
+    }
+
+    // Samurái: si un ninja pasa por delante, a su altura y cerca, se prepara para correr
+    buscarCarga(carga, ahora) {
+        if (this.accion || ahora < this.proximaCarga || this.intocable) return;
+        const objetivo = this.scene.jugadorMasCercano(this.x, this.y);
+        if (!objetivo) return;
+        const dx = objetivo.x - this.x;
+        const delante = Math.sign(dx) === this.direccion;
+        if (delante && Math.abs(dx) <= carga.distancia && Math.abs(objetivo.y - this.y) < 12) {
+            this.accion = { tipo: 'preparar', fin: ahora + carga.aviso, direccion: this.direccion };
+        }
+    }
+
+    // Devuelve true mientras la acción sigue y manda sobre el caminar
+    seguirAccion(config, ahora, enPiso) {
+        const { accion } = this;
+        if (accion.tipo === 'carga') {
+            const choco = this.body.blocked.left || this.body.blocked.right || this.body.touching.left || this.body.touching.right;
+            if (ahora < accion.fin && !choco && (!enPiso || this.hayPisoHacia(accion.direccion))) {
+                this.setVelocityX(accion.direccion * config.carga.velocidad * this.multVelocidad);
+                return true;
+            }
+            this.accion = null;
+            this.proximaCarga = ahora + config.carga.espera;
+            this.setVelocityX(-accion.direccion * config.velocidadX * this.multVelocidad);
+            return false;
+        }
+
+        this.setVelocityX(0);
+        if (ahora < accion.fin) return true;
+        this.accion = null;
+        if (accion.tipo === 'aviso') this.lanzarCuchilla(config.lanza);
+        if (accion.tipo === 'preparar') {
+            this.accion = { tipo: 'carga', fin: ahora + config.carga.duracion, direccion: accion.direccion };
+            this.setVelocityX(accion.direccion * config.carga.velocidad * this.multVelocidad);
+            return true;
+        }
+        this.setVelocityX(this.direccion * config.velocidadX * this.multVelocidad);
+        return false;
+    }
+
+    lanzarCuchilla(lanza) {
+        const direccion = this.flipX ? -1 : 1;
+        const cuchilla = this.scene.dispararProyectilEnemigo(this.x + direccion * 6, this.y - 3, direccion * lanza.vx, lanza.vy,
+            { gravedad: true, textura: 'cuchilla', gravedadY: lanza.gravedad });
+        if (cuchilla) cuchilla.setAngularVelocity(direccion * 720);
+    }
+
+    animarCaminante(enPiso) {
+        if (!this.config.cuadros) return;
+        const tipo = this.accion && this.accion.tipo;
+        let cuadro;
+        if (tipo === 'aviso' || tipo === 'preparar') cuadro = 2;
+        else if (tipo === 'carga') cuadro = 3;
+        else if (!enPiso) cuadro = 1;
+        else cuadro = this.body.velocity.x !== 0 ? Math.floor(this.scene.time.now / 160) % 2 : 0;
+        this.setFrame(cuadro);
     }
 
     logicaVolador() {
@@ -290,6 +424,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(vx, vy);
         if (this.inmuneStun) return;
 
+        this.accion = null;  // Un golpe corta lo que estaba haciendo (el aviso, la carga)
         this.aturdido = true;
         this.setTint(0x88ccff);
         if (!this.estrellaStun) this.estrellaStun = this.scene.add.image(this.x, this.y - 12, 'estrella').setDepth(61);

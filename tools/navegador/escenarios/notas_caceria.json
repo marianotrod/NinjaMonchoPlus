@@ -1,0 +1,36 @@
+{
+  "descripcion": "Notas de la partida de prueba: monedas en la Cacería, pisar al fantasma una vez y el conteo de puntos al terminar",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 2000, "eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.configurar('INTERVALO_MONEDAS_CACERIA', 200), true)"},
+    {"eval": "(prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.crearEnemigo('demonio_caminante', 440, 264), prueba.proteger(1), true)"},
+    {"wait": 1500},
+    {"verificar": "en la Cacería siguen cayendo monedas hasta el tope", "eval": "({ v: prueba.monedas() })", "espera": {"v": 3}},
+    {"wait": 600},
+    {"verificar": "y no pasan del tope", "eval": "({ v: prueba.monedas() })", "espera": {"v": 3}},
+    {"eval": "(() => { const s = window.game.scene.getScene('NinjaMonchoScene'); const moneda = s.items.getChildren().find(i => !i.esTalisman); s.recolectarItem(s.jugador, moneda); return prueba.monedas(); })()"},
+    {"verificar": "al agarrar una cae otra", "eval": "({ v: prueba.monedas() })", "espera": {"v": 3}},
+    {"eval": "(prueba.configurar('INTERVALO_MONEDAS_CACERIA', 3000), prueba.sinItems(), prueba.ponerTiempo(1), true)"},
+
+    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "aparece el fantasma"},
+    {"wait": 300},
+    {"eval": "(() => { const fantasma = window.game.scene.getScene('NinjaMonchoScene').fantasmas[0]; fantasma.body.reset(250, 170); window.v0 = fantasma.velocidad; prueba.proteger(1); prueba.ponerJugador(1, 250, 156, 0, 200); return true; })()"},
+    {"hasta": "prueba.fantasmas()[0].pisado", "timeout": 500, "nombre": "J1 cae sobre el fantasma"},
+    {"verificar": "al fantasma se lo puede pisar: J1 rebota y no muere", "eval": "({ muerto: prueba.jugador(1).muerto, sube: prueba.jugador(1).vy < 0, enojado: prueba.fantasmas()[0].enojado })", "espera": {"muerto": false, "sube": true, "enojado": true}},
+    {"hasta": "!prueba.fantasmas()[0].pisado", "timeout": 1500, "nombre": "el fantasma se recupera"},
+    {"verificar": "enojado va más rápido", "eval": "prueba.fantasmas()[0].velocidad > v0 * 1.25"},
+    {"eval": "(() => { const fantasma = window.game.scene.getScene('NinjaMonchoScene').fantasmas[0]; fantasma.body.reset(250, 170); prueba.proteger(1); prueba.ponerJugador(1, 250, 156, 0, 200); return true; })()"},
+    {"hasta": "prueba.jugador(1).muerto", "timeout": 1000, "nombre": "J1 cae sobre el fantasma enojado"},
+    {"verificar": "enojado ya no se lo puede pisar: mata", "eval": "prueba.jugador(1).muerto"},
+    {"hasta": "!prueba.jugador(1).muerto && prueba.estado().tiempo > 20", "timeout": 6000, "nombre": "la Cacería recomienza"},
+
+    {"eval": "(window.final = null, prueba.ponerTiempo(20), prueba.terminarCaceria(true), true)"},
+    {"hasta": "prueba.panel() !== null", "timeout": 1000, "nombre": "aparece el panel de nivel completado"},
+    {"verificar": "el puntaje arranca sin el bono", "eval": "prueba.panel().includes(`J1  ${prueba.estado().puntajes[0] - 2000}`)"},
+    {"wait": 1400},
+    {"verificar": "y el bono pasa al puntaje de a poco hasta el total", "eval": "({ total: prueba.panel().includes(`J1  ${prueba.estado().puntajes[0]}`), bono: prueba.panel()[0] })", "espera": {"total": true, "bono": "BONO TIEMPO +0"}}
+  ]
+}

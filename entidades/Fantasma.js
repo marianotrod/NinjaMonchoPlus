@@ -2,6 +2,7 @@
 // Fantasma Perseguidor: aparece cuando el reloj llega a 0, uno por jugador. Es invencible y atraviesa muros.
 // Persigue a su jugador cada vez más rápido y sin tope, así que tarde o temprano no se lo puede esquivar.
 // Puede matar a cualquier ninja. Desaparece cuando muere su jugador, sea cual sea la causa.
+// Se lo puede pisar una vez: se frena un momento y se enoja (más rápido y ya no se deja pisar). Sirve para llegar más alto.
 import { CONFIG } from '../config.js';
 
 export default class Fantasma extends Phaser.Physics.Arcade.Sprite {
@@ -22,7 +23,23 @@ export default class Fantasma extends Phaser.Physics.Arcade.Sprite {
     scene.tweens.add({ targets: this, alpha: 0.5, duration: 400, yoyo: true, repeat: -1 });
   }
 
+  serPisado() {
+    this.pisado = true;
+    this.enojado = true;
+    this.setVelocity(0, 0);
+    this.setTint(0xff6666);
+    this.scene.time.delayedCall(CONFIG.FANTASMA_PISADO, () => {
+      this.pisado = false;
+      this.velocidad *= CONFIG.FANTASMA_ENOJO;
+      this.factor *= CONFIG.FANTASMA_ENOJO;
+    });
+  }
+
   actualizar(objetivo, delta) {
+    if (this.pisado) {
+      this.setVelocity(0, 0);
+      return;
+    }
     if (!objetivo) {
       this.setVelocity(0, 0);
       return;

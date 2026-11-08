@@ -3,6 +3,7 @@ import { CONFIG } from '../config.js';
 import { ARMAS } from '../entidades/Armas.js';
 import { estilo } from '../sistemas/Estilo.js';
 import { EVENTOS } from '../datos/Eventos.js';
+import { Sonido } from '../sistemas/Sonido.js';
 
 const TIPOS = ['cuadrado', 'triangulo', 'rombo'];
 
@@ -236,8 +237,10 @@ export default class UIScene extends Phaser.Scene {
     const panel = this.add.container(256, 150).setDepth(250);
     panel.add(this.add.rectangle(0, 0, 360, 170, 0x000000, 0.85).setStrokeStyle(2, Phaser.Display.Color.HexStringToColor(colorTitulo).color));
     panel.add(this.add.text(0, -62, titulo, { ...estilo(16, colorTitulo), align: 'center' }).setOrigin(0.5));
-    lineas.forEach(([texto, color], i) => {
-      panel.add(this.add.text(0, -28 + i * 16, texto, { ...estilo(8, color), align: 'center' }).setOrigin(0.5));
+    panel.lineas = lineas.map(([texto, color], i) => {
+      const linea = this.add.text(0, -28 + i * 16, texto, { ...estilo(8, color), align: 'center' }).setOrigin(0.5);
+      panel.add(linea);
+      return linea;
     });
     panel.setScale(0.7).setAlpha(0);
     this.tweens.add({ targets: panel, scale: 1, alpha: 1, duration: 220, ease: 'Back.Out' });
@@ -247,6 +250,7 @@ export default class UIScene extends Phaser.Scene {
       panel.add(textoAviso);
       this.tweens.add({ targets: textoAviso, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
     });
+    this.panel = panel;
     return panel;
   }
 
@@ -256,12 +260,44 @@ export default class UIScene extends Phaser.Scene {
     return lineas;
   }
 
+  // Los bonos pasan al puntaje de a poco, con un tic que sube de tono, y al final el puntaje salta
   mostrarNivelCompletado(datos) {
-    const lineas = [];
-    if (datos.bonoExtra) lineas.push([`${i18n.t('bono_jefe')} +${datos.bonoExtra}`, '#FBBF24']);
-    lineas.push([`${i18n.t('bono_tiempo')} +${datos.bonoTiempo}`, datos.bonoTiempo ? '#4ADE80' : '#9CA3AF']);
-    lineas.push(['', '#FFFFFF'], ...this.lineasPuntaje(datos.puntajes, datos.jugadores));
-    this.crearPanel(`${i18n.t('nivel')} ${datos.nivel}\n${i18n.t('completado')}`, '#4ADE80', lineas.slice(0, 6), i18n.t('continuar'));
+    const bonos = [];
+    if (datos.bonoExtra) bonos.push({ clave: 'bono_jefe', valor: datos.bonoExtra, color: '#FBBF24' });
+    bonos.push({ clave: 'bono_tiempo', valor: datos.bonoTiempo || 0, color: datos.bonoTiempo ? '#4ADE80' : '#9CA3AF' });
+    const textoBono = (bono, valor) => `${i18n.t(bono.clave)} +${valor}`;
+    const totalBonos = bonos.reduce((suma, bono) => suma + bono.valor, 0);
+    const antes = datos.puntajes.map(puntaje => puntaje - totalBonos);
+
+    const lineas = bonos.map(bono => [textoBono(bono, bono.valor), bono.color]);
+    lineas.push(['', '#FFFFFF'], ...this.lineasPuntaje(antes, datos.jugadores));
+    const panel = this.crearPanel(`${i18n.t('nivel')} ${datos.nivel}\n${i18n.t('completado')}`, '#4ADE80', lineas.slice(0, 6), i18n.t('continuar'));
+    const textosBono = panel.lineas.slice(0, bonos.length);
+    const textosPuntaje = panel.lineas.slice(bonos.length + 1);
+    if (!totalBonos) return;
+
+    const mostrar = (t) => {
+      bonos.forEach((bono, i) => textosBono[i].setText(textoBono(bono, Math.round(bono.valor * (1 - t)))));
+      const puntajes = antes.map(puntaje => Math.round(puntaje + totalBonos * t));
+      this.lineasPuntaje(puntajes, datos.jugadores).forEach(([texto], i) => { if (textosPuntaje[i]) textosPuntaje[i].setText(texto); });
+    };
+    const pasos = 20;
+    let paso = 0;
+    this.time.addEvent({
+      delay: 40, repeat: pasos - 1, startAt: -210,
+      callback: () => {
+        paso++;
+        mostrar(paso / pasos);
+        Sonido.beep(this, 500 + paso * 30, 0.03, 0.05);
+        if (paso < pasos) return;
+        // Final: el puntaje salta y suena un acorde corto
+        Sonido.beep(this, 1047, 0.12, 0.08, 'triangle');
+        this.time.delayedCall(70, () => Sonido.beep(this, 1568, 0.18, 0.08, 'triangle'));
+        textosPuntaje.forEach(texto => {
+          this.tweens.add({ targets: texto, scale: { from: 1.6, to: 1 }, duration: 260, ease: 'Back.Out' });
+        });
+      }
+    });
   }
 
   mostrarFinDePartida(datos) {

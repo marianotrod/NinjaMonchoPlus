@@ -1,0 +1,47 @@
+{
+  "descripcion": "Caer de muy alto (aterrizaje pesado) y boulder: saltar justo rueda, casi justo aterriza bien; nivel 2 dispara enemigos",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 2000, "eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.ponerTiempo(90), prueba.proteger(1), true)"},
+    {"eval": "(window.s = window.game.scene.getScene('NinjaMonchoScene'), window.j = s.jugador, window.saltarCuando = (y) => { const fn = () => { if (j.y > y) { j.ultimoSalto = s.time.now; s.events.off('update', fn); } }; s.events.on('update', fn); }, true)"},
+
+    {"eval": "(prueba.ponerJugador(1, 200, 150), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 2000, "nombre": "cae de poco"},
+    {"verificar": "de poca altura aterriza normal", "eval": "({ estado: prueba.jugador(1).estado })", "espera": {"estado": "libre"}},
+
+    {"eval": "(prueba.ponerJugador(1, 200, 20), true)"},
+    {"hasta": "prueba.jugador(1).estado === 'aterrizando'", "timeout": 2000, "nombre": "cae de 2/3 de pantalla"},
+    {"verificar": "de muy alto aterriza pesado: un momento sin control", "eval": "({ estado: prueba.jugador(1).estado, vx: prueba.jugador(1).vx })", "espera": {"estado": "aterrizando", "vx": 0}},
+    {"hasta": "prueba.jugador(1).estado === 'libre'", "timeout": 800, "nombre": "recupera el control"},
+
+    {"eval": "(prueba.darHabilidades(1, ['boulder'], 1), prueba.ponerJugador(1, 200, 20), saltarCuando(160), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 2000, "nombre": "cae con el boulder, saltando un poco antes"},
+    {"wait": 30},
+    {"verificar": "con el boulder, saltar casi justo aterriza bien: ni pesado ni rodando", "eval": "({ estado: prueba.jugador(1).estado })", "espera": {"estado": "libre"}},
+
+    {"eval": "(prueba.crearEnemigo('demonio_caminante', 290, 264), prueba.mirar(1, 1), prueba.ponerJugador(1, 200, 20), saltarCuando(250), true)"},
+    {"hasta": "prueba.jugador(1).estado === 'rodando'", "timeout": 2000, "nombre": "salta justo al tocar el piso"},
+    {"verificar": "saltar justo al tocar el piso desde muy alto: rueda hacia adelante, intocable", "eval": "({ vx: prueba.jugador(1).vx, invulnerable: prueba.jugador(1).invulnerable })", "espera": {"vx": {"min": 200}, "invulnerable": true}},
+    {"hasta": "prueba.enemigo(0).aturdido", "timeout": 800, "nombre": "el rodar alcanza al demonio"},
+    {"verificar": "rodando golpea lo que toca (en Recolección lo aturde)", "eval": "({ aturdido: prueba.enemigo(0).aturdido, muerto: prueba.enemigo(0).muerto, ninja: prueba.jugador(1).aturdido })", "espera": {"aturdido": true, "muerto": false, "ninja": false}},
+    {"hasta": "prueba.jugador(1).estado === 'libre'", "timeout": 1000, "nombre": "termina de rodar"},
+    {"eval": "prueba.sinEnemigos()"},
+
+    {"eval": "(prueba.darHabilidades(1, ['boulder'], 2), prueba.crearEnemigo('demonio_caminante', 250, 264), prueba.crearEnemigo('demonio_caminante', 330, 264), prueba.mirar(1, 1), prueba.ponerJugador(1, 200, 20), saltarCuando(250), true)"},
+    {"hasta": "prueba.enemigo(0).lanzado", "timeout": 2000, "nombre": "rueda contra el primero"},
+    {"verificar": "boulder nivel 2: el enemigo sale disparado", "eval": "({ lanzado: prueba.enemigo(0).lanzado, vx: prueba.enemigo(0).vx })", "espera": {"lanzado": true, "vx": {"min": 150}}},
+    {"hasta": "prueba.enemigo(1).aturdido", "timeout": 1000, "nombre": "el disparado alcanza al segundo"},
+    {"verificar": "y golpea a los otros como un proyectil", "eval": "prueba.enemigo(1).aturdido"},
+    {"hasta": "!prueba.enemigo(0).lanzado", "timeout": 1500, "nombre": "se le acaba el impulso"},
+    {"verificar": "en Recolección no muere: queda aturdido", "eval": "({ enemigos: prueba.estado().enemigos })", "espera": {"enemigos": 2}},
+    {"eval": "prueba.sinEnemigos()"},
+    {"hasta": "prueba.jugador(1).estado === 'libre'", "timeout": 1000, "nombre": "termina de rodar"},
+
+    {"eval": "(async () => { const { CONFIG } = await import('./config.js'); CONFIG.CAIDA_ALTA.activa = false; j.habilidades.boulder = 0; prueba.ponerJugador(1, 200, 20); return true; })()"},
+    {"hasta": "prueba.listo(1)", "timeout": 2000, "nombre": "cae de muy alto con la mecánica apagada"},
+    {"wait": 30},
+    {"verificar": "con CAIDA_ALTA.activa en false no hay aterrizaje pesado", "eval": "({ estado: prueba.jugador(1).estado })", "espera": {"estado": "libre"}},
+    {"eval": "(async () => { const { CONFIG } = await import('./config.js'); CONFIG.CAIDA_ALTA.activa = true; return true; })()"}
+  ]
+}

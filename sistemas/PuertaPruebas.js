@@ -24,13 +24,14 @@ export function instalarPuertaPruebas(game) {
     enPiso: j.body.blocked.down || j.body.touching.down,
     muerto: j.muerto, eliminado: j.eliminado,
     estado: j.estado, brillo: !!j.conBrillo, alfa: Math.round(j.alpha * 10) / 10, aturdido: j.aturdido, invulnerable: j.proteccion !== PROTECCION.NORMAL, apareciendo: j.apareciendo,
-    arma: j.arma, municion: j.municion
+    arma: j.arma, municion: j.municion, intensidadBrillo: Math.round((j.intensidadBrillo ?? 0) * 100) / 100,
+    katana: j.katana ? { ancho: Math.round(j.katana.getBounds().width), alto: Math.round(j.katana.getBounds().height), top: Math.round(j.katana.getBounds().top) } : null
   } : null;
 
   const estadoEnemigo = (e) => ({
     clave: claveEnemigo(e), x: redondear(e.x), y: redondear(e.y),
     enfurecido: e.enfurecido, aturdido: e.aturdido, muerto: e.muerto, hp: e.hp, intocable: e.intocable, brillo: !!e.conBrillo,
-    escudo: !!e.escudo
+    escudo: !!e.escudo, lanzado: !!e.lanzado, accion: e.accion ? e.accion.tipo : null, vx: redondear(e.body.velocity.x), cuadro: e.frame ? e.frame.name : null
   });
 
   window.prueba = {
@@ -81,7 +82,8 @@ export function instalarPuertaPruebas(game) {
       return true;
     },
     fantasmas: () => juego().fantasmas.map(f => ({
-      x: redondear(f.x), y: redondear(f.y), velocidad: redondear(f.velocidad), objetivo: f.objetivo ? f.objetivo.indice + 1 : null
+      x: redondear(f.x), y: redondear(f.y), velocidad: redondear(f.velocidad), objetivo: f.objetivo ? f.objetivo.indice + 1 : null,
+      pisado: !!f.pisado, enojado: !!f.enojado
     })),
     jugador: (n = 1) => estadoJugador(jugador(n)),
     enemigos: () => juego().enemigos.getChildren().map(estadoEnemigo),
@@ -292,6 +294,7 @@ export function instalarPuertaPruebas(game) {
       const s = juego();
       s.inventario = [];
       s.events.emit(EVENTOS.INVENTARIO, s.contarInventario());
+      s.actualizarBrillo();
       return true;
     },
     juntarTalismanes(conteo) {
@@ -300,6 +303,7 @@ export function instalarPuertaPruebas(game) {
         for (let i = 0; i < (conteo[tipo] || 0); i++) s.inventario.push(tipo);
       });
       s.events.emit(EVENTOS.INVENTARIO, s.contarInventario());
+      s.actualizarBrillo();
       return s.contarInventario();
     },
     // Hace que el jugador toque un talismán (como si lo agarrara) de ese tipo
@@ -315,6 +319,27 @@ export function instalarPuertaPruebas(game) {
       s.inventario = ['cuadrado', 'cuadrado', 'cuadrado', 'triangulo', 'triangulo', 'triangulo', 'rombo', 'rombo'];
       return window.prueba.tocarTalisman(n, 'rombo');
     },
+    // Hace que el enemigo i haga ya una de sus acciones (pausa, salto, bajar, lanzar), sin esperar al azar
+    accionEnemigo(i, opcion) {
+      const e = juego().enemigos.getChildren()[i];
+      const config = e.rasgos.caminante;
+      const pesos = config.pesos;
+      config.pesos = { [opcion]: 1 };
+      e.decidir(config, juego().time.now);
+      config.pesos = pesos;
+      return e.accion ? e.accion.tipo : opcion;
+    },
+    // Sin decisiones al azar por un rato largo: el enemigo i solo camina
+    sinDecisiones(i) {
+      juego().enemigos.getChildren()[i].proximaDecision = Infinity;
+      return true;
+    },
+    // Los textos del último panel de la UI (nivel completado, fin de partida)
+    panel: () => {
+      const ui = game.scene.getScene('UIScene');
+      return ui && ui.panel && ui.panel.active ? ui.panel.lineas.map(linea => linea.text) : null;
+    },
+    monedas: () => juego().items.getChildren().filter(item => item.active && !item.esTalisman).length,
     enfurecerEnemigos() {
       juego().enemigos.getChildren().forEach(e => e.enfurecer());
       return true;

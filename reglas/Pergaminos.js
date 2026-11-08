@@ -9,7 +9,7 @@ export const MODS_JUGADOR_BASE = {
   rebotesExtra: 0,      // Rebotes de más para sus proyectiles
   escudos: 0,           // Veces que sobrevive a una muerte (no al fantasma)
   iman: false, municionGratis: false, trampaPiedra: false, bombaAlMorir: false,
-  saltoPisoton: false, parryRecarga: false,
+  saltoPisoton: false, parryRecarga: false, katanaLarga: false, katanaAlta: false, parry360: false,
   pisarEnfurece: false, fantasmaRapido: false
 };
 
@@ -70,6 +70,12 @@ export function armarCartas(partida, azar = Math.random, cantidad = 3) {
     if (indice >= 0) cartas.push({ positivo: positivo.id, negativo: negativos.splice(indice, 1)[0].id });
   });
   return cartas;
+}
+
+// La clave del texto de un efecto: los movimientos dicen "nivel 2" o no según cómo esté la partida
+export function textoEfecto(partida, id) {
+  const efecto = efectoPorId(id);
+  return `perg_${efecto.texto ? efecto.texto(partida, jugadoresEnJuego(partida)) : id}`;
 }
 
 export function tomarEfecto(partida, id, j) {

@@ -6,8 +6,13 @@ export const GRAFICOS = [
   'proyectil', 'corazon', 'corazon-vacio', 'corazon-coop', 'mano', 'estrella', 'chispa',
   'onda', 'icono-shuriken', 'icono-bumeran', 'icono-bomba', 'pergamino', 'jefe-ogro', 'jefe-oni',
   'jefe-espectro', 'jefe-rey', 'bola-fuego',
-  'carta-pergamino', 'plataforma-fantasma', 'mina', 'bomba-especial'
+  'carta-pergamino', 'plataforma-fantasma', 'mina', 'bomba-especial', 'cuchilla', 'parry-circular'
 ];
 
 // Hojas de cuadros de 16x16 en una fila. La animación usa todos los cuadros que tenga el PNG: se pueden agregar sin tocar código.
 export const GRAFICOS_ANIMADOS = ['llama'];
+
+// Hojas de cuadros de 16x16 en una fila, sin animación propia: el código elige el cuadro.
+//   esqueleto: 0 y 1 caminar, 2 aviso antes de tirar la cuchilla
+//   samurai:   0 y 1 caminar, 2 se prepara, 3 corre
+export const GRAFICOS_CUADROS = ['esqueleto', 'samurai'];

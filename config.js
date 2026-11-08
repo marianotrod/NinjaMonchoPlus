@@ -54,7 +54,11 @@ export const CONFIG = {
   FUEGO_ESPERA_MIN: 3000,       // Tiempo entre bolas de un tile de fuego: al azar entre estos dos valores (ms)
   FUEGO_ESPERA_MAX: 7000,
   DURACION_LLAMA: 5000,         // Lo que dura encendida la llama que deja una bola al quedar quieta (ms)
-  ENTRADA_ENEMIGO: 500,         // Un enemigo es intocable mientras entra a la pantalla y esto más (ms)
+  FANTASMA_PISADO: 800,         // Pisado, el fantasma se frena y no daña durante esto (ms); después se enoja
+  FANTASMA_ENOJO: 1.3,          // Enojado va esto más rápido y acelera esto más; ya no se lo puede pisar
+  ENTRADA_ENEMIGO: 1200,        // Un enemigo es intocable mientras entra a la pantalla y esto más (ms)
+  TOPE_MONEDAS_CACERIA: 3,      // En la Cacería siguen cayendo monedas hasta este tope
+  INTERVALO_MONEDAS_CACERIA: 3000, // Cada cuánto cae una si hay menos que el tope (ms)
   // Pergaminos
   DURACION_FURIA: 6000,         // Con "la furia se pasa": lo que dura enfurecido un demonio (ms)
   RADIO_IMAN: 72,               // Distancia a la que el imán atrae talismanes (px)
@@ -71,7 +75,8 @@ export const CONFIG = {
   PROB_BOMBA_ESPECIAL: 0.25,    // Con el pergamino: lo mismo con la bomba especial
   ESPERA_BOMBA_ESPECIAL: 4000,  // La bomba especial explota sola después de esto (ms)
   ESPERA_RESPAWN: 2000,         // Tras caer fuera de la pantalla, el ninja reaparece arriba después de esto (ms)
-  INVUL_RESPAWN: 1500,          // Invulnerabilidad al reaparecer, desde que toca el piso (ms)
+  INVUL_RESPAWN: 2500,          // Invulnerabilidad al reaparecer, desde que toca el piso (ms)
+  INVUL_INICIO: 1500,           // Lo mismo al aparecer al empezar el nivel (ms)
   TOTAL_NIVELES: 10,
   NIVELES_POR_BLOQUE: 5,        // Cada 5 niveles hay jefe: el 5 es intermedio y el 10 es el final
   NIVELES_FIJOS: { 1: 'inicio', 2: 'aprendizaje' }, // Número de nivel → id; el resto sale del pool
@@ -105,8 +110,26 @@ export const CONFIG = {
   INTERVALO_TALISMANES: 150,
   INTERVALO_DEMONIOS: 2000,
 
+  // Caer de muy alto: se mide la altura caída (sigue sumando si se cae por un hueco y se vuelve a entrar por arriba).
+  // Al tocar el piso desde esa altura el ninja aterriza pesado y pierde un poco de tiempo sin control.
+  // Con el boulder, saltar justo antes de tocar el piso lo hace rodar; apenas antes, aterriza sin castigo.
+  // Para sacar la mecánica entera: activa: false (el boulder deja de tener cuándo activarse).
+  CAIDA_ALTA: {
+    activa: true,
+    altura: 190,                // 2/3 de la pantalla (px)
+    castigo: 400,               // Tiempo sin control al aterrizar pesado (ms)
+    ventanaPerfecta: 100,       // Boulder: saltar en estos últimos ms antes de tocar el piso → rueda
+    ventanaCasi: 250            // Boulder: saltar en estos → aterriza sin castigo, sin rodar
+  },
+  BOULDER: {
+    velocidad: 230,             // Velocidad del rodar (px/s)
+    duracion: 600,              // Lo que dura rodando (ms)
+    empujeNivel2: { x: 380, y: -220 },  // Nivel 2: así salen disparados los enemigos que toca
+    duracionLanzado: 900        // Nivel 2: lo que un enemigo disparado golpea a otros (ms)
+  },
+
   // Vida que le saca cada cosa a un jefe
-  DAÑO_GOLPE: { katana: 1, proyectil: 1, pisoton: 2, explosion: 3 }
+  DAÑO_GOLPE: { katana: 1, proyectil: 1, pisoton: 2, explosion: 3, boulder: 2 }
 };
 
 // Parámetros de movimiento del ninja. Gravedad efectiva = gravedadMundo + gravedadJugador = 800 px/s².
@@ -117,6 +140,8 @@ export const FISICA = {
 
   velocidadCarrera: 140,
   suavizado: 0.3,
+  suavizadoAire: 0.4,           // En el aire, qué tan rápido responde al cambiar de dirección
+  frenadoAire: 0.12,            // En el aire sin apretar nada, cuánto frena por cuadro (0 = sigue derecho)
 
   salto: -350,
   dobleSalto: -280,
@@ -150,8 +175,10 @@ export const FISICA = {
   roceItem: 0.92,               // Frenado de talismanes y monedas apoyados en el piso
   caidaShuriken: 40,            // Gravedad propia del shuriken (px/s²): cae muy poco en su recorrido
 
-  katanaDuracion: 150,
-  katanaCooldown: 320
+  katanaDuracion: 230,
+  katanaCooldown: 320,
+  katanaExtra: 16,              // Pergaminos: lo que suma la katana hacia adelante o hacia arriba (px)
+  radioParry360: 22             // Pergamino: el parry alcanza esto alrededor del centro del ninja (px)
 };
 
 // Índices estándar de botones de joystick (layout Xbox / "standard gamepad")
