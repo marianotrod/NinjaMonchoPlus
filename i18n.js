@@ -101,6 +101,8 @@ const textos = {
     ouch: '¡OUCH!',
     perdiste_talisman: '¡SE TE CAYÓ UN TALISMÁN!',
     perdiste_talismanes: '¡SE TE CAYERON LOS TALISMANES!',
+    rescate_llave: '¡LLAVE! LLEVALA A LA JAULA',
+    rescatado: 'RESCATADO',
 
     arma_shuriken: 'SHURIKEN',
     arma_bumeran: 'BUMERÁN',
@@ -241,6 +243,8 @@ const textos = {
     ouch: 'OUCH!',
     perdiste_talisman: 'YOU DROPPED A TALISMAN!',
     perdiste_talismanes: 'YOU DROPPED YOUR TALISMANS!',
+    rescate_llave: 'KEY! TAKE IT TO THE CAGE',
+    rescatado: 'RESCUED',
 
     arma_shuriken: 'SHURIKEN',
     arma_bumeran: 'BOOMERANG',

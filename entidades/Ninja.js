@@ -9,6 +9,7 @@ import { PROTECCION } from '../reglas/Resolvedor.js';
 import { ARMAS, dispararArma, equiparEnPartida } from './Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { EVENTOS } from '../datos/Eventos.js';
+import { arrojarLlave } from '../mundo/Rescate.js';
 
 export const ESTADO = {
   APARECIENDO: 'apareciendo',   // Cae hasta tocar el piso, sin control
@@ -520,6 +521,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   // --- KATANA: tajo corto delante del ninja. Lo que toca lo resuelve la escena en procesarKatana() ---
   atacar({ forzar = false, duracion = FISICA.katanaDuracion } = {}) {
+    if (!forzar && arrojarLlave(this.sceneRef, this)) return;  // Rescate: con la llave en la mano, la arroja
     const ahora = this.sceneRef.time.now;
     if (!forzar && ahora < this.ultimoAtaque + FISICA.katanaCooldown) return;
     this.ultimoAtaque = ahora;
@@ -557,6 +559,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   usarEspecial() {
+    if (arrojarLlave(this.sceneRef, this)) return;
     if (!this.arma || this.municion <= 0 || this.sceneRef.reglas.soloBasico) {
       Sonido.beep(this.sceneRef, 140, 0.08, 0.08);
       return;
@@ -625,6 +628,13 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     this.body.reset(x, y);
     this.dashDisponible = true;
+  }
+
+  // Rescatado: vuelve a la partida desde donde estaba la jaula, como al reaparecer
+  revivir(punto) {
+    this.body.enable = true;
+    this.setActive(true).setVisible(true);
+    this.respawnear(punto);
   }
 
   // Sin vidas: deja de jugar y de ocupar lugar en la física

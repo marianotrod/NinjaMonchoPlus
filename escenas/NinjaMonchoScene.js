@@ -7,6 +7,7 @@ import Jefe from '../entidades/Jefe.js';
 import { cambiarTile, construirNivel, crearPlataformaFantasma, extenderTrampa, trampasAlAzar } from '../mundo/CargadorNivel.js';
 import { bordeVerticalOpuesto, costadoLibre, wrapear } from '../mundo/Mundo.js';
 import { actualizarFuego, crearBola, crearBolaCeleste } from '../mundo/Fuego.js';
+import { actualizarRescate, objetosSueltos, prepararRescate } from '../mundo/Rescate.js';
 import { BANDO, COLORES, CONFIG, DEBUG, FISICA, LOGICA, MUNDO, PAD, TECLAS, TILES } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
 import { armarCartas, textoEfecto, tomarCarta } from '../reglas/Pergaminos.js';
@@ -112,6 +113,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       // En la sala no se puede entrar: el J2 entra en un nivel común
       this.prepararHotJoin();
     }
+    this.grupoRescate = null;
+    prepararRescate(this);
 
     this.physics.add.collider(this.items, this.bloquesFisicos, this.procesarImpactoPiso, null, this);
     this.physics.add.collider(this.enemigos, this.bloquesFisicos,
@@ -922,6 +925,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         item.lanzador = null;
         this.colorearItem(item);
       }
+      if (itemLanzado(item)) this.dejarEstela(item);
       if (item.body.touching.down) {
         item.setVelocityX(item.body.velocity.x * FISICA.roceItem);
         if (Math.abs(item.body.velocity.x) < 1) item.setVelocityX(0);
@@ -940,6 +944,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     actualizarProyectiles(this);
     actualizarFuego(this, time);
+    actualizarRescate(this);
     if (this.conWrap) this.aplicarWrap();
 
     this.fantasmas.forEach(fantasma => fantasma.actualizar(this.objetivoDeFantasma(fantasma), delta));
@@ -949,8 +954,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // El ninja muerto no cruza: sigue cayendo hasta salir de la pantalla y recién ahí pierde la vida
   aplicarWrap() {
     this.jugadores.filter(jugador => !jugador.muerto).forEach(wrapear);
-    [this.items, this.enemigos, this.proyectiles, this.peligros]
-      .forEach(grupo => grupo.getChildren().forEach(wrapear));
+    [this.items, this.enemigos, this.proyectiles, this.peligros, this.grupoRescate]
+      .forEach(grupo => grupo && grupo.getChildren().forEach(wrapear));
   }
 
   actualizarDebug() {
@@ -1045,6 +1050,17 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   // Una moneda se resquebraja un cuadro de coin.png por cada rebote que le resta valor: usa todos los cuadros que tenga.
   // Mientras vuela empujada lleva el color de quien la empujó. Rojiza solo con el pergamino de monedas rojas.
+  // Un ítem lanzado es peligroso: deja una estela del color de a quién daña (azul: a los demonios; negro: a todos).
+  // Cuando frena deja de ser proyectil, y la estela se corta sola.
+  dejarEstela(item) {
+    const { cada, dura, alfa } = FISICA.estelaItem;
+    if (this.time.now < (item.proximaEstela ?? 0)) return;
+    item.proximaEstela = this.time.now + cada;
+    const copia = this.add.image(item.x, item.y, item.texture.key, item.frame.name)
+      .setTint(colorDeJugador(this)).setAlpha(alfa).setDepth(item.depth - 1);
+    this.tweens.add({ targets: copia, alpha: 0, scale: 0.6, duration: dura, onComplete: () => copia.destroy() });
+  }
+
   colorearItem(item) {
     if (!item.esTalisman) {
       const cuadros = this.textures.get('coin').frameTotal - 1;
@@ -1354,6 +1370,12 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.enemigos.getChildren().slice().forEach(enemigo => alcanzar(enemigo));
     this.items.getChildren().forEach(item => alcanzar(item));
+    // Rescate: la llave suelta y la jaula se alejan del centro del ninja, como los ítems
+    objetosSueltos(this).forEach(objeto => alcanzar(objeto, () => {
+      const { fuerza, subidaMinima } = FISICA.empujeItem;
+      const angulo = Math.atan2(objeto.y - ninja.y, objeto.x - ninja.x);
+      objeto.setVelocity(Math.cos(angulo) * fuerza, Math.min(subidaMinima, Math.sin(angulo) * fuerza));
+    }));
     this.proyectilesDe(BANDO.DEMONIOS).forEach(p => {
       // Pergamino: el parry alcanza a todo lo que esté alrededor del ninja, no solo delante
       const cerca = ninja.mods.parry360 && Phaser.Math.Distance.Between(ninja.x, ninja.y, p.x, p.y) <= FISICA.radioParry360;
@@ -1426,6 +1448,10 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     };
     this.enemigos.getChildren().slice().forEach(enemigo => golpeA(enemigo, impulso(enemigo)));
     this.items.getChildren().forEach(item => golpeA(item, impulso(item)));
+    objetosSueltos(this).forEach(objeto => {
+      const empuje = impulso(objeto);
+      if (empuje) objeto.setVelocity(empuje.vx, empuje.vy);
+    });
     this.jugadores.forEach(jugador => golpeA(jugador, impulso(jugador)));
     if (bando === BANDO.JUGADORES && this.jefe && this.jefe.active && Phaser.Math.Distance.Between(x, y, this.jefe.x, this.jefe.y) < radio + 16) {
       resolverGolpe(this, this.jefe, crearGolpe('explosion', { duenio }));
@@ -1497,9 +1523,26 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.pararProyectil(jugador, proyectil);
       return;
     }
+    if (this.pisarProyectil(jugador, proyectil)) return;
     if (jugador.proteccion === PROTECCION.INTOCABLE) return;
     if (!proyectil.atraviesaBloques) proyectil.destroy();
     resolverGolpe(this, jugador, this.golpeDeProyectil(proyectil));
+  }
+
+  // Cayendo sobre un proyectil y apretando saltar justo antes, el ninja rebota encima y el proyectil se rompe.
+  // No es automático: sin el salto a tiempo, golpea. Vale para cualquiera que lo dañaría (también un ítem lanzado).
+  pisarProyectil(jugador, proyectil) {
+    const { activa, ventana } = CONFIG.PISAR_PROYECTIL;
+    if (!activa || jugador.body.velocity.y <= 0 || !this.reglas.jugable) return false;
+    if (jugador.body.bottom > proyectil.body.top + 6) return false;
+    if (this.time.now - jugador.ultimoSalto > ventana) return false;
+    jugador.ultimoSalto = -9999;
+    jugador.hacerPisoton();
+    this.efectoChispas(proyectil.x, proyectil.y, 0xffffff);
+    Sonido.efecto(this, 'snd-parry', 0.4, { rate: 1.3 });
+    if (proyectil.esTalisman !== undefined) proyectil.lanzador = null;  // Un ítem pisado deja de ser proyectil
+    else if (!proyectil.atraviesaBloques) proyectil.destroy();
+    return true;
   }
 
   // Un ítem lanzado golpea una sola vez a cada objetivo y sigue su camino: no se rompe, porque hay que poder juntarlo
@@ -1517,6 +1560,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (itemLanzado(item)) {
       const golpe = crearGolpe('proyectil', { duenio: item.lanzador, fuenteX: item.x });
       if (golpeaAliado(this, golpe, jugador)) {
+        if (this.pisarProyectil(jugador, item)) return;
         this.impactoItem(item, jugador);
         return;
       }

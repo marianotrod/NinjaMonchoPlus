@@ -6,7 +6,8 @@ export const GRAFICOS = [
   'proyectil', 'corazon', 'corazon-vacio', 'corazon-coop', 'mano', 'estrella', 'chispa',
   'onda', 'icono-shuriken', 'icono-bumeran', 'icono-bomba', 'pergamino', 'jefe-ogro', 'jefe-oni',
   'jefe-espectro', 'jefe-rey', 'bola-fuego',
-  'carta-pergamino', 'plataforma-fantasma', 'mina', 'bomba-especial', 'cuchilla', 'parry-circular'
+  'carta-pergamino', 'plataforma-fantasma', 'mina', 'bomba-especial', 'cuchilla', 'parry-circular',
+  'llave', 'jaula'
 ];
 
 // Hojas de cuadros de 16x16 en una fila. La animación usa todos los cuadros que tenga el PNG: se pueden agregar sin tocar código.

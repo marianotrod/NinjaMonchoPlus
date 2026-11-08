@@ -10,6 +10,7 @@ import { BANDO, COLORES, CONFIG, FISICA } from '../config.js';
 import { i18n } from '../i18n.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { GOLPE_AL_NINJA } from './Fases.js';
+import { soltarLlave } from '../mundo/Rescate.js';
 
 // normal: lo aturden y lo dañan. invulnerable: lo aturden, pero no recibe daño. intocable: no le pasa nada.
 export const PROTECCION = { NORMAL: 'normal', INVULNERABLE: 'invulnerable', INTOCABLE: 'intocable' };
@@ -77,6 +78,7 @@ function golpearNinja(escena, ninja, golpe) {
     return;
   }
   if (reglas.hayTalismanes) escena.perderTalismanes(ninja);
+  soltarLlave(escena, ninja);  // Rescate: quien lleva la llave la suelta
 }
 
 function golpearEnemigo(escena, enemigo, golpe) {

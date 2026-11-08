@@ -1,0 +1,17 @@
+{
+  "descripcion": "Un ítem lanzado deja una estela del color de a quién daña, y al frenar vuelve a ser inofensivo y de su color",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 1500, "eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.ponerTiempo(90), prueba.proteger(1), true)"},
+    {"eval": "(window.s = window.game.scene.getScene('NinjaMonchoScene'), window.copias = () => s.children.list.filter(o => o.type === 'Image' && o.texture.key === 'coin' && !s.items.contains(o)), prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), prueba.crearItem('coin', 114, 262), prueba.atacar(1), true)"},
+    {"wait": 120},
+    {"verificar": "la moneda lanzada deja una estela azul (daña a los demonios)", "eval": "({ hay: copias().length > 0, azul: copias().every(c => c.tintTopLeft === 0x60a5fa) })", "espera": {"hay": true, "azul": true}},
+    {"hasta": "!s.items.getChildren()[0].lanzador", "timeout": 4000, "nombre": "la moneda frena"},
+    {"wait": 300},
+    {"verificar": "al frenar deja de ser proyectil: sin estela y con su color", "eval": "({ estela: copias().length, tinte: s.items.getChildren()[0].isTinted })", "espera": {"estela": 0, "tinte": false}},
+    {"eval": "(prueba.ponerModGlobal('fuegoAmigo', true), prueba.sinItems(), prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), prueba.crearItem('coin', 114, 262), prueba.atacar(1), true)"},
+    {"wait": 120},
+    {"verificar": "con fuego amigo la estela es negra: daña a todos", "eval": "({ hay: copias().length > 0, negra: copias().every(c => c.tintTopLeft === 0x4b5563) })", "espera": {"hay": true, "negra": true}}
+  ]
+}

@@ -121,6 +121,18 @@ export const CONFIG = {
     ventanaPerfecta: 100,       // Boulder: saltar en estos últimos ms antes de tocar el piso → rueda
     ventanaCasi: 250            // Boulder: saltar en estos → aterriza sin castigo, sin rodar
   },
+  // Rescate: un jugador sin vidas se puede rescatar en el nivel siguiente (ver mundo/Rescate.js)
+  RESCATE: {
+    activo: true,
+    espera: 1000,               // Después de que el vivo toca el piso, caen la llave y la jaula (ms)
+    vidas: 1,                   // Con cuántas vidas vuelve el rescatado
+    soltarConGolpe: true,       // Quien lleva la llave la suelta al recibir un golpe
+    arrojar: { x: 220, y: -180 }, // Con la llave en la mano, atacar o disparar la arroja así
+    conFantasma: false          // Con el reloj en cero (fantasma) la jaula no se abre: nadie reaparece
+  },
+  // Pisar un proyectil: cayendo sobre él y apretando saltar justo (en estos ms antes de tocarlo) se rebota encima.
+  // Si no, golpea como siempre. Para sacarlo: activa: false.
+  PISAR_PROYECTIL: { activa: true, ventana: 150 },
   BOULDER: {
     velocidad: 230,             // Velocidad del rodar (px/s)
     duracion: 600,              // Lo que dura rodando (ms)
@@ -163,7 +175,8 @@ export const FISICA = {
 
   empujeEnemigo: { x: 200, y: -150 },  // Golpe de katana o proyectil a un enemigo que no muere
   empujeItem: { fuerza: 300, subidaMinima: -120 },  // Katana a un talismán o una moneda: se aleja del centro del ninja
-  velocidadItemLanzado: 60,            // Un ítem empujado golpea hasta que anda más lento que esto (px/s)
+  velocidadItemLanzado: 120,           // Un ítem empujado golpea hasta que anda más lento que esto (px/s)
+  estelaItem: { cada: 35, dura: 220, alfa: 0.55 },  // La estela de un ítem lanzado: cada cuántos ms deja una copia y lo que dura
   empujeNinja: { x: 220, y: -160 },    // Katana al compañero
   parpadeoGolpe: 1200,          // Protección que queda después del aturdimiento (ms)
   parpadeoPisoton: 600,         // Protección después de pisar a un enemigo (ms)

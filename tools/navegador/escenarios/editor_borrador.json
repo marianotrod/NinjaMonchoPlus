@@ -12,6 +12,6 @@
     {"eval": "(location.href = location.pathname + '?debug', true)"},
     {"wait": 500},
     {"hasta": "window.prueba && prueba.escenas().includes('TitleScene')", "timeout": 8000, "nombre": "abre el juego sin el borrador"},
-    {"verificar": "sin ?borrador el juego no lo mira", "eval": "prueba.validarNiveles().cantidad === 16"}
+    {"verificar": "sin ?borrador el juego no lo mira", "eval": "prueba.validarNiveles().cantidad === 76"}
   ]
 }

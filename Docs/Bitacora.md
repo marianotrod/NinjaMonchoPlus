@@ -5,6 +5,26 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-08 — Claude: etapa 9 y 60 niveles base
+
+- Rescate (`mundo/Rescate.js`, `CONFIG.RESCATE`): en el nivel siguiente a quedarse sin vidas uno solo, cae una llave desde
+  el spawn del vivo y una jaula desde el del muerto. Con la llave no se ataca ni se dispara (se arroja); un golpe la suelta;
+  la katana y las explosiones empujan la llave suelta y la jaula. Al abrirla, el compañero vuelve desde su spawn con 1 vida.
+  Gráficos provisorios: `llave.png`, `jaula.png`.
+- Pisar proyectiles con el salto a tiempo (`CONFIG.PISAR_PROYECTIL`), también ítems lanzados.
+- 60 niveles base `b-01` a `b-60` (tipo `borrador`: no salen en el juego hasta pasarlos a `normal` en el editor), hechos
+  con `tools/generar_niveles_base.py`: 6 familias, tiers 1 a 3 (trampas desde el 21, fuego desde el 41), algunos con wrap.
+  Todas las superficies se alcanzan con el salto básico. OJO: volver a correr el script pisa los `b-XX`.
+- Ítems lanzados: dejan una estela del color de a quién dañan (azul a los demonios, negro a todos con fuego amigo). Al frenar
+  dejan de ser proyectil, se corta la estela y vuelven a su color. Ahora dejan de golpear por debajo de 120 px/s (antes 60):
+  una moneda lenta ya no mata (`FISICA.velocidadItemLanzado`, `FISICA.estelaItem`).
+- Pruebas nuevas: `rescate`, `niveles_base`, `estela`.
+
+**Pendientes**
+- Mariano: probar la estela de las monedas, el rescate y pisar proyectiles. Editar los niveles base.
+
+---
+
 ## 2026-11-08 — Claude: notas de la partida de prueba de Mariano
 
 - Tiempos: intocable al aparecer 1,5 s al empezar el nivel y 2,5 s al reaparecer (`INVUL_INICIO`, `INVUL_RESPAWN`);

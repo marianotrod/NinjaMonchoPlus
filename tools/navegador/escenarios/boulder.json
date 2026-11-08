@@ -20,7 +20,7 @@
     {"wait": 30},
     {"verificar": "con el boulder, saltar casi justo aterriza bien: ni pesado ni rodando", "eval": "({ estado: prueba.jugador(1).estado })", "espera": {"estado": "libre"}},
 
-    {"eval": "(prueba.crearEnemigo('demonio_caminante', 290, 264), prueba.mirar(1, 1), prueba.ponerJugador(1, 200, 20), saltarCuando(250), true)"},
+    {"eval": "(prueba.crearEnemigo('demonio_caminante', 290, 264), s.enemigos.getChildren().forEach(e => { e.setVelocityX(-60); e.setFlipX(true); }), prueba.mirar(1, 1), prueba.ponerJugador(1, 200, 20), saltarCuando(250), true)"},
     {"hasta": "prueba.jugador(1).estado === 'rodando'", "timeout": 2000, "nombre": "salta justo al tocar el piso"},
     {"verificar": "saltar justo al tocar el piso desde muy alto: rueda hacia adelante, intocable", "eval": "({ vx: prueba.jugador(1).vx, invulnerable: prueba.jugador(1).invulnerable })", "espera": {"vx": {"min": 200}, "invulnerable": true}},
     {"hasta": "prueba.enemigo(0).aturdido", "timeout": 800, "nombre": "el rodar alcanza al demonio"},
@@ -28,7 +28,7 @@
     {"hasta": "prueba.jugador(1).estado === 'libre'", "timeout": 1000, "nombre": "termina de rodar"},
     {"eval": "prueba.sinEnemigos()"},
 
-    {"eval": "(prueba.darHabilidades(1, ['boulder'], 2), prueba.crearEnemigo('demonio_caminante', 250, 264), prueba.crearEnemigo('demonio_caminante', 330, 264), prueba.mirar(1, 1), prueba.ponerJugador(1, 200, 20), saltarCuando(250), true)"},
+    {"eval": "(prueba.darHabilidades(1, ['boulder'], 2), prueba.crearEnemigo('demonio_caminante', 275, 264), prueba.crearEnemigo('demonio_caminante', 345, 264), s.enemigos.getChildren().forEach(e => { e.setVelocityX(-60); e.setFlipX(true); }), prueba.mirar(1, 1), prueba.ponerJugador(1, 200, 20), saltarCuando(250), true)"},
     {"hasta": "prueba.enemigo(0).lanzado", "timeout": 2000, "nombre": "rueda contra el primero"},
     {"verificar": "boulder nivel 2: el enemigo sale disparado", "eval": "({ lanzado: prueba.enemigo(0).lanzado, vx: prueba.enemigo(0).vx })", "espera": {"lanzado": true, "vx": {"min": 150}}},
     {"hasta": "prueba.enemigo(1).aturdido", "timeout": 1000, "nombre": "el disparado alcanza al segundo"},

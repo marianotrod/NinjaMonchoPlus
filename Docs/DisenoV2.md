@@ -188,14 +188,20 @@ Cada fase es una **tabla de reglas**. El resto del código consulta la tabla y n
 
 ### 5.4 Fin de partida y rescate
 - La partida termina cuando **todos** los jugadores se quedan sin vidas.
-- Si se queda sin vidas **uno solo**, en la fase más riesgosa del nivel siguiente (la Cacería, o la pelea en los niveles de jefe):
-  - Desde el spawn del muerto cae un **vórtice** de 32×32, como un talismán, pero pierde el rebote más rápido.
-  - Desde el spawn del vivo cae una **llave**.
+- Si se queda sin vidas **uno solo**, en el nivel siguiente (decidido el 2026-11-08: al empezar, no en la Cacería):
+  - Un poco después de que el vivo toca el piso (`CONFIG.RESCATE.espera`), desde el spawn del muerto cae una **jaula**
+    (se verá si es vórtice o qué; gráfico provisorio `jaula.png`, 16×16) con el compañero adentro.
+  - Desde el spawn del vivo cae una **llave** (`llave.png`).
+  - Con el reloj en cero (fantasma) la jaula no se abre: nadie reaparece (`CONFIG.RESCATE.conFantasma`).
+  - Código: `mundo/Rescate.js`. Prueba: `rescate.json`.
   - La llave se agarra tocándola. **Mientras la lleva, el ninja no puede atacar ni disparar:** si lo intenta, la arroja.
   - Si el que la lleva recibe un golpe, la llave se le cae.
   - La katana, los proyectiles y las explosiones empujan la llave y el vórtice. Si los enemigos también los empujan es **[Probar]**.
   - El vórtice **solo se abre si lo toca un ninja que lleva la llave.** La llave suelta no lo abre.
   - Al abrirse, el muerto aparece en su spawn con **1 vida**, intocable un rato.
+  - Los proyectiles de los jugadores todavía no empujan la llave ni la jaula (la katana y las explosiones sí).
+- **Pisar proyectiles** (`CONFIG.PISAR_PROYECTIL`): cayendo sobre un proyectil que te dañaría (también un ítem lanzado)
+  y apretando saltar en los últimos 150 ms, se rebota encima y el proyectil se rompe. Sin el salto a tiempo, golpea.
   - El sobreviviente no está obligado a rescatarlo. Si el nivel termina sin rescate, el vórtice y la llave vuelven en el nivel siguiente.
 - El jugador muerto **no participa** del nivel de pergaminos.
 

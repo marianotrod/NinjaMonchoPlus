@@ -42,7 +42,7 @@ const TIPOS_OBJETO = [
 ];
 const CAMPOS = [
   { clave: 'nombre', etiqueta: 'Nombre' },
-  { clave: 'tipo', etiqueta: 'Tipo', opciones: ['inicio', 'fijo', 'normal', 'jefe', 'pergaminos', 'prueba'] },
+  { clave: 'tipo', etiqueta: 'Tipo', opciones: ['inicio', 'fijo', 'normal', 'jefe', 'pergaminos', 'prueba', 'borrador'] },
   { clave: 'tier', etiqueta: 'Tier (dificultad)', opciones: [null, 1, 2, 3] },
   { clave: 'jefe', etiqueta: 'Jefe', opciones: [null, 'ogro', 'oni', 'espectro', 'rey'] },
   { clave: 'musica', etiqueta: 'Música', opciones: [null, 'musica-fondo', 'musica-cueva', 'musica-agua', 'musica-jefe'] },

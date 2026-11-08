@@ -1,0 +1,12 @@
+{
+  "descripcion": "Un nivel base generado (con wrap, trampas y fuego) arranca y se juega",
+  "query": "?debug&nivel=3&mapa=b-45",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"verificar": "es el nivel base pedido, con wrap", "eval": "({ id: prueba.nivel().id, wrap: !!window.game.scene.getScene('NinjaMonchoScene').conWrap })", "espera": {"id": "b-45", "wrap": true}},
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 cae del spawn y toca el piso"},
+    {"verificar": "J1 aparece sin golpearse con nada", "eval": "({ aturdido: prueba.jugador(1).aturdido, vidas: prueba.estado().vidas[0] })", "espera": {"aturdido": false, "vidas": 3}},
+    {"wait": 3000},
+    {"verificar": "a los 3 segundos el nivel sigue andando", "eval": "({ fase: prueba.estado().fase })", "espera": {"fase": "recoleccion"}}
+  ]
+}
