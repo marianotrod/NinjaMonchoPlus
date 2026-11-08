@@ -75,6 +75,38 @@ y se pueden eliminar) → **Pergaminos de Pacto**. Hay 3 vidas por jugador, un f
 
 ---
 
+## Fase 5 — Versión 2: lo que sigue (pedido de Mariano, 2026-11-08)
+
+Nada de esto está empezado. Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define.
+
+- [ ] **5.1 Niveles base disponibles (S).** Pasar los 60 borradores `b-01`…`b-60` a tipo `normal`, para que entren al sorteo.
+- [ ] **5.2 Jefes mejores, con mecánicas intercambiables (L).** *Diseño: Mariano.* Separar cada jefe en piezas
+      (movimiento, ataques, fases según la vida) que se combinen desde un catálogo, como los rasgos de los enemigos en
+      `Bestiario.js`, para armar un jefe nuevo sin escribir código.
+- [ ] **5.3 Un fondo por fase, con transición animada (M).** Recolección, Cacería, jefe y sala de pergaminos con fondos
+      distintos; al cambiar de fase, el fondo cambia con una animación (fundido, barrido o similar). Fondos reemplazables
+      como archivos.
+- [ ] **5.4 Carteles menos intrusivos (M).** Revisar los carteles de cambio de fase y otros avisos: más chicos, más
+      cortos, en un costado o en el HUD, sin tapar el juego.
+- [ ] **5.5 Spawns de la llave y la jaula (M).** Hoy caen desde los spawns de J1 y J2, lugares demasiado fáciles.
+      En el editor, objetos nuevos "spawn de llave" y "spawn de jaula" (varios de cada uno); el juego elige uno al azar
+      para cada cosa. Si el mapa no tiene ninguno, sigue como ahora (spawns de los jugadores).
+- [ ] **5.6 Más enemigos y variedades (M c/u).** *Diseño: Mariano.* Se agregan como entradas del `Bestiario`;
+      el código suma rasgos nuevos cuando haga falta.
+- [ ] **5.7 Música fija en la sala de pergaminos (S).** *Mariano, desde el editor:* elegir la música en `sala-pergaminos`
+      (el juego ya usa el campo "Música" del nivel; hoy está vacío y suena la del nivel). Verificar que la respete.
+- [ ] **5.8 Combo de monedas (M).**
+      - Agarrar monedas seguidas, lo bastante rápido, sube el combo; si pasa un rato sin agarrar nada, vuelve a 1.
+      - Se guarda el combo máximo del nivel. Si te matan después de que se acabó el tiempo (el fantasma), el máximo se anula.
+      - Las monedas ya no suman al agarrarlas: los puntos se calculan al final del nivel,
+        **100 × monedas agarradas × combo máximo**, y se suman al total.
+      - En el panel de fin de nivel: el número sube de a poco, con un sonido de incremento lindo y efecto (jugo).
+      - A definir: la ventana de tiempo del combo, si se ve el combo durante el juego y cómo se cuenta en 2 jugadores.
+- [ ] **5.9 Gastar monedas en pergaminos positivos (M, a decidir).** Idea: en la sala de pergaminos, comprar uno positivo
+      con monedas. Choca con 5.8 (si las monedas se gastan, ¿cuentan para el puntaje?): decidir antes de hacerla.
+
+---
+
 ## Diferencias con el GDD que quedaron así a propósito
 - **9 talismanes (3 de cada forma)** en lugar de 6: es lo que ya tenía el juego.
 - **Los talismanes no dan puntos ni se degradan**; los puntos vienen de las monedas, que pierden valor al rebotar
