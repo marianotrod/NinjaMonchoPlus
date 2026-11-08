@@ -17,3 +17,7 @@ export const GRAFICOS_ANIMADOS = ['llama'];
 //   esqueleto: 0 y 1 caminar, 2 aviso antes de tirar la cuchilla
 //   samurai:   0 y 1 caminar, 2 se prepara, 3 corre
 export const GRAFICOS_CUADROS = ['esqueleto', 'samurai'];
+
+// Como los animados, pero con cuadros de 24x24.
+//   aura: la llama alrededor de un ítem lanzado. Blanca: el juego la tiñe del color de a quién daña.
+export const GRAFICOS_ANIMADOS_24 = ['aura'];

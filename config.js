@@ -33,6 +33,8 @@ export const BANDO = { JUGADORES: 'jugadores', DEMONIOS: 'demonios' };
 
 // Color de lo que golpea: azul daña a los enemigos, rojo a los jugadores y negro a todos (con fuego amigo)
 export const COLORES = { JUGADORES: 0x60a5fa, DEMONIOS: 0xf87171, TODOS: 0x4b5563, INMORTAL: 0xfacc15 };
+// Aura y estela de todo lo que vuela y daña: del color de a quién daña (mundo/Peligros.js)
+export const COLORES_PELIGRO = { A_JUGADORES: 0xff3df0, A_DEMONIOS: 0x00b3ff, A_TODOS: 0x4c1d95 };
 
 export const MUNDO = {
   columnas: 34, filas: 20, columnasOcultas: 1, filasOcultas: 2, tile: 16,
@@ -57,7 +59,7 @@ export const CONFIG = {
   FANTASMA_PISADO: 800,         // Pisado, el fantasma se frena y no daña durante esto (ms); después se enoja
   FANTASMA_ENOJO: 1.3,          // Enojado va esto más rápido y acelera esto más; ya no se lo puede pisar
   ENTRADA_ENEMIGO: 1200,        // Un enemigo es intocable mientras entra a la pantalla y esto más (ms)
-  TOPE_MONEDAS_CACERIA: 3,      // En la Cacería siguen cayendo monedas hasta este tope
+  TOPE_MONEDAS_CACERIA: 12,     // En la Cacería siguen cayendo monedas hasta este tope (sirven para pisar y llegar alto)
   INTERVALO_MONEDAS_CACERIA: 3000, // Cada cuánto cae una si hay menos que el tope (ms)
   // Pergaminos
   DURACION_FURIA: 6000,         // Con "la furia se pasa": lo que dura enfurecido un demonio (ms)
@@ -176,7 +178,8 @@ export const FISICA = {
   empujeEnemigo: { x: 200, y: -150 },  // Golpe de katana o proyectil a un enemigo que no muere
   empujeItem: { fuerza: 300, subidaMinima: -120 },  // Katana a un talismán o una moneda: se aleja del centro del ninja
   velocidadItemLanzado: 120,           // Un ítem empujado golpea hasta que anda más lento que esto (px/s)
-  estelaItem: { cada: 35, dura: 220, alfa: 0.55 },  // La estela de un ítem lanzado: cada cuántos ms deja una copia y lo que dura
+  estelaPeligro: { activa: true, cada: 35, dura: 220, alfa: 0.55 },  // La estela de lo que vuela y daña: cada cuántos ms deja una copia y lo que dura
+  auraPeligro: { activa: true, alfa: 0.9 },  // El aura de llama alrededor de lo que vuela y daña (graficos/aura.png)
   empujeNinja: { x: 220, y: -160 },    // Katana al compañero
   parpadeoGolpe: 1200,          // Protección que queda después del aturdimiento (ms)
   parpadeoPisoton: 600,         // Protección después de pisar a un enemigo (ms)

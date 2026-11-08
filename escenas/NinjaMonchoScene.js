@@ -13,7 +13,8 @@ import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel 
 import { armarCartas, textoEfecto, tomarCarta } from '../reglas/Pergaminos.js';
 import { efectoPorId } from '../datos/Pergaminos.js';
 import { RECOMIENZO, reglasDe } from '../reglas/Fases.js';
-import { PROTECCION, colorDeJugador, crearGolpe, golpeaAliado, itemLanzado, resolverGolpe } from '../reglas/Resolvedor.js';
+import { PROTECCION, crearGolpe, golpeaAliado, itemLanzado, resolverGolpe } from '../reglas/Resolvedor.js';
+import { marcarPeligros } from '../mundo/Peligros.js';
 import { ARMAS, actualizarProyectiles, arrastrarItem, chocarProyectil, soltarBomba } from '../entidades/Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { Guardado } from '../sistemas/Guardado.js';
@@ -925,7 +926,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         item.lanzador = null;
         this.colorearItem(item);
       }
-      if (itemLanzado(item)) this.dejarEstela(item);
       if (item.body.touching.down) {
         item.setVelocityX(item.body.velocity.x * FISICA.roceItem);
         if (Math.abs(item.body.velocity.x) < 1) item.setVelocityX(0);
@@ -943,6 +943,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     });
 
     actualizarProyectiles(this);
+    marcarPeligros(this);
     actualizarFuego(this, time);
     actualizarRescate(this);
     if (this.conWrap) this.aplicarWrap();
@@ -1049,18 +1050,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   // Una moneda se resquebraja un cuadro de coin.png por cada rebote que le resta valor: usa todos los cuadros que tenga.
-  // Mientras vuela empujada lleva el color de quien la empujó. Rojiza solo con el pergamino de monedas rojas.
-  // Un ítem lanzado es peligroso: deja una estela del color de a quién daña (azul: a los demonios; negro: a todos).
-  // Cuando frena deja de ser proyectil, y la estela se corta sola.
-  dejarEstela(item) {
-    const { cada, dura, alfa } = FISICA.estelaItem;
-    if (this.time.now < (item.proximaEstela ?? 0)) return;
-    item.proximaEstela = this.time.now + cada;
-    const copia = this.add.image(item.x, item.y, item.texture.key, item.frame.name)
-      .setTint(colorDeJugador(this)).setAlpha(alfa).setDepth(item.depth - 1);
-    this.tweens.add({ targets: copia, alpha: 0, scale: 0.6, duration: dura, onComplete: () => copia.destroy() });
-  }
-
+  // Mientras vuela empujada no se tiñe: lleva aura y estela (mundo/Peligros.js). Rojiza solo con el pergamino de monedas rojas.
   colorearItem(item) {
     if (!item.esTalisman) {
       const cuadros = this.textures.get('coin').frameTotal - 1;
@@ -1317,7 +1307,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     const { empujeNivel2, duracionLanzado } = CONFIG.BOULDER;
     enemigo.aturdir(Math.max(enemigo.config.duracionStun, duracionLanzado), (golpe.direccion ?? 1) * empujeNivel2.x, empujeNivel2.y);
     enemigo.lanzado = { duenio: golpe.duenio, fin: this.time.now + duracionLanzado, golpeados: new Set() };
-    enemigo.setTint(colorDeJugador(this));
   }
 
   choqueLanzado(a, b) {

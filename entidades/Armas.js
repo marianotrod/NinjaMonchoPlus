@@ -7,7 +7,6 @@
 //   bomba:    tiro con rebote que explota por tiempo y empuja todo lo que esté cerca.
 import { BANDO, CONFIG, FISICA } from '../config.js';
 import { proyectilVencido } from '../mundo/Mundo.js';
-import { colorDeJugador } from '../reglas/Resolvedor.js';
 import { Sonido } from '../sistemas/Sonido.js';
 
 export const ARMAS = {
@@ -74,8 +73,7 @@ function crearProyectil(scene, tipo, x, y, duenio) {
   proyectil.golpeados = new Set();
   proyectil.nacimiento = scene.time.now;
   proyectil.rebotesRestantes = ARMAS[tipo].rebotes + duenio.mods.rebotesExtra;
-  proyectil.setBounce(1);
-  proyectil.setTint(colorDeJugador(scene));
+  proyectil.setBounce(1);  // No se tiñe: lleva aura y estela del color de a quién daña (mundo/Peligros.js)
   return proyectil;
 }
 

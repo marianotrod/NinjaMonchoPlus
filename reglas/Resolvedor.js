@@ -6,7 +6,7 @@
 //   direccion: -1 o 1, para empujar con la fuerza propia de cada objetivo
 //   origen:    desde dónde empuja: los ítems se alejan de ese punto
 //   empuje:    { vx, vy }, para los golpes que empujan distinto a cada objetivo (explosiones)
-import { BANDO, COLORES, CONFIG, FISICA } from '../config.js';
+import { BANDO, CONFIG, FISICA } from '../config.js';
 import { i18n } from '../i18n.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { GOLPE_AL_NINJA } from './Fases.js';
@@ -36,9 +36,6 @@ export function golpeaAliado(escena, golpe, ninja) {
   const { fuegoAmigo, dañoPropio } = escena.modsGlobal;
   return fuegoAmigo || (golpe.duenio === ninja && dañoPropio);
 }
-
-// El color de lo que lanza un jugador
-export const colorDeJugador = (escena) => (escena.modsGlobal.fuegoAmigo ? COLORES.TODOS : COLORES.JUGADORES);
 
 function golpearNinja(escena, ninja, golpe) {
   if (golpe.bando === ninja.bando && !golpeaAliado(escena, golpe, ninja)) {
@@ -126,13 +123,12 @@ function golpearEnemigo(escena, enemigo, golpe) {
   }
 }
 
-// Un ítem empujado pasa a ser un proyectil de quien lo empujó, hasta que frena
+// Un ítem empujado pasa a ser un proyectil de quien lo empujó, hasta que frena. No se tiñe: lleva aura y estela.
 function lanzarItem(escena, item, golpe) {
   const { vx, vy } = golpe.empuje ?? empujeDesde(golpe.origen, item);
   item.setVelocity(vx, vy);
   item.lanzador = golpe.duenio ?? null;
   item.golpeados = new Set();
-  if (item.lanzador) item.setTint(colorDeJugador(escena));
 }
 
 export const itemLanzado = (item) =>

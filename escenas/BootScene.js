@@ -1,6 +1,6 @@
 import { i18n } from '../i18n.js';
 import { ARRANQUE_DEBUG, TILES } from '../config.js';
-import { GRAFICOS, GRAFICOS_ANIMADOS, GRAFICOS_CUADROS } from '../datos/Graficos.js';
+import { GRAFICOS, GRAFICOS_ANIMADOS, GRAFICOS_ANIMADOS_24, GRAFICOS_CUADROS } from '../datos/Graficos.js';
 import { armarCartas } from '../reglas/Pergaminos.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { nuevaPartida } from '../reglas/Partida.js';
@@ -35,6 +35,7 @@ export default class BootScene extends Phaser.Scene {
 
     GRAFICOS.forEach(clave => this.load.image(clave, `${A}graficos/${clave}.png`));
     [...GRAFICOS_ANIMADOS, ...GRAFICOS_CUADROS].forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 16, frameHeight: 16 }));
+    GRAFICOS_ANIMADOS_24.forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 24, frameHeight: 24 }));
 
     this.load.audio('musica-fondo', [`${A}GameMusic.ogg`, `${A}GameMusic.mp3`]);
     this.load.audio('musica-cueva', [`${A}CaveMusic.mp3`]);
@@ -110,7 +111,7 @@ export default class BootScene extends Phaser.Scene {
     this.anims.create({ key: 'coop-caer', frames: [{ key: 'ninja_coop', frame: 7 }], frameRate: 10 });
     this.anims.create({ key: 'coop-stun', frames: this.anims.generateFrameNumbers('ninja_coop', { start: 10, end: 13 }), frameRate: 12, repeat: -1 });
 
-    GRAFICOS_ANIMADOS.forEach(clave => this.anims.create({
+    [...GRAFICOS_ANIMADOS, ...GRAFICOS_ANIMADOS_24].forEach(clave => this.anims.create({
       key: clave, frames: this.anims.generateFrameNumbers(clave), frameRate: 10, repeat: -1
     }));
     this.anims.create({
