@@ -5,6 +5,17 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-08 — Claude: aura y estela de los peligros, monedas en la Cacería
+
+- Todo lo que vuela y daña (proyectiles propios y de enemigos, bolas de fuego, ítems y enemigos lanzados) lleva un aura
+  de llama y una estela del color de a quién daña: rosa a los jugadores, azul a los demonios, negro-violeta a todos.
+  Ya no se tiñe nada. Está en `mundo/Peligros.js`; colores en `COLORES_PELIGRO`, se apagan en `FISICA.auraPeligro` y `estelaPeligro`.
+- La estela anterior no se veía: quedaba dibujada detrás del cielo.
+- `TOPE_MONEDAS_CACERIA` de 3 a 12, para pisarlas y llegar a lugares altos.
+- Pendiente (Mariano): redibujar `graficos/aura.png` (blanca, la tiñe el juego); ver si el negro-violeta se lee bien.
+
+---
+
 ## 2026-11-08 — Claude: etapa 9 y 60 niveles base
 
 - Rescate (`mundo/Rescate.js`, `CONFIG.RESCATE`): en el nivel siguiente a quedarse sin vidas uno solo, cae una llave desde
