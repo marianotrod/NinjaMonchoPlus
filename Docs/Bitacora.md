@@ -5,6 +5,22 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-08 — Claude: roadmap 5.1, 5.4, 5.5 y 5.8
+
+- 5.1: los 60 niveles base `b-XX` pasaron a `normal` (70 en el sorteo). El generador ya los crea así.
+- El sorteo respeta el tier: `CONFIG.TIERS_POR_NIVEL` dice qué tiers salen en cada nivel (3: tier 1 … 8 y 9: tier 3).
+- 5.4: pausa de fase (`sistemas/PausaDeFase.js`, `CONFIG.PAUSA_FASE`). Al romper el sello y al acabarse el tiempo el juego
+  frena hasta quedar quieto, salen los carteles (se van rápido por arriba) y recién al recuperar la velocidad empieza
+  la Cacería o entran los fantasmas.
+- 5.5: objeto "Rescate" en el editor (varios por mapa). La llave y la jaula caen de dos de ellos al azar; sin puntos, como antes.
+- 5.8: combo de monedas (`reglas/Combo.js`, `CONFIG.COMBO`). 1,5 s para la siguiente, "COMBO X1" arriba, uno por jugador.
+  Las monedas se cobran al final: lo que valían (100 sin rebotar) × combo máximo; en el panel cuentan con sonido.
+  Morir con el reloj en cero anula el combo máximo.
+- Escenarios nuevos: combo, pausa_fase, rescate_puntos. Plazos más largos donde se espera la Cacería o el fantasma.
+- Pendiente (Mariano): poner puntos de rescate en los mapas; probar la pausa y el combo jugando. 5.2 y 5.3 para más adelante.
+
+---
+
 ## 2026-11-08 — Claude: aura y estela de los peligros, monedas en la Cacería
 
 - Todo lo que vuela y daña (proyectiles propios y de enemigos, bolas de fuego, ítems y enemigos lanzados) lleva un aura

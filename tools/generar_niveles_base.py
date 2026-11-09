@@ -1,11 +1,10 @@
 # generar_niveles_base.py
-# Genera niveles base (tipo "borrador") en public/niveles/ para editarlos después con el editor.
+# Genera niveles base (tipo "normal": entran al sorteo) en public/niveles/ para editarlos después con el editor.
 # Cada nivel sale de una familia de diseño con parámetros al azar (semilla fija: siempre salen los mismos) y se
 # verifica que todas las superficies se alcancen con el salto básico, sin movimientos especiales.
 #   python tools/generar_niveles_base.py            → genera b-01 a b-60 y los agrega al índice
 #   python tools/generar_niveles_base.py --vista ruta.png  → además deja una imagen con todos los niveles juntos
 # OJO: volver a correrlo pisa los b-XX, también los que ya se hayan editado.
-# Los niveles de tipo "borrador" no salen en el juego: para usarlos, cambiarles el tipo a "normal" en el editor.
 import json, os, random, sys, zlib, struct
 
 COLUMNAS, FILAS = 34, 20
@@ -216,7 +215,7 @@ def generar(n):
         raise RuntimeError(f'b-{n:02d}: no salió un nivel alcanzable')
     nivel = {
         'id': f'b-{n:02d}', 'nombre': f'Base {n:02d} · {nombre_familia}' + (' (wrap)' if wrap else ''),
-        'tipo': 'borrador', 'tier': tier, 'jefe': None, 'musica': None, 'fondoImagen': 'fondo-cielo', 'tiempo': None,
+        'tipo': 'normal', 'tier': tier, 'jefe': None, 'musica': None, 'fondoImagen': 'fondo-cielo', 'tiempo': None,
         'tileset': {'clave': 'MapTileSet', 'columnas': 10},
         'capas': {'fondo': [[-1] * COLUMNAS for _ in range(FILAS)], 'skin': skin(m), 'logica': m.l},
         'objetos': spawns(m)
@@ -263,7 +262,7 @@ def main():
     ruta_indice = os.path.join(CARPETA, 'indice.json')
     indice = json.load(open(ruta_indice, encoding='utf-8'))
     indice['niveles'] = [n for n in indice['niveles'] if not n['id'].startswith('b-')]
-    indice['niveles'] += [{'id': f'b-{n:02d}', 'tipo': 'borrador', 'tier': 1 if n <= 20 else (2 if n <= 40 else 3)} for n in range(1, 61)]
+    indice['niveles'] += [{'id': f'b-{n:02d}', 'tipo': 'normal', 'tier': 1 if n <= 20 else (2 if n <= 40 else 3)} for n in range(1, 61)]
     with open(ruta_indice, 'w', encoding='utf-8', newline='\n') as f:
         f.write('{\n  "niveles": [\n' + ',\n'.join('    ' + js(n) for n in indice['niveles']) + '\n  ]\n}\n')
     if '--vista' in sys.argv: vista(mapas, sys.argv[sys.argv.index('--vista') + 1])

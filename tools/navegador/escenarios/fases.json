@@ -18,7 +18,7 @@
     {"verificar": "los talismanes sobrantes desaparecen", "eval": "({ talismanes: prueba.items().filter(i => i.talisman).length })", "espera": {"talismanes": 0}},
     {"verificar": "durante el sello roto los ninjas no reciben golpes", "eval": "(prueba.quitarProteccion(1), prueba.golpear(1), prueba.jugador(1))", "espera": {"muerto": false, "aturdido": false}},
     {"eval": "prueba.proteger(1)"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"verificar": "la Cacería dura 30 s y tiene un cupo de 3 demonios en el nivel 1", "eval": "(() => { const e = prueba.estado(); return { tiempo: e.tiempo, cupo: e.enemigos + e.enemigosPorAparecer }; })()", "espera": {"tiempo": {"min": 29, "max": 30}, "cupo": 3}},
     {"hasta": "prueba.estado().enemigos === 3", "timeout": 3000, "nombre": "aparecen los 3 demonios"},
     {"verificar": "los demonios de la Cacería están enfurecidos", "eval": "prueba.enemigos().every(e => e.enfurecido)"},

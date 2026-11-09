@@ -11,7 +11,7 @@
     {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
     {"wait": 1600},
     {"eval": "(prueba.danarJefe(2), window.hp = prueba.estado().jefe.hpMax, prueba.ponerTiempo(1))"},
-    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "aparece el fantasma"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 8000, "nombre": "aparece el fantasma"},
     {"verificar": "el jefe está herido", "eval": "prueba.estado().jefe.hp < hp"},
     {"eval": "(prueba.quitarProteccion(1), prueba.golpear(1), true)"},
     {"verificar": "muera como muera, su fantasma desaparece", "eval": "prueba.estado().fantasma === false && prueba.jugador(1).muerto"},

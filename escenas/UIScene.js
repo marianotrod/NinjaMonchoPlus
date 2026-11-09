@@ -28,6 +28,12 @@ export default class UIScene extends Phaser.Scene {
     this.cantidadJugadores = juegoEscena.cantidadJugadores;
     this.actualizarPuntajes(partida.puntajes);
 
+    // Combo de monedas de cada jugador, debajo de su puntaje (reglas/Combo.js). No va en la sala ni con el jefe.
+    const conBorde = { stroke: '#000000', strokeThickness: 3 };
+    this.textosCombo = [4, 84].map(x => this.add.text(x, 24, '', estilo(8, '#9CA3AF', conBorde)).setOrigin(0, 0.5).setDepth(2));
+    this.conCombo = !juegoEscena.esSala && !juegoEscena.esNivelJefe;
+    (juegoEscena.combos || []).forEach((combo, indice) => this.mostrarCombo(indice, combo.actual, false));
+
     // 3. HUD central de talismanes: siluetas apagadas que se encienden al juntarlos
     this.hudTalismanes = {};
     this.conteoPrevio = { cuadrado: 0, triangulo: 0, rombo: 0 };
@@ -74,7 +80,9 @@ export default class UIScene extends Phaser.Scene {
       this.cantidadJugadores = cantidad;
       this.actualizarPuntajes(juegoEscena.partida.puntajes);
       this.mostrarVidas(juegoEscena.partida.vidas);
+      (juegoEscena.combos || []).forEach((combo, indice) => this.mostrarCombo(indice, combo.actual, false));
     });
+    this.escuchar(EVENTOS.COMBO, (indice, combo, subio) => this.mostrarCombo(indice, combo, subio));
     this.escuchar(EVENTOS.TIEMPO, (tiempo) => this.actualizarTiempo(tiempo));
     this.escuchar(EVENTOS.INVENTARIO, (conteo) => this.mostrarInventario(conteo));
     this.escuchar(EVENTOS.VIDAS, (vidas) => this.mostrarVidas(vidas));
@@ -82,7 +90,6 @@ export default class UIScene extends Phaser.Scene {
     this.escuchar(EVENTOS.ENEMIGOS_RESTANTES, (cantidad) => this.textoCentro.setText(`${i18n.t('caceria')} · ${i18n.t('quedan')} ${cantidad}`));
     this.escuchar(EVENTOS.BANNER, (datos) => this.mostrarBanner(datos));
     this.escuchar(EVENTOS.FANTASMA, () => {
-      this.mostrarBanner({ titulo: i18n.t('fantasma'), subtitulo: i18n.t('fantasma_sub'), color: '#E5E7EB', duracion: 1800 });
       this.textoTiempo.setText(i18n.t('fantasma_corto')).setColor('#E5E7EB');
       this.vineta.setAlpha(0.5);
     });
@@ -115,6 +122,16 @@ export default class UIScene extends Phaser.Scene {
   actualizarPuntajes(puntajes) {
     this.textosPuntaje[0].setText(`J1 ${String(puntajes[0]).padStart(6, '0')}`);
     this.textosPuntaje[1].setText(`J2 ${String(puntajes[1]).padStart(6, '0')}`).setVisible(this.cantidadJugadores === 2);
+  }
+
+  mostrarCombo(indice, combo, subio) {
+    const texto = this.textosCombo[indice];
+    if (!texto) return;
+    texto.setText(`${i18n.t('combo')} X${combo}`).setColor(combo > 1 ? '#FBBF24' : '#9CA3AF')
+      .setVisible(this.conCombo && (indice === 0 || this.cantidadJugadores === 2));
+    if (!subio) return;
+    this.tweens.killTweensOf(texto);
+    this.tweens.add({ targets: texto, scale: { from: 1.6, to: 1 }, duration: 220, ease: 'Back.Out' });
   }
 
   mostrarInventario(conteo) {
@@ -204,7 +221,8 @@ export default class UIScene extends Phaser.Scene {
     hud.texto.setText(`x${cantidad}`);
   }
 
-  mostrarBanner({ titulo, subtitulo = '', color = '#FBBF24', duracion = 1800, iconos = false, chico = false }) {
+  // Con salida, al terminar se va rápido por arriba (los carteles de la pausa de fase); si no, se desvanece
+  mostrarBanner({ titulo, subtitulo = '', color = '#FBBF24', duracion = 1800, iconos = false, chico = false, salida = 0 }) {
     if (this.banner) {
       this.tweens.killTweensOf(this.banner);
       this.banner.destroy();
@@ -229,7 +247,11 @@ export default class UIScene extends Phaser.Scene {
 
     contenedor.setScale(0.6).setAlpha(0);
     this.tweens.add({ targets: contenedor, scale: 1, alpha: 1, duration: 180, ease: 'Back.Out' });
-    this.tweens.add({ targets: contenedor, alpha: 0, delay: Math.max(200, duracion - 250), duration: 250, onComplete: () => contenedor.destroy() });
+    if (salida) {
+      this.tweens.add({ targets: contenedor, y: -60, delay: Math.max(200, duracion - salida), duration: salida, ease: 'Back.In', onComplete: () => contenedor.destroy() });
+    } else {
+      this.tweens.add({ targets: contenedor, alpha: 0, delay: Math.max(200, duracion - 250), duration: 250, onComplete: () => contenedor.destroy() });
+    }
     this.banner = contenedor;
   }
 
@@ -260,42 +282,85 @@ export default class UIScene extends Phaser.Scene {
     return lineas;
   }
 
-  // Los bonos pasan al puntaje de a poco, con un tic que sube de tono, y al final el puntaje salta
+  // Primero los bonos de tiempo y de jefe pasan al puntaje; después las monedas de cada jugador, por su combo máximo.
+  // Todo de a poco, con un tic que sube de tono, y al final el puntaje salta.
   mostrarNivelCompletado(datos) {
+    const cantidad = datos.jugadores;
     const bonos = [];
     if (datos.bonoExtra) bonos.push({ clave: 'bono_jefe', valor: datos.bonoExtra, color: '#FBBF24' });
     bonos.push({ clave: 'bono_tiempo', valor: datos.bonoTiempo || 0, color: datos.bonoTiempo ? '#4ADE80' : '#9CA3AF' });
     const textoBono = (bono, valor) => `${i18n.t(bono.clave)} +${valor}`;
     const totalBonos = bonos.reduce((suma, bono) => suma + bono.valor, 0);
-    const antes = datos.puntajes.map(puntaje => puntaje - totalBonos);
+
+    // Una línea por jugador: lo que valían sus monedas, su combo máximo y lo que le falta pasar al puntaje
+    const monedas = (datos.monedas || []).slice(0, cantidad);
+    const conMonedas = monedas.some(cobro => cobro.monedas > 0) ? monedas : [];
+    const textoMonedas = (i, restan) => `J${i + 1} ${i18n.t('monedas')} ${conMonedas[i].valor} X${conMonedas[i].combo} +${restan}`;
+    const antes = datos.puntajes.map((puntaje, i) => puntaje - totalBonos - (conMonedas[i] ? conMonedas[i].puntos : 0));
 
     const lineas = bonos.map(bono => [textoBono(bono, bono.valor), bono.color]);
-    lineas.push(['', '#FFFFFF'], ...this.lineasPuntaje(antes, datos.jugadores));
-    const panel = this.crearPanel(`${i18n.t('nivel')} ${datos.nivel}\n${i18n.t('completado')}`, '#4ADE80', lineas.slice(0, 6), i18n.t('continuar'));
+    conMonedas.forEach((cobro, i) => lineas.push([textoMonedas(i, cobro.puntos), '#FBBF24']));
+    if (lineas.length + cantidad < 6) lineas.push(['', '#FFFFFF']);
+    lineas.push(...this.lineasPuntaje(antes, cantidad));
+    const panel = this.crearPanel(`${i18n.t('nivel')} ${datos.nivel}\n${i18n.t('completado')}`, '#4ADE80', lineas, i18n.t('continuar'));
     const textosBono = panel.lineas.slice(0, bonos.length);
-    const textosPuntaje = panel.lineas.slice(bonos.length + 1);
-    if (!totalBonos) return;
+    const textosMonedas = panel.lineas.slice(bonos.length, bonos.length + conMonedas.length);
+    const textosPuntaje = panel.lineas.slice(-Math.min(cantidad, 2));
 
-    const mostrar = (t) => {
-      bonos.forEach((bono, i) => textosBono[i].setText(textoBono(bono, Math.round(bono.valor * (1 - t)))));
-      const puntajes = antes.map(puntaje => Math.round(puntaje + totalBonos * t));
-      this.lineasPuntaje(puntajes, datos.jugadores).forEach(([texto], i) => { if (textosPuntaje[i]) textosPuntaje[i].setText(texto); });
+    const puntajes = [...antes];
+    const mostrarPuntajes = () => this.lineasPuntaje(puntajes, cantidad).forEach(([texto], i) => textosPuntaje[i].setText(texto));
+    const etapas = [];
+    if (totalBonos) {
+      etapas.push((siguiente) => {
+        const base = [...puntajes];
+        this.contarDeAPoco(20, (t, paso) => {
+          bonos.forEach((bono, i) => textosBono[i].setText(textoBono(bono, Math.round(bono.valor * (1 - t)))));
+          base.forEach((puntaje, i) => { puntajes[i] = Math.round(puntaje + totalBonos * t); });
+          mostrarPuntajes();
+          Sonido.beep(this, 500 + paso * 30, 0.03, 0.05);
+        }, siguiente);
+      });
+    }
+    if (conMonedas.some(cobro => cobro.puntos > 0)) {
+      etapas.push((siguiente) => {
+        // El combo de cada uno salta antes de empezar a contar
+        textosMonedas.forEach(texto => this.tweens.add({ targets: texto, scale: { from: 1.4, to: 1 }, duration: 240, ease: 'Back.Out' }));
+        Sonido.beep(this, 784, 0.08, 0.08, 'square');
+        const base = [...puntajes];
+        this.contarDeAPoco(30, (t, paso) => {
+          conMonedas.forEach((cobro, i) => {
+            textosMonedas[i].setText(textoMonedas(i, Math.round(cobro.puntos * (1 - t))));
+            puntajes[i] = Math.round(base[i] + cobro.puntos * t);
+          });
+          mostrarPuntajes();
+          // Un tintineo de moneda que sube de tono
+          Sonido.beep(this, 880 * Math.pow(2, paso / 24), 0.025, 0.05, 'square');
+        }, siguiente, 300);
+      });
+    }
+    if (etapas.length === 0) return;
+
+    // Final: el puntaje salta y suena un acorde corto
+    const final = () => {
+      Sonido.beep(this, 1047, 0.12, 0.08, 'triangle');
+      this.time.delayedCall(70, () => Sonido.beep(this, 1568, 0.18, 0.08, 'triangle'));
+      textosPuntaje.forEach(texto => {
+        this.tweens.add({ targets: texto, scale: { from: 1.6, to: 1 }, duration: 260, ease: 'Back.Out' });
+      });
     };
-    const pasos = 20;
+    const correr = (i) => (i < etapas.length ? etapas[i](() => correr(i + 1)) : final());
+    correr(0);
+  }
+
+  // Llama a alPaso(t, paso) pasos veces, cada 40 ms (t va de 0 a 1), y después a alTerminar
+  contarDeAPoco(pasos, alPaso, alTerminar, espera = 210) {
     let paso = 0;
     this.time.addEvent({
-      delay: 40, repeat: pasos - 1, startAt: -210,
+      delay: 40, repeat: pasos - 1, startAt: -espera,
       callback: () => {
         paso++;
-        mostrar(paso / pasos);
-        Sonido.beep(this, 500 + paso * 30, 0.03, 0.05);
-        if (paso < pasos) return;
-        // Final: el puntaje salta y suena un acorde corto
-        Sonido.beep(this, 1047, 0.12, 0.08, 'triangle');
-        this.time.delayedCall(70, () => Sonido.beep(this, 1568, 0.18, 0.08, 'triangle'));
-        textosPuntaje.forEach(texto => {
-          this.tweens.add({ targets: texto, scale: { from: 1.6, to: 1 }, duration: 260, ease: 'Back.Out' });
-        });
+        alPaso(paso / pasos, paso);
+        if (paso === pasos) alTerminar();
       }
     });
   }

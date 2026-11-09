@@ -11,6 +11,7 @@ export const EVENTOS = {
   INVENTARIO: 'inventario',
   ARMA: 'arma-cambiada',
   ENEMIGOS_RESTANTES: 'enemigos-restantes',
+  COMBO: 'combo',
   FANTASMA: 'fantasma',
   JEFE_APARECE: 'jefe-aparece',
   JEFE_VIDA: 'jefe-vida',

@@ -14,7 +14,7 @@
     {"wait": 250},
     {"verificar": "el bumerán rebota contra la pared en lugar de atravesarla", "eval": "(() => { const b = prueba.proyectiles().jugador[0]; return !!b && b.x > 20; })()"},
     {"eval": "(prueba.equipar(1, 'bumeran'), prueba.completarRecoleccion(), true)"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"wait": 300, "eval": "prueba.terminarCaceria(false)"},
     {"hasta": "prueba.estado().listoParaContinuar", "timeout": 3000, "nombre": "se puede continuar"},
     {"press": "Enter"},

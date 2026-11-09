@@ -40,7 +40,7 @@
     {"wait": 3300},
     {"verificar": "los proyectiles tienen duración máxima", "eval": "prueba.proyectiles().enemigos === 0"},
     {"eval": "(prueba.completarRecoleccion(), true)"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"eval": "(prueba.sinEnemigos(), prueba.ponerJugador(1, 200, 264), prueba.quitarProteccion(1), prueba.golpear(1, 1), true)"},
     {"hasta": "prueba.estado().vidas[0] === 2", "timeout": 3000, "nombre": "el ninja muerto cae y pierde la vida"},
     {"verificar": "el ninja muerto no cruza: sale de la pantalla y pierde la vida", "eval": "prueba.jugador(1).y > 288"}

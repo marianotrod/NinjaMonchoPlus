@@ -11,7 +11,7 @@
     {"verificar": "a veces frena", "eval": "({ v: prueba.accionEnemigo(0, 'pausa') })", "espera": {"v": "pausa"}},
     {"wait": 100},
     {"verificar": "y se queda quieto", "eval": "({ v: prueba.enemigo(0).vx })", "espera": {"v": 0}},
-    {"hasta": "prueba.enemigo(0).accion === null && prueba.enemigo(0).vx !== 0", "timeout": 1500, "nombre": "vuelve a caminar"},
+    {"hasta": "prueba.enemigo(0).accion === null && prueba.enemigo(0).vx !== 0", "timeout": 4000, "nombre": "vuelve a caminar"},
     {"eval": "(window.y0 = prueba.enemigo(0).y, prueba.accionEnemigo(0, 'salto'), true)"},
     {"wait": 150},
     {"verificar": "a veces salta un par de tiles", "eval": "({ v: y0 - prueba.enemigo(0).y })", "espera": {"v": {"min": 16, "max": 48}}},
@@ -50,7 +50,7 @@
     {"eval": "(prueba.sinEnemigos(), true)"},
 
     {"eval": "(prueba.completarRecoleccion(), true)"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"eval": "(prueba.sinEnemigos(), prueba.crearEnemigo('demonio_caminante', 460, 264), prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), prueba.proteger(1), prueba.crearEnemigo('samurai', 118, 264), prueba.sinDecisiones(1), prueba.atacar(1), true)"},
     {"wait": 100},
     {"verificar": "Cacería: la katana rebota en el samurái si no está aturdido", "eval": "({ muerto: prueba.enemigo(1).muerto, aturdido: prueba.enemigo(1).aturdido })", "espera": {"muerto": false, "aturdido": false}},

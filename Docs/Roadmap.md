@@ -77,31 +77,36 @@ y se pueden eliminar) → **Pergaminos de Pacto**. Hay 3 vidas por jugador, un f
 
 ## Fase 5 — Versión 2: lo que sigue (pedido de Mariano, 2026-11-08)
 
-Nada de esto está empezado. Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define.
+Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define. 5.2 y 5.3 quedan para más adelante.
 
-- [ ] **5.1 Niveles base disponibles (S).** Pasar los 60 borradores `b-01`…`b-60` a tipo `normal`, para que entren al sorteo.
-- [ ] **5.2 Jefes mejores, con mecánicas intercambiables (L).** *Diseño: Mariano.* Separar cada jefe en piezas
+- [x] **5.1 Niveles base disponibles (S).** Los 60 `b-01`…`b-60` son de tipo `normal` y entran al sorteo (70 en total).
+      El generador ya los crea como `normal`. El sorteo respeta el tier de cada mapa según el nivel
+      (`CONFIG.TIERS_POR_NIVEL`: nivel 3 tier 1, 4 tier 1-2, 6 tier 2, 7 tier 2-3, 8 y 9 tier 3).
+- [ ] **5.2 (más adelante) Jefes mejores, con mecánicas intercambiables (L).** *Diseño: Mariano.* Separar cada jefe en piezas
       (movimiento, ataques, fases según la vida) que se combinen desde un catálogo, como los rasgos de los enemigos en
       `Bestiario.js`, para armar un jefe nuevo sin escribir código.
-- [ ] **5.3 Un fondo por fase, con transición animada (M).** Recolección, Cacería, jefe y sala de pergaminos con fondos
+- [ ] **5.3 (más adelante) Un fondo por fase, con transición animada (M).** Recolección, Cacería, jefe y sala de pergaminos con fondos
       distintos; al cambiar de fase, el fondo cambia con una animación (fundido, barrido o similar). Fondos reemplazables
       como archivos.
-- [ ] **5.4 Carteles menos intrusivos (M).** Revisar los carteles de cambio de fase y otros avisos: más chicos, más
-      cortos, en un costado o en el HUD, sin tapar el juego.
-- [ ] **5.5 Spawns de la llave y la jaula (M).** Hoy caen desde los spawns de J1 y J2, lugares demasiado fáciles.
-      En el editor, objetos nuevos "spawn de llave" y "spawn de jaula" (varios de cada uno); el juego elige uno al azar
-      para cada cosa. Si el mapa no tiene ninguno, sigue como ahora (spawns de los jugadores).
+- [x] **5.4 Pausa en los cambios de fase (M).** El problema no eran los carteles sino que el juego seguía atrás. Al romper
+      el sello y al acabarse el tiempo, el juego frena hasta quedar quieto, salen los carteles (se van rápido por arriba)
+      y después recupera la velocidad; recién ahí empieza la Cacería o entran los fantasmas (`sistemas/PausaDeFase.js`,
+      `CONFIG.PAUSA_FASE`).
+- [x] **5.5 Spawns de la llave y la jaula (M).** Objeto nuevo "Rescate" en el editor (se pueden poner varios): la llave
+      y la jaula caen de dos de ellos, al azar y distintos. Si el mapa no tiene, como antes (spawns de los jugadores).
+      *Falta poner puntos de rescate en los mapas (Mariano).*
 - [ ] **5.6 Más enemigos y variedades (M c/u).** *Diseño: Mariano.* Se agregan como entradas del `Bestiario`;
       el código suma rasgos nuevos cuando haga falta.
 - [ ] **5.7 Música fija en la sala de pergaminos (S).** *Mariano, desde el editor:* elegir la música en `sala-pergaminos`
       (el juego ya usa el campo "Música" del nivel; hoy está vacío y suena la del nivel). Verificar que la respete.
-- [ ] **5.8 Combo de monedas (M).**
+- [x] **5.8 Combo de monedas (M).** Hecho en `reglas/Combo.js` (`CONFIG.COMBO`, `VALOR_MONEDA` = 100).
       - Agarrar monedas seguidas, lo bastante rápido, sube el combo; si pasa un rato sin agarrar nada, vuelve a 1.
       - Se guarda el combo máximo del nivel. Si te matan después de que se acabó el tiempo (el fantasma), el máximo se anula.
       - Las monedas ya no suman al agarrarlas: los puntos se calculan al final del nivel,
         **100 × monedas agarradas × combo máximo**, y se suman al total.
       - En el panel de fin de nivel: el número sube de a poco, con un sonido de incremento lindo y efecto (jugo).
-      - A definir: la ventana de tiempo del combo, si se ve el combo durante el juego y cómo se cuenta en 2 jugadores.
+      - Decidido: 1,5 s para la siguiente moneda; "COMBO X1" visible arriba, debajo del puntaje; un combo por jugador.
+      - Una moneda que rebotó vale menos (como antes): se cobra lo que valía cada una.
 - [ ] **5.9 Gastar monedas en pergaminos positivos (M, a decidir).** Idea: en la sala de pergaminos, comprar uno positivo
       con monedas. Choca con 5.8 (si las monedas se gastan, ¿cuentan para el puntaje?): decidir antes de hacerla.
 

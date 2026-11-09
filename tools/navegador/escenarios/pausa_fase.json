@@ -1,0 +1,17 @@
+{
+  "descripcion": "Pausa de fase: al romper el sello y al acabarse el tiempo el juego frena hasta quedar quieto, salen los carteles y después recupera la velocidad",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 1500, "eval": "(window.s = window.game.scene.getScene('NinjaMonchoScene'), prueba.sinEnemigos(), prueba.sinItems(), prueba.proteger(1), prueba.completarRecoleccion(), true)"},
+    {"wait": 700},
+    {"verificar": "al romper el sello el juego queda quieto y sale el cartel", "eval": "({ pausa: prueba.pausaDeFase(), fase: prueba.estado().fase, quieto: s.velocidadJuego === 0, fisica: s.physics.world.timeScale > 1000 })", "espera": {"pausa": true, "fase": "transicion", "quieto": true, "fisica": true}},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "la Cacería empieza al terminar la pausa"},
+    {"verificar": "empieza con el juego otra vez a velocidad normal", "eval": "({ pausa: prueba.pausaDeFase(), velocidad: s.velocidadJuego, fisica: s.physics.world.timeScale, tweens: s.tweens.timeScale })", "espera": {"pausa": false, "velocidad": 1, "fisica": 1, "tweens": 1}},
+    {"eval": "(prueba.sinEnemigos(), prueba.proteger(1), prueba.ponerTiempo(1), true)"},
+    {"hasta": "prueba.pausaDeFase()", "timeout": 2500, "nombre": "al acabarse el tiempo frena"},
+    {"verificar": "mientras frena todavía no hay fantasma", "eval": "({ fantasma: prueba.estado().fantasma })", "espera": {"fantasma": false}},
+    {"hasta": "prueba.estado().fantasma", "timeout": 8000, "nombre": "el fantasma entra después del cartel"},
+    {"verificar": "y el juego ya anda a velocidad normal", "eval": "({ pausa: prueba.pausaDeFase(), velocidad: s.velocidadJuego })", "espera": {"pausa": false, "velocidad": 1}}
+  ]
+}

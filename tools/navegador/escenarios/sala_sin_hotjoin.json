@@ -5,7 +5,7 @@
     {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
     {"verificar": "en un nivel común está el cartel de hotjoin", "eval": "!!window.game.scene.getScene('NinjaMonchoScene').uiHotJoin"},
     {"eval": "(prueba.sinEnemigos(), prueba.completarRecoleccion(), true)"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"wait": 300, "eval": "prueba.terminarCaceria(false)"},
     {"hasta": "prueba.estado().listoParaContinuar", "timeout": 3000, "nombre": "se puede continuar"},
     {"press": "Enter"},

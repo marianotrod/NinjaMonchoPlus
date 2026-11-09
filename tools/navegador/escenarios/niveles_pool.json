@@ -3,7 +3,10 @@
   "query": "?debug&nivel=3",
   "pasos": [
     {"hasta": "window.prueba && prueba.enJuego()", "timeout": 8000, "nombre": "arranca el nivel"},
-    {"verificar": "el nivel 3 sale del pool de niveles normales", "eval": "prueba.nivel().id.startsWith('n-')"},
-    {"verificar": "y tiene bloques", "eval": "prueba.nivel()", "espera": {"bloques": {"min": 50}}}
+    {"verificar": "el nivel 3 sale del pool de niveles normales (los n- y los base b-)", "eval": "/^[nb]-/.test(prueba.nivel().id)"},
+    {"verificar": "y tiene bloques", "eval": "prueba.nivel()", "espera": {"bloques": {"min": 50}}},
+    {"verificar": "cada nivel sortea mapas de su tier (CONFIG.TIERS_POR_NIVEL)", "eval": "(async () => { const { nuevaPartida, prepararNivel, tiersDelNivel } = await import('./reglas/Partida.js'); const malos = []; [3, 4, 6, 7, 8, 9].forEach(nivel => { for (let i = 0; i < 40; i++) { const partida = nuevaPartida(1, nivel); prepararNivel(partida); if (!tiersDelNivel(nivel).includes(partida.datosNivel.tier)) malos.push(`${nivel}:${partida.datosNivel.id}`); } }); return { malos }; })()", "espera": {"malos": []}},
+    {"verificar": "en una partida no se repite el mapa hasta agotar los de ese tier", "eval": "(async () => { const { nuevaPartida, prepararNivel } = await import('./reglas/Partida.js'); const partida = nuevaPartida(1, 3); const vistos = new Set(); for (let i = 0; i < 20; i++) { partida.datosNivel = null; prepararNivel(partida); vistos.add(partida.datosNivel.id); } return { distintos: vistos.size }; })()", "espera": {"distintos": 20}},
+    {"verificar": "si se acaban los de su tier, el pool se rearma y sigue saliendo de ese tier", "eval": "(async () => { const { nuevaPartida, prepararNivel } = await import('./reglas/Partida.js'); const partida = nuevaPartida(1, 8); const tiers = new Set(); for (let i = 0; i < 45; i++) { partida.datosNivel = null; prepararNivel(partida); tiers.add(partida.datosNivel.tier); } return { tiers: [...tiers] }; })()", "espera": {"tiers": [3]}}
   ]
 }

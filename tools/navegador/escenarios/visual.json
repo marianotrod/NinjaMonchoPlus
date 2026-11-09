@@ -37,7 +37,7 @@
     {"wait": 60},
     {"verificar": "al frenar deja de ser proyectil y recupera su color", "eval": "({ lanzada: !!m.lanzador, blanca: m.tintTopLeft === 0xffffff })", "espera": {"lanzada": false, "blanca": true}},
     {"eval": "(prueba.completarRecoleccion(), true)"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"wait": 100},
     {"verificar": "en la Cacería ya no brillan: ahora pueden morir", "eval": "prueba.jugador(1).brillo === false"}
   ]

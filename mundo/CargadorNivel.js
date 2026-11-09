@@ -130,5 +130,7 @@ export function construirNivel(scene, nivel) {
     const { col, fila } = nivel.objetos.find(o => o.tipo === 'spawnJugador' && o.jugador === jugador);
     return { x: aX(col), y: aY(fila) };
   };
+  // Puntos opcionales de donde caen la llave y la jaula del rescate (mundo/Rescate.js)
+  scene.puntosRescate = nivel.objetos.filter(o => o.tipo === 'spawnRescate').map(({ col, fila }) => ({ x: aX(col), y: aY(fila) }));
   return [spawnDe(1), spawnDe(2)];
 }

@@ -36,7 +36,7 @@
     {"eval": "prueba.sinEnemigos()"},
     {"hasta": "!prueba.jugador(1).invulnerable", "timeout": 2500},
     {"eval": "(prueba.conEnemigos(), prueba.proteger(1), prueba.completarRecoleccion())"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"eval": "prueba.sinEnemigos()"},
     {"wait": 1600},
     {"eval": "(prueba.sinEnemigos(), prueba.ponerJugador(1, 60, 264), prueba.mirar(1, 1), prueba.proteger(1), prueba.crearEnemigo('demonio_caminante', 440, 264))", "nota": "un demonio lejos, para que la Cacería no termine al matar al otro"},

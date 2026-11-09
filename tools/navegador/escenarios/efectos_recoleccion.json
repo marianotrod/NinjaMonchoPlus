@@ -74,7 +74,7 @@
     {"eval": "(prueba.ponerModGlobal('llamaBola', false), prueba.configurar('DURACION_LLAMA', 5000), true)"},
 
     {"eval": "(prueba.tomarEfecto(1, 'fantasmaRapido'), prueba.ponerJugador(1, 60, 264), prueba.ponerTiempo(1), true)"},
-    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "aparece el fantasma"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 8000, "nombre": "aparece el fantasma"},
     {"verificar": "con el fantasma rápido, el tuyo arranca al doble", "eval": "prueba.fantasmas()[0].velocidad >= 89"}
   ]
 }

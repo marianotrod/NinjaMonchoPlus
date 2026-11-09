@@ -39,14 +39,24 @@ export function esNivelFinal(nivel) {
   return nivel >= CONFIG.TOTAL_NIVELES;
 }
 
-// Elige el id del nivel: fijo para algunos números, una arena para los jefes y, si no, al azar del pool sin repetir.
+// Los tiers de mapa que valen para un número de nivel (null: cualquiera)
+export const tiersDelNivel = (nivel) => CONFIG.TIERS_POR_NIVEL[nivel] ?? null;
+
+// Elige el id del nivel: fijo para algunos números, una arena para los jefes y, si no, al azar del pool sin repetir,
+// entre los mapas del tier que le toca al nivel (CONFIG.TIERS_POR_NIVEL).
 function elegirNivel(partida) {
   const nivel = partida.nivel;
   if (partida.mapaForzado) return partida.mapaForzado;
   if (esNivelJefe(nivel)) return Phaser.Utils.Array.GetRandom(idsDeTipo('jefe'));
   if (CONFIG.NIVELES_FIJOS[nivel]) return CONFIG.NIVELES_FIJOS[nivel];
-  if (partida.pool.length === 0) partida.pool = idsDeTipo('normal');
-  return partida.pool.splice(Phaser.Math.Between(0, partida.pool.length - 1), 1)[0];
+  const tiers = tiersDelNivel(nivel);
+  const delTier = () => partida.pool.filter(id => !tiers || tiers.includes(nivelPorId(id)?.tier));
+  // Si ya salieron todos los de ese tier, se rearma el pool; si aun así no hay ninguno, vale cualquiera
+  if (delTier().length === 0) partida.pool = idsDeTipo('normal');
+  const candidatos = delTier().length > 0 ? delTier() : partida.pool;
+  const elegido = Phaser.Utils.Array.GetRandom(candidatos);
+  partida.pool.splice(partida.pool.indexOf(elegido), 1);
+  return elegido;
 }
 
 export function prepararNivel(partida) {

@@ -20,7 +20,7 @@
     {"eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), true)"},
     {"hasta": "prueba.listo(1) && prueba.listo(2)", "timeout": 4000, "nombre": "los dos en el piso"},
     {"eval": "(prueba.proteger(1), prueba.proteger(2), prueba.completarRecoleccion())"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"wait": 300, "eval": "(prueba.ponerModGlobal('cadena', true), prueba.terminarCaceria(false))"},
     {"hasta": "prueba.estado().listoParaContinuar", "timeout": 3000, "nombre": "se puede continuar"},
     {"press": "Enter"},

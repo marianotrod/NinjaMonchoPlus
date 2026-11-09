@@ -5,7 +5,7 @@
     {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
     {"hasta": "prueba.listo(1) && prueba.listo(2)", "timeout": 4000, "nombre": "los dos en el piso"},
     {"eval": "(prueba.sinEnemigos(), prueba.sinCajasArmas(), prueba.ponerJugador(1, 40, 264), prueba.ponerJugador(2, 408, 72), prueba.ponerTiempo(1))"},
-    {"hasta": "prueba.estado().fantasma", "timeout": 2500, "nombre": "aparecen los fantasmas"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 8000, "nombre": "aparecen los fantasmas"},
     {"eval": "(async () => { const ys = []; for (let i = 0; i < 16; i++) { ys.push(prueba.fantasmas().map(f => f.y)); await new Promise(r => setTimeout(r, 25)); } window.alturas = ys; return ys.length; })()"},
     {"verificar": "J1 abajo: su fantasma nace arriba. J2 arriba: el suyo nace abajo. Ninguno salta al cruzar el corte", "eval": "({ deJ1: alturas[0][0], deJ2: alturas[0][1], salto: Math.max(...alturas.slice(1).flatMap((fila, i) => fila.map((y, k) => Math.abs(y - alturas[i][k])))) })", "espera": {"deJ1": {"max": 0}, "deJ2": {"min": 285}, "salto": {"max": 12}}}
   ]

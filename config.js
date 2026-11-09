@@ -82,6 +82,9 @@ export const CONFIG = {
   TOTAL_NIVELES: 10,
   NIVELES_POR_BLOQUE: 5,        // Cada 5 niveles hay jefe: el 5 es intermedio y el 10 es el final
   NIVELES_FIJOS: { 1: 'inicio', 2: 'aprendizaje' }, // Número de nivel → id; el resto sale del pool
+  // Qué tiers de mapa pueden salir en cada nivel (el tier va en el JSON del mapa: 1 fácil, 3 difícil).
+  // Un nivel que no está acá acepta cualquiera. Si no queda ningún mapa de esos tiers, sale cualquiera.
+  TIERS_POR_NIVEL: { 3: [1], 4: [1, 2], 6: [2], 7: [2, 3], 8: [3], 9: [3] },
 
   TIEMPO_RECOLECCION: 60,
   TIEMPO_MINIMO: 15,            // Piso del tiempo de un nivel aunque los pergaminos lo recorten
@@ -95,13 +98,20 @@ export const CONFIG = {
   ALARMA_URGENTE: 5,
 
   DURACION_INTRO: 2400,         // Cartel de inicio de nivel (ms)
-  DURACION_SELLO: 2000,         // Cartel de "¡Sello roto!" antes de la Cacería (ms)
+  DURACION_SELLO: 1200,         // Cartel de "¡Sello roto!" antes de la Cacería (ms), con el juego quieto
+  DURACION_CARTEL_CACERIA: 1000, // Cartel de "Cacería", después del sello (ms)
+  DURACION_CARTEL_FANTASMA: 1200, // Cartel del fantasma al acabarse el tiempo (ms)
+  // Al cambiar de fase el juego frena hasta quedar quieto, sale el cartel (y se va rápido por arriba) y recién
+  // después recupera la velocidad (sistemas/PausaDeFase.js). Con activa: false, los carteles salen con el juego andando.
+  PAUSA_FASE: { activa: true, frenado: 450, cartel: 1000, salida: 220, arranque: 450 },
   APARICION_JEFE: 1000,         // El jefe aparece a este tiempo de empezada la intro (ms)
 
   BONO_POR_SEGUNDO: 100,
   PUNTOS_BAJA: 100,
   BONO_JEFE: 5000,
-  VALOR_MONEDA: 200,
+  VALOR_MONEDA: 100,            // Lo que vale una moneda sin rebotar. Se cobra al final del nivel, por el combo máximo
+  // Combo de monedas (reglas/Combo.js): ms que hay para agarrar la siguiente; si te matan con el reloj en cero, se anula
+  COMBO: { ventana: 1500, anularConFantasma: true },
   CAIDA_VALOR_MONEDA: 0.8,      // En cada rebote la moneda vale esto respecto de lo que valía
 
   TOPE_ENEMIGOS_BASE: 3,

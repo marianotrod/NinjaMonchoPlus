@@ -22,7 +22,7 @@
     {"verificar": "la Recolección sigue en curso y el reloj corre", "eval": "prueba.estado()", "espera": {"fase": "recoleccion", "tiempo": {"min": 50, "max": 59}}},
     {"shot": "juego"},
     {"eval": "(prueba.proteger(1), prueba.completarRecoleccion())"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "Cacería"},
     {"shot": "caceria"},
     {"wait": 1500, "eval": "prueba.terminarCaceria(true)"},
     {"hasta": "prueba.estado().fase === 'nivelCompletado' && prueba.estado().listoParaContinuar", "timeout": 4000, "nombre": "nivel completado"},

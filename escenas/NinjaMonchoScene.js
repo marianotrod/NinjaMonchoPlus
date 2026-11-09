@@ -15,6 +15,8 @@ import { efectoPorId } from '../datos/Pergaminos.js';
 import { RECOMIENZO, reglasDe } from '../reglas/Fases.js';
 import { PROTECCION, crearGolpe, golpeaAliado, itemLanzado, resolverGolpe } from '../reglas/Resolvedor.js';
 import { marcarPeligros } from '../mundo/Peligros.js';
+import { actualizarPausaDeFase, cartelesDeFase, cortarPausaDeFase } from '../sistemas/PausaDeFase.js';
+import { actualizarCombos, anularCombo, cobroDeMonedas, prepararCombos, sumarMoneda } from '../reglas/Combo.js';
 import { ARMAS, actualizarProyectiles, arrastrarItem, chocarProyectil, soltarBomba } from '../entidades/Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { Guardado } from '../sistemas/Guardado.js';
@@ -116,6 +118,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
     this.grupoRescate = null;
     prepararRescate(this);
+    prepararCombos(this);
+    cortarPausaDeFase(this);  // Por si el nivel anterior se cerró en medio de una pausa de fase
+    this.events.once('shutdown', () => { this.anims.globalTimeScale = 1; });
 
     this.physics.add.collider(this.items, this.bloquesFisicos, this.procesarImpactoPiso, null, this);
     this.physics.add.collider(this.enemigos, this.bloquesFisicos,
@@ -249,12 +254,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     Sonido.efecto(this, 'snd-parry', 0.6);
     this.cameras.main.flash(250, 255, 255, 255);
-    this.events.emit(EVENTOS.BANNER, {
-      titulo: i18n.t('sello_roto'), subtitulo: `${i18n.t('bono_tiempo')} +${bono}`, color: '#EF4444', duracion: CONFIG.DURACION_SELLO
-    });
     this.enemigos.getChildren().forEach(enemigo => enemigo.enfurecer());
 
-    this.time.delayedCall(CONFIG.DURACION_SELLO, () => this.iniciarCaceria());
+    // El juego frena, salen los carteles y la Cacería empieza recién cuando recupera la velocidad
+    cartelesDeFase(this, [
+      { titulo: i18n.t('sello_roto'), subtitulo: `${i18n.t('bono_tiempo')} +${bono}`, color: '#EF4444', duracion: CONFIG.DURACION_SELLO },
+      { titulo: i18n.t('caceria'), subtitulo: i18n.t('objetivo_caceria'), color: '#EF4444', duracion: CONFIG.DURACION_CARTEL_CACERIA, chico: true }
+    ], () => this.iniciarCaceria());
   }
 
   iniciarCaceria() {
@@ -262,16 +268,16 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.fase = 'caceria';
     this.puntajesCaceria = [...this.partida.puntajes];
     this.reaparecerLosQueEsperan();
-    this.arrancarCaceria();
+    this.arrancarCaceria(false);  // El cartel ya salió en la pausa de fase
   }
 
-  arrancarCaceria() {
+  arrancarCaceria(conCartel = true) {
     this.tiempoRestante = CONFIG.TIEMPO_CACERIA;
     this.relojJuego.paused = false;
     Sonido.ritmoMusica(1);
     this.events.emit(EVENTOS.TIEMPO, this.tiempoRestante);
     this.events.emit(EVENTOS.FASE, 'caceria');
-    this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('caceria'), subtitulo: i18n.t('objetivo_caceria'), color: '#EF4444', duracion: 1400, chico: true });
+    if (conCartel) this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('caceria'), subtitulo: i18n.t('objetivo_caceria'), color: '#EF4444', duracion: 1400, chico: true });
 
     // Cupo de demonios a cazar: crece con el nivel
     const cupo = Math.min(CONFIG.CUPO_CACERIA_BASE + Math.floor(this.nivelActual / 2), CONFIG.CUPO_CACERIA_MAX);
@@ -356,8 +362,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     Sonido.musica(this, 'musica-win', 0.5, false);
     if (this.uiHotJoin) this.uiHotJoin.setVisible(false);
 
+    // Las monedas se cobran ahora: lo que valían por el combo máximo de cada uno
+    const monedas = cobroDeMonedas(this);
+    monedas.forEach((cobro, indice) => this.sumarPuntos(indice, cobro.puntos));
+
     this.events.emit(EVENTOS.NIVEL_COMPLETADO, {
       nivel: this.nivelActual,
+      monedas,
       puntajes: this.partida.puntajes,
       jugadores: this.cantidadJugadores,
       ...info
@@ -566,7 +577,17 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (t > 0 || this.modoDiosActivo) return;
 
     if (this.reglas.terminaConElTiempo) this.terminarSala();
-    else if (this.reglas.recomienzoPorFantasma) this.aparecerFantasmas();
+    else if (this.reglas.recomienzoPorFantasma) this.tiempoAgotado();
+  }
+
+  // Se acabó el tiempo: el juego frena, avisa, y los fantasmas entran cuando recupera la velocidad
+  tiempoAgotado() {
+    this.persecucion = true;
+    Sonido.ritmoMusica(1.3);
+    Sonido.beep(this, 110, 0.6, 0.15, 'sawtooth');
+    cartelesDeFase(this, [
+      { titulo: i18n.t('fantasma'), subtitulo: i18n.t('fantasma_sub'), color: '#E5E7EB', duracion: CONFIG.DURACION_CARTEL_FANTASMA }
+    ], () => { if (this.persecucion) this.aparecerFantasmas(); });
   }
 
   // Uno por jugador en pie. Cada uno persigue al suyo, pero puede matar a cualquiera. Para dar el mayor tiempo posible
@@ -575,8 +596,6 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // afecta: los fantasmas no cruzan.
   aparecerFantasmas() {
     this.persecucion = true;
-    Sonido.ritmoMusica(1.3);
-    Sonido.beep(this, 110, 0.6, 0.15, 'sawtooth');
     const perseguidos = this.jugadores.filter(j => j.active && !j.muerto);
     const costado = costadoLibre(perseguidos.map(j => j.x));
     const objetivos = perseguidos.length > 0 ? perseguidos : [null];
@@ -606,6 +625,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   // Cada jugador tiene su fantasma: muera como muera, el suyo desaparece, y nunca quedan dos para uno solo
   alMorirNinja(jugador) {
+    if (this.persecucion) anularCombo(this, jugador.indice);  // Morir con el reloj en cero anula el combo máximo
     if (jugador.mods.bombaAlMorir) soltarBomba(this, jugador);
     this.fantasmas.filter(fantasma => fantasma.objetivo === jugador).forEach(fantasma => this.quitarFantasma(fantasma));
   }
@@ -877,6 +897,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // UPDATE
   // ==========================================
   update(time, delta) {
+    actualizarPausaDeFase(this, delta);
     if (this.brilloActual !== this.reglas.brilloInmortal) this.aplicarBrillo();
     if (this.fase === 'fin') {
       if (!this.listoParaContinuar) return;
@@ -920,6 +941,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.jugadores.forEach(j => j.update());
 
+    actualizarCombos(this, delta * (this.velocidadJuego ?? 1));
     this.items.getChildren().forEach(item => {
       if (item.esTalisman) this.atraerConIman(item, delta);
       if (item.lanzador && !itemLanzado(item)) {
@@ -1134,11 +1156,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         return;
       }
     } else {
-      this.sumarPuntos(jugador.indice, item.valorPuntos);
+      // No suma ahora: se cobra al final del nivel, por el combo máximo (reglas/Combo.js)
+      const combo = sumarMoneda(this, jugador.indice, item.valorPuntos);
       const colorTexto = item.valorPuntos >= item.valorInicial * 0.75 ? '#4ADE80' : (item.valorPuntos > item.valorInicial * 0.25 ? '#FBBF24' : '#EF4444');
-      this.mostrarTextoFlotante(item.x, item.y, `+${item.valorPuntos}`, colorTexto);
-      Sonido.beep(this, 988, 0.06, 0.08);
-      this.time.delayedCall(60, () => Sonido.beep(this, 1319, 0.1, 0.08));
+      this.mostrarTextoFlotante(item.x, item.y, combo > 1 ? `X${combo}` : `+${item.valorPuntos}`, colorTexto);
+      const tono = Math.pow(2, Math.min(combo - 1, 12) / 12);  // Cada moneda del combo suena un semitono más aguda
+      Sonido.beep(this, 988 * tono, 0.06, 0.08);
+      this.time.delayedCall(60, () => Sonido.beep(this, 1319 * tono, 0.1, 0.08));
     }
 
     item.destroy();

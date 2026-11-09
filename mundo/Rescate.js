@@ -1,6 +1,7 @@
 // Rescate.js
 // Un jugador que se quedó sin vidas se puede rescatar en el nivel SIGUIENTE. Un poco después de que aparece el que
-// sigue vivo, cae una llave desde su spawn y una jaula desde el spawn del otro. Quien lleva la llave a la jaula lo libera:
+// sigue vivo, cae una llave y una jaula: de dos puntos de rescate del mapa al azar (objeto "Rescate" del editor) o, si
+// el mapa no tiene, la llave desde el spawn del vivo y la jaula desde el del otro. Quien lleva la llave a la jaula lo libera:
 // vuelve con CONFIG.RESCATE.vidas. Si quien lleva la llave recibe un golpe, la suelta. Si el nivel termina sin rescate,
 // se intenta otra vez en el siguiente. Todo lo que se calibra está en CONFIG.RESCATE.
 import { CONFIG } from '../config.js';
@@ -35,10 +36,13 @@ export function actualizarRescate(escena) {
 function soltarLlaveYJaula(escena) {
   const r = escena.rescate;
   if (!r || r.llave || escena.rescate !== r) return;
-  const desde = (jugador) => escena.spawnDe(jugador);
-  r.llave = escena.grupoRescate.create(desde(r.vivo).x, desde(r.vivo).y, 'llave').setDepth(20);
+  // Dos puntos de rescate distintos al azar; lo que falte sale de los spawns de los jugadores
+  const puntos = Phaser.Utils.Array.Shuffle([...(escena.puntosRescate || [])]);
+  const desdeLlave = puntos[0] ?? escena.spawnDe(r.vivo);
+  const desdeJaula = puntos[1] ?? escena.spawnDe(r.muerto);
+  r.llave = escena.grupoRescate.create(desdeLlave.x, desdeLlave.y, 'llave').setDepth(20);
   r.llave.setBounce(0.3);
-  r.jaula = escena.grupoRescate.create(desde(r.muerto).x, desde(r.muerto).y, 'jaula').setDepth(9);
+  r.jaula = escena.grupoRescate.create(desdeJaula.x, desdeJaula.y, 'jaula').setDepth(9);
   // Adentro de la jaula se ve al compañero
   r.preso = escena.add.sprite(r.jaula.x, r.jaula.y, r.muerto.texture.key, 9).setDepth(8).setAlpha(0.7);
   if (!escena.conWrap) [r.llave, r.jaula].forEach(objeto => objeto.setCollideWorldBounds(true));

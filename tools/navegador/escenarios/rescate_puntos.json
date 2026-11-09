@@ -1,0 +1,12 @@
+{
+  "descripcion": "Rescate con puntos de rescate en el mapa: la llave y la jaula caen de dos de ellos, distintos, en vez de los spawns",
+  "query": "?debug&nivel=1&jugadores=2",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"eval": "(() => { const s = window.game.scene.getScene('NinjaMonchoScene'); s.partida.datosNivel = { ...s.partida.datosNivel, objetos: [...s.partida.datosNivel.objetos, { tipo: 'spawnRescate', col: 4, fila: 4 }, { tipo: 'spawnRescate', col: 29, fila: 4 }] }; prueba.ponerVidas(2, 0); s.recomenzarNivel(); return true; })()"},
+    {"hasta": "prueba.enJuego() && !!window.game.scene.getScene('NinjaMonchoScene').rescate && !!window.game.scene.getScene('NinjaMonchoScene').rescate.llave", "timeout": 8000, "nombre": "caen la llave y la jaula"},
+    {"eval": "(window.s = window.game.scene.getScene('NinjaMonchoScene'), window.r = s.rescate, true)"},
+    {"verificar": "el mapa tiene dos puntos de rescate", "eval": "({ v: s.puntosRescate.length })", "espera": {"v": 2}},
+    {"verificar": "llave y jaula salen de puntos de rescate distintos", "eval": "(() => { const xs = s.puntosRescate.map(p => Math.round(p.x)); const lx = Math.round(r.llave.x), jx = Math.round(r.jaula.x); return { llave: xs.includes(lx), jaula: xs.includes(jx), distintos: lx !== jx }; })()", "espera": {"llave": true, "jaula": true, "distintos": true}}
+  ]
+}

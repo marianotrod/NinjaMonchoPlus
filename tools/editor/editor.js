@@ -38,7 +38,9 @@ const TIPOS_LOGICA = [
 const TIPOS_OBJETO = [
   { nombre: 'Spawn J1', color: '#f87171', ancho: 1, alto: 1, datos: { tipo: 'spawnJugador', jugador: 1 } },
   { nombre: 'Spawn J2', color: '#4ade80', ancho: 1, alto: 1, datos: { tipo: 'spawnJugador', jugador: 2 } },
-  { nombre: 'Pergamino', color: '#fbbf24', ancho: 2, alto: 4, datos: { tipo: 'spawnPergamino' } }
+  { nombre: 'Pergamino', color: '#fbbf24', ancho: 2, alto: 4, letra: 'P', datos: { tipo: 'spawnPergamino' } },
+  // Puntos de donde puede caer la llave o la jaula del rescate (se eligen dos al azar). Se pueden poner varios.
+  { nombre: 'Rescate', color: '#a78bfa', ancho: 1, alto: 1, letra: 'R', datos: { tipo: 'spawnRescate' } }
 ];
 const CAMPOS = [
   { clave: 'nombre', etiqueta: 'Nombre' },
@@ -147,7 +149,7 @@ function dibujarObjetos(lado) {
     ctx.lineWidth = 2;
     ctx.strokeRect(x + 1, y + 1, ancho - 2, alto - 2);
     ctx.fillStyle = '#fff';
-    ctx.fillText(objeto.jugador ? `J${objeto.jugador}` : 'P', x + 3, y + 3);
+    ctx.fillText(objeto.jugador ? `J${objeto.jugador}` : tipo.letra, x + 3, y + 3);
   });
 }
 

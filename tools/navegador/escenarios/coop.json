@@ -22,7 +22,7 @@
     {"verificar": "la explosión no daña al compañero", "eval": "({ ...prueba.jugador(2), vidas: prueba.estado().vidas })", "espera": {"aturdido": false, "muerto": false, "vidas": [3, 3]}},
     {"wait": 1500},
     {"eval": "(prueba.conEnemigos(), prueba.completarRecoleccion())"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"wait": 1600, "eval": "(prueba.sinEnemigos(), prueba.crearEnemigo('demonio_caminante', 440, 264), prueba.ponerJugador(2, 60, 264), prueba.mirar(2, 1), true)"},
     {"wait": 300, "eval": "(prueba.crearEnemigo('demonio_caminante', 76, 264), prueba.enfurecerEnemigos(), window.p = prueba.estado().puntajes, prueba.atacar(2))"},
     {"wait": 150},

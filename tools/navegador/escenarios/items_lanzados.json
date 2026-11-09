@@ -37,8 +37,8 @@
 
     {"eval": "(prueba.sinItems(), prueba.sinEnemigos(), prueba.ponerModGlobal('fuegoAmigo', false), prueba.quitarProteccion(2), prueba.ponerJugador(1, 240, 264), prueba.ponerJugador(2, 290, 264), prueba.mirar(1, 1), prueba.crearItem('coin', 254, 262), true)"},
     {"wait": 30},
-    {"eval": "(window.p2 = prueba.estado().puntajes[1], prueba.atacar(1), true)"},
-    {"hasta": "prueba.estado().puntajes[1] > p2", "timeout": 1500, "nombre": "J2 la agarra"},
+    {"eval": "(window.m2 = prueba.combo(2).monedas, prueba.atacar(1), true)"},
+    {"hasta": "prueba.combo(2).monedas > m2", "timeout": 1500, "nombre": "J2 la agarra"},
     {"verificar": "sin fuego amigo, el compañero junta la moneda y no sufre nada", "eval": "prueba.jugador(2).aturdido === false"},
 
     {"eval": "(prueba.sinItems(), prueba.ponerModGlobal('fuegoAmigo', true), prueba.proteger(1), prueba.quitarProteccion(2), prueba.ponerJugador(1, 240, 264), prueba.ponerJugador(2, 290, 264), prueba.mirar(1, 1), prueba.crearItem('coin', 254, 262), true)"},

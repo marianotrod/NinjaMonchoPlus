@@ -1,0 +1,31 @@
+{
+  "descripcion": "Combo de monedas: sube si se agarran seguidas, vuelve a x1 si pasa 1,5 s, se anula al morir con el reloj en cero, y las monedas se cobran al final por el combo máximo",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 1500, "eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.ponerTiempo(90), prueba.proteger(1), true)"},
+    {"eval": "(window.s = window.game.scene.getScene('NinjaMonchoScene'), window.ui = window.game.scene.getScene('UIScene'), window.agarrar = () => { prueba.crearItem('coin', 100, 100); const l = s.items.getChildren(); s.recolectarItem(s.jugador, l[l.length - 1]); prueba.sinItems(); }, window.p0 = prueba.estado().puntajes[0], true)"},
+    {"verificar": "arranca en COMBO X1, visible arriba", "eval": "({ texto: ui.textosCombo[0].text, visible: ui.textosCombo[0].visible, combo: prueba.combo(1).actual })", "espera": {"texto": "COMBO X1", "visible": true, "combo": 1}},
+    {"eval": "(agarrar(), true)"},
+    {"wait": 300, "eval": "(agarrar(), true)"},
+    {"verificar": "dos monedas seguidas: X2, y no suman puntos al agarrarlas", "eval": "({ combo: prueba.combo(1).actual, texto: ui.textosCombo[0].text, puntos: prueba.estado().puntajes[0] - p0 })", "espera": {"combo": 2, "texto": "COMBO X2", "puntos": 0}},
+    {"eval": "(s.persecucion = true, s.alMorirNinja(s.jugador), s.persecucion = false, true)"},
+    {"verificar": "morir con el reloj en cero anula el combo máximo", "eval": "({ actual: prueba.combo(1).actual, maximo: prueba.combo(1).maximo, monedas: prueba.combo(1).monedas })", "espera": {"actual": 1, "maximo": 1, "monedas": 2}},
+    {"eval": "(agarrar(), true)"},
+    {"wait": 300, "eval": "(agarrar(), true)"},
+    {"wait": 300, "eval": "(agarrar(), true)"},
+    {"verificar": "tres seguidas: X3", "eval": "({ actual: prueba.combo(1).actual, maximo: prueba.combo(1).maximo })", "espera": {"actual": 3, "maximo": 3}},
+    {"wait": 1800},
+    {"verificar": "si pasa 1,5 s sin agarrar ninguna vuelve a X1, pero queda el máximo", "eval": "({ actual: prueba.combo(1).actual, maximo: prueba.combo(1).maximo, texto: ui.textosCombo[0].text })", "espera": {"actual": 1, "maximo": 3, "texto": "COMBO X1"}},
+    {"eval": "(agarrar(), true)"},
+    {"verificar": "cada moneda nueva cuenta lo que vale", "eval": "({ monedas: prueba.combo(1).monedas, valor: prueba.combo(1).valor })", "espera": {"monedas": 6, "valor": 600}},
+    {"eval": "(prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.proteger(1), window.datosFin = null, s.events.once('nivel-completado', (d) => { window.datosFin = d; }), window.antesFin = prueba.estado().puntajes[0], prueba.ponerTiempo(20), prueba.terminarCaceria(false), true)"},
+    {"hasta": "prueba.panel() !== null", "timeout": 2000, "nombre": "aparece el panel"},
+    {"verificar": "al final se cobran las monedas: lo que valían por el combo máximo", "eval": "datosFin.monedas[0]", "espera": {"monedas": 6, "valor": 600, "combo": 3, "puntos": 1800}},
+    {"verificar": "el panel muestra la línea de monedas de J1", "eval": "prueba.panel().some(l => l.startsWith('J1 MONEDAS 600 X3'))"},
+    {"hasta": "prueba.panel().every(l => !l.includes('+') || l.endsWith('+0'))", "timeout": 8000, "nombre": "termina de contar"},
+    {"verificar": "el número baja a cero y el puntaje queda con el bono y las monedas", "eval": "({ linea: prueba.panel().find(l => l.startsWith('J1 MONEDAS')), total: prueba.panel().includes(`J1  ${prueba.estado().puntajes[0]}`), suma: prueba.estado().puntajes[0] - antesFin >= 2000 + 1800 })", "espera": {"linea": "J1 MONEDAS 600 X3 +0", "total": true, "suma": true}}
+  ]
+}

@@ -58,7 +58,7 @@
     {"eval": "(prueba.configurar('ESPERA_BOMBA_ESPECIAL', 4000), prueba.ponerModGlobal('minas', true), Math.random = () => 0, escena.spawnearMoneda(), Math.random = azarReal, true)"},
     {"verificar": "con el pergamino, a veces cae una mina en vez de una moneda", "eval": "prueba.peligros().length === 1 && prueba.items().length === 0"},
     {"eval": "(prueba.completarRecoleccion(), true)"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"verificar": "la mina no se va al pasar a la Cacería", "eval": "prueba.peligros().length === 1"}
   ]
 }

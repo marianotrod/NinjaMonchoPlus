@@ -20,7 +20,7 @@
     {"verificar": "los talismanes perdidos vuelven a caer", "eval": "talismanesCaidos.length >= 2"},
     {"verificar": "un golpe sin talismanes no rompe nada", "eval": "(prueba.golpear(1), prueba.estado().vidas[0] === 3)"},
     {"eval": "prueba.completarRecoleccion()"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 3000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"hasta": "!prueba.jugador(1).aturdido", "timeout": 2000},
     {"verificar": "en la Cacería un golpe mata: el ninja sale despedido", "eval": "(prueba.quitarProteccion(1), prueba.golpear(1, 1), prueba.jugador(1))", "espera": {"muerto": true, "vx": {"max": -1}}},
     {"verificar": "la vida se descuenta recién al caer fuera de la pantalla", "eval": "prueba.estado()", "espera": {"vidas": [3, 3]}},

@@ -7,7 +7,7 @@
     {"verificar": "+1 vida suma una vida", "eval": "(prueba.tomarEfecto(1, 'vidaExtra'), prueba.estado().vidas[0]) === 4"},
     {"verificar": "+1 segundo suma tiempo a los niveles siguientes", "eval": "(prueba.tomarEfecto(1, 'masTiempo'), prueba.modsGlobal().tiempoExtra) === 1"},
     {"eval": "(prueba.completarRecoleccion(), true)"},
-    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 4000, "nombre": "empieza la Cacería"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
     {"wait": 1600, "eval": "(prueba.sinEnemigos(), prueba.ponerTiempo(90), true)"},
 

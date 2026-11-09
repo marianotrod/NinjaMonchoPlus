@@ -340,6 +340,8 @@ export function instalarPuertaPruebas(game) {
       return ui && ui.panel && ui.panel.active ? ui.panel.lineas.map(linea => linea.text) : null;
     },
     monedas: () => juego().items.getChildren().filter(item => item.active && !item.esTalisman).length,
+    combo: (n) => ({ ...juego().combos[n - 1] }),
+    pausaDeFase: () => !!juego().pausaDeFase,
     enfurecerEnemigos() {
       juego().enemigos.getChildren().forEach(e => e.enfurecer());
       return true;
