@@ -104,6 +104,9 @@ export const CONFIG = {
   // Al cambiar de fase el juego frena hasta quedar quieto, sale el cartel (y se va rápido por arriba) y recién
   // después recupera la velocidad (sistemas/PausaDeFase.js). Con activa: false, los carteles salen con el juego andando.
   PAUSA_FASE: { activa: true, frenado: 450, cartel: 1000, salida: 220, arranque: 450 },
+  // Golpe final: al completar el nivel la cámara se acerca a la última baja con un destello y el panel sale un momento
+  // después. zoom: 1 lo apaga (el panel igual espera esperaPanel ms).
+  GOLPE_FINAL: { zoom: 1.4, duracion: 350, esperaPanel: 600 },
   APARICION_JEFE: 1000,         // El jefe aparece a este tiempo de empezada la intro (ms)
 
   BONO_POR_SEGUNDO: 100,

@@ -5,6 +5,19 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-09 — Claude: golpe final, vida perdida sin cartel, puntos de rescate y revisión de los mapas base
+
+- Golpe final (`CONFIG.GOLPE_FINAL`): al completar el nivel la cámara se acerca a la última baja (o al jefe) con un destello
+  y el panel sale 0,6 s después. La cámara queda limitada a la pantalla.
+- Perder una vida ya no saca cartel: el corazón late fuerte en el HUD y aparece un "-1". El cartel queda para "eliminado".
+- Puntos de rescate en los 10 mapas `n-`: 2 o 3 por mapa, en la mitad de arriba, lejos de los spawns. Para corregir en el editor.
+- Revisión de los 60 `b-XX` (imagen con todos): se repiten mucho por familia. Las mesetas (b-06, 12, 18…) y los escalones
+  (b-03, 09, 15…) son casi iguales entre sí; las islas (b-05, 11, 17…) tienen muchas plataformas chiquitas. b-57 tiene
+  pasarelas apiladas de a dos junto a los costados abiertos.
+- Pendiente (Mariano): probar; decidir si se regeneran los base con más variedad (pisa los b-XX).
+
+---
+
 ## 2026-11-08 — Claude: roadmap 5.1, 5.4, 5.5 y 5.8
 
 - 5.1: los 60 niveles base `b-XX` pasaron a `normal` (70 en el sorteo). El generador ya los crea así.

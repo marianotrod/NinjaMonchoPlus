@@ -334,6 +334,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   jefeDerrotado() {
     if (this.fase !== 'jefe' || this.cobrarCaidas()) return;
+    if (this.jefe) this.ultimaBaja = { x: this.jefe.x, y: this.jefe.y };
     this.jefe = null;
     this.collidersJefe.forEach(c => c.destroy());
     this.collidersJefe = [];
@@ -366,15 +367,25 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     const monedas = cobroDeMonedas(this);
     monedas.forEach((cobro, indice) => this.sumarPuntos(indice, cobro.puntos));
 
-    this.events.emit(EVENTOS.NIVEL_COMPLETADO, {
+    // Golpe final: la cámara se acerca a la última baja con un destello, y el panel sale un momento después
+    const { zoom, duracion, esperaPanel } = CONFIG.GOLPE_FINAL;
+    if (this.ultimaBaja && zoom > 1) {
+      const camara = this.cameras.main;
+      camara.setBounds(0, 0, this.scale.width, this.scale.height);  // Que el zoom no muestre lo que está fuera de la pantalla
+      camara.flash(150, 255, 255, 255);
+      camara.pan(this.ultimaBaja.x, this.ultimaBaja.y, duracion, 'Quad.easeOut');
+      camara.zoomTo(zoom, duracion, 'Quad.easeOut');
+      Sonido.beep(this, 196, 0.35, 0.12, 'square');
+    }
+    this.time.delayedCall(esperaPanel, () => this.events.emit(EVENTOS.NIVEL_COMPLETADO, {
       nivel: this.nivelActual,
       monedas,
       puntajes: this.partida.puntajes,
       jugadores: this.cantidadJugadores,
       ...info
-    });
+    }));
     this.listoParaContinuar = false;
-    this.time.delayedCall(1200, () => { this.listoParaContinuar = true; });
+    this.time.delayedCall(esperaPanel + 1200, () => { this.listoParaContinuar = true; });
   }
 
   // Entre un nivel y el siguiente se pasa por la sala de pergaminos
@@ -483,8 +494,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       }
     }
 
-    const titulo = sinVidas ? `J${jugador.indice + 1} ${i18n.t('eliminado')}` : i18n.t('vida_perdida');
-    this.events.emit(EVENTOS.BANNER, { titulo, color: '#EF4444', duracion: sinVidas ? 1400 : 900, chico: true });
+    // Perder una vida se ve en el corazón que late en el HUD; el cartel queda para cuando alguien se queda sin vidas
+    if (sinVidas) this.events.emit(EVENTOS.BANNER, { titulo: `J${jugador.indice + 1} ${i18n.t('eliminado')}`, color: '#EF4444', duracion: 1400, chico: true });
 
     if (this.debeRecomenzar()) {
       this.recomenzar();
@@ -1355,6 +1366,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
     this.efectoExplosion(enemigo.x, enemigo.y, 10);
     Sonido.efecto(this, 'snd-grito', 0.3, { rate: 1.4 });
+    this.ultimaBaja = { x: enemigo.x, y: enemigo.y };  // Para el golpe final
     enemigo.morir();
     if (explota) this.explotar(enemigo.x, enemigo.y, { bando: BANDO.DEMONIOS });
 

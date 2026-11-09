@@ -167,9 +167,14 @@ export default class UIScene extends Phaser.Scene {
       for (let i = 0; i < Math.max(CONFIG.VIDAS_INICIALES, vidas[j]); i++) {
         grupo.push(this.add.image(344 + j * 40 + i * 10, 8, i < vidas[j] ? lleno : 'corazon-vacio'));
       }
-      // Late el corazón que se acaba de perder
+      // Late el corazón que se acaba de perder (es el único aviso de una vida perdida: no hay cartel)
       const perdido = vidas[j] < this.vidasPrevias[j] ? grupo[vidas[j]] : null;
-      if (perdido) this.tweens.add({ targets: perdido, scale: { from: 2, to: 1 }, duration: 300 });
+      if (perdido) {
+        this.tweens.add({ targets: perdido, scale: { from: 3, to: 1 }, duration: 500, ease: 'Back.Out' });
+        const menos = this.add.text(perdido.x, 18, '-1', estilo(8, '#EF4444', { stroke: '#000000', strokeThickness: 3 }))
+          .setOrigin(0.5, 0).setDepth(2);
+        this.tweens.add({ targets: menos, y: 30, alpha: 0, delay: 400, duration: 600, onComplete: () => menos.destroy() });
+      }
       this.corazones.push(...grupo);
     }
     this.vidasPrevias = [...vidas];

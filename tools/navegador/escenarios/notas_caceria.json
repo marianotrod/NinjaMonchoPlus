@@ -28,7 +28,7 @@
     {"hasta": "!prueba.jugador(1).muerto && prueba.estado().tiempo > 20", "timeout": 8000, "nombre": "la Cacería recomienza"},
 
     {"eval": "(window.final = null, prueba.ponerTiempo(20), prueba.terminarCaceria(true), true)"},
-    {"hasta": "prueba.panel() !== null", "timeout": 1000, "nombre": "aparece el panel de nivel completado"},
+    {"hasta": "prueba.panel() !== null", "timeout": 4000, "nombre": "aparece el panel de nivel completado"},
     {"verificar": "el puntaje arranca sin el bono ni las monedas, que se cobran al final", "eval": "(() => { const c = window.game.scene.getScene('NinjaMonchoScene').combos[0]; return prueba.panel().includes(`J1  ${prueba.estado().puntajes[0] - 2000 - Math.round(c.valor * c.maximo)}`); })()"},
     {"hasta": "prueba.panel().every(l => !l.includes('+') || l.endsWith('+0'))", "timeout": 8000, "nombre": "termina de contar"},
     {"verificar": "y el bono pasa al puntaje de a poco hasta el total", "eval": "({ total: prueba.panel().includes(`J1  ${prueba.estado().puntajes[0]}`), bono: prueba.panel()[0] })", "espera": {"total": true, "bono": "BONO TIEMPO +0"}}

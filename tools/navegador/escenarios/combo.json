@@ -22,7 +22,7 @@
     {"eval": "(prueba.completarRecoleccion(), true)"},
     {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
     {"eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.proteger(1), window.datosFin = null, s.events.once('nivel-completado', (d) => { window.datosFin = d; }), window.antesFin = prueba.estado().puntajes[0], prueba.ponerTiempo(20), prueba.terminarCaceria(false), true)"},
-    {"hasta": "prueba.panel() !== null", "timeout": 2000, "nombre": "aparece el panel"},
+    {"hasta": "prueba.panel() !== null", "timeout": 4000, "nombre": "aparece el panel"},
     {"verificar": "al final se cobran las monedas: lo que valían por el combo máximo", "eval": "datosFin.monedas[0]", "espera": {"monedas": 6, "valor": 600, "combo": 3, "puntos": 1800}},
     {"verificar": "el panel muestra la línea de monedas de J1", "eval": "prueba.panel().some(l => l.startsWith('J1 MONEDAS 600 X3'))"},
     {"hasta": "prueba.panel().every(l => !l.includes('+') || l.endsWith('+0'))", "timeout": 8000, "nombre": "termina de contar"},
