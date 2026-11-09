@@ -1,0 +1,30 @@
+{
+  "descripcion": "Un fondo por fase con fundido (5.3) y la música propia de la sala de pergaminos (5.7)",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"verificar": "la Recolección usa el fondo del nivel, detrás de todo", "eval": "(() => { const f = prueba.fondo(); return { clave: f.clave === prueba.nivel().fondoImagen, alfa: f.alfa, atras: f.capa < 0 }; })()", "espera": {"clave": true, "alfa": 1, "atras": true}},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.proteger(1), prueba.completarRecoleccion(), true)"},
+    {"verificar": "al romper el sello empieza el fundido al fondo de la Cacería", "eval": "prueba.fondo()", "espera": {"clave": "fondo-caceria", "fundiendo": true}},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
+    {"verificar": "el fundido terminó durante la pausa de fase", "eval": "prueba.fondo()", "espera": {"clave": "fondo-caceria", "alfa": 1, "fundiendo": false}},
+    {"shot": "fondo_caceria"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.ponerTiempo(1), true)"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 8000, "nombre": "aparece el fantasma"},
+    {"verificar": "con los fantasmas, su fondo", "eval": "prueba.fondo()", "espera": {"clave": "fondo-fantasma", "alfa": 1, "fundiendo": false}},
+    {"shot": "fondo_fantasma"},
+    {"eval": "(prueba.quitarProteccion(1), prueba.golpear(1), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria' && !prueba.estado().fantasma && prueba.estado().tiempo > 20", "timeout": 8000, "nombre": "la Cacería recomienza"},
+    {"verificar": "al recomenzar vuelve el fondo de la Cacería", "eval": "({ clave: prueba.fondo().clave })", "espera": {"clave": "fondo-caceria"}},
+
+    {"eval": "(window.game.cache.json.get('nivel-sala-pergaminos').musica = 'musica-cueva', prueba.proteger(1), prueba.terminarCaceria(false), true)"},
+    {"hasta": "prueba.estado().listoParaContinuar", "timeout": 4000, "nombre": "se puede continuar"},
+    {"press": "Enter"},
+    {"hasta": "prueba.enJuego() && prueba.estado().fase === 'sala'", "timeout": 8000, "nombre": "sala de pergaminos"},
+    {"verificar": "la sala tiene su fondo y respeta la música que tiene puesta", "eval": "({ fondo: prueba.fondo().clave, musica: prueba.musica() })", "espera": {"fondo": "fondo-sala", "musica": "musica-cueva"}},
+    {"shot": "fondo_sala"},
+    {"eval": "prueba.terminarSala()"},
+    {"hasta": "prueba.enJuego() && prueba.estado().fase !== 'sala' && prueba.estado().fase !== 'transicion'", "timeout": 6000, "nombre": "sigue el nivel 2"},
+    {"verificar": "después de la sala vuelven la música y el fondo del nivel", "eval": "({ musica: prueba.musica() === (prueba.nivel().musica || 'musica-fondo'), fondo: prueba.fondo().clave === prueba.nivel().fondoImagen })", "espera": {"musica": true, "fondo": true}}
+  ]
+}

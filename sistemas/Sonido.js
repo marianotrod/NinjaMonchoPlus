@@ -33,6 +33,11 @@ export const Sonido = {
     return musicaActual;
   },
 
+  // La clave de la música que suena (o null)
+  claveMusica() {
+    return musicaActual ? musicaActual.key : null;
+  },
+
   detenerMusica() {
     if (musicaActual) {
       musicaActual.stop();

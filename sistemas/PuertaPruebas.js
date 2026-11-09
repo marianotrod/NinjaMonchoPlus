@@ -11,6 +11,7 @@ import { todosLosNiveles, validarNivel } from '../mundo/Niveles.js';
 import { crearBola, escupirFuego } from '../mundo/Fuego.js';
 import { tomarEfecto } from '../reglas/Pergaminos.js';
 import { EVENTOS } from '../datos/Eventos.js';
+import { Sonido } from './Sonido.js';
 
 export function instalarPuertaPruebas(game) {
   const juego = () => game.scene.getScene('NinjaMonchoScene');
@@ -61,7 +62,8 @@ export function instalarPuertaPruebas(game) {
     nivel: () => {
       const s = juego();
       const bloques = s.bloquesFisicos.getChildren();
-      return { id: s.partida.datosNivel.id, bloques: bloques.length, pasarelas: bloques.filter(b => b.esOneWay).length };
+      const { id, fondoImagen, musica } = s.partida.datosNivel;
+      return { id, fondoImagen, musica, bloques: bloques.length, pasarelas: bloques.filter(b => b.esOneWay).length };
     },
     validarNiveles: () => {
       const niveles = todosLosNiveles();
@@ -342,6 +344,8 @@ export function instalarPuertaPruebas(game) {
     monedas: () => juego().items.getChildren().filter(item => item.active && !item.esTalisman).length,
     combo: (n) => ({ ...juego().combos[n - 1] }),
     pausaDeFase: () => !!juego().pausaDeFase,
+    fondo: () => { const f = juego().fondo; return { clave: f.actual, alfa: Math.round(f.imagen.alpha * 100) / 100, fundiendo: !!f.saliente, capa: f.imagen.depth }; },
+    musica: () => Sonido.claveMusica(),
     enfurecerEnemigos() {
       juego().enemigos.getChildren().forEach(e => e.enfurecer());
       return true;

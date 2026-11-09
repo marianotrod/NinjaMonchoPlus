@@ -77,7 +77,7 @@ y se pueden eliminar) → **Pergaminos de Pacto**. Hay 3 vidas por jugador, un f
 
 ## Fase 5 — Versión 2: lo que sigue (pedido de Mariano, 2026-11-08)
 
-Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define. 5.2 y 5.3 quedan para más adelante.
+Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define. 5.2 queda para más adelante.
 
 - [x] **5.1 Niveles base disponibles (S).** Los 60 `b-01`…`b-60` son de tipo `normal` y entran al sorteo (70 en total).
       El generador ya los crea como `normal`. El sorteo respeta el tier de cada mapa según el nivel
@@ -85,9 +85,10 @@ Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define
 - [ ] **5.2 (más adelante) Jefes mejores, con mecánicas intercambiables (L).** *Diseño: Mariano.* Separar cada jefe en piezas
       (movimiento, ataques, fases según la vida) que se combinen desde un catálogo, como los rasgos de los enemigos en
       `Bestiario.js`, para armar un jefe nuevo sin escribir código.
-- [ ] **5.3 (más adelante) Un fondo por fase, con transición animada (M).** Recolección, Cacería, jefe y sala de pergaminos con fondos
-      distintos; al cambiar de fase, el fondo cambia con una animación (fundido, barrido o similar). Fondos reemplazables
-      como archivos.
+- [x] **5.3 Un fondo por fase, con transición animada (M).** Hecho en `mundo/Fondo.js` (`CONFIG.FONDOS_FASE`). La Recolección
+      usa el fondo del nivel (el del editor); la Cacería, los fantasmas, el jefe y la sala tienen el suyo en
+      `public/assets/fondos/` (`caceria`, `fantasma`, `jefe`, `sala`, 512x288). Al cambiar de fase hay un fundido que
+      corre durante la pausa de fase. *Los PNG son provisorios: los reemplaza Mariano.*
 - [x] **5.4 Pausa en los cambios de fase (M).** El problema no eran los carteles sino que el juego seguía atrás. Al romper
       el sello y al acabarse el tiempo, el juego frena hasta quedar quieto, salen los carteles (se van rápido por arriba)
       y después recupera la velocidad; recién ahí empieza la Cacería o entran los fantasmas (`sistemas/PausaDeFase.js`,
@@ -98,7 +99,9 @@ Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define
 - [ ] **5.6 Más enemigos y variedades (M c/u).** *Diseño: Mariano.* Se agregan como entradas del `Bestiario`;
       el código suma rasgos nuevos cuando haga falta.
 - [ ] **5.7 Música fija en la sala de pergaminos (S).** *Mariano, desde el editor:* elegir la música en `sala-pergaminos`
-      (el juego ya usa el campo "Música" del nivel; hoy está vacío y suena la del nivel). Verificar que la respete.
+      (el juego ya usa el campo "Música" del nivel; hoy está vacío y suena la del nivel). Verificado: si tiene música, la
+      respeta y después vuelve la del nivel (escenario `fondos`). Ojo: vacía, suena la del nivel que sigue; antes del
+      nivel 5 es la del jefe.
 - [x] **5.8 Combo de monedas (M).** Hecho en `reglas/Combo.js` (`CONFIG.COMBO`, `VALOR_MONEDA` = 100).
       - Agarrar monedas seguidas, lo bastante rápido, sube el combo; si pasa un rato sin agarrar nada, vuelve a 1.
       - Se guarda el combo máximo del nivel. Si te matan después de que se acabó el tiempo (el fantasma), el máximo se anula.

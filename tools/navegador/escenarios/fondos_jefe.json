@@ -1,0 +1,17 @@
+{
+  "descripcion": "Fondo del jefe: arranca con el suyo, cambia con los fantasmas y vuelve al recomenzar la pelea",
+  "query": "?debug&nivel=5&jefe=ogro",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'jefe'", "timeout": 10000, "nombre": "empieza la pelea"},
+    {"verificar": "el nivel del jefe arranca con su fondo, sin fundido", "eval": "prueba.fondo()", "espera": {"clave": "fondo-jefe", "alfa": 1, "fundiendo": false}},
+    {"shot": "fondo_jefe"},
+    {"hasta": "prueba.listo(1) && prueba.estado().jefe.estado !== 'entrando'", "timeout": 8000, "nombre": "J1 en el piso y el jefe listo"},
+    {"eval": "prueba.ponerTiempo(1)"},
+    {"hasta": "prueba.estado().fantasma", "timeout": 8000, "nombre": "aparece el fantasma"},
+    {"verificar": "con los fantasmas, su fondo", "eval": "({ clave: prueba.fondo().clave })", "espera": {"clave": "fondo-fantasma"}},
+    {"eval": "(prueba.quitarProteccion(1), prueba.golpear(1), true)"},
+    {"hasta": "prueba.estado().fase === 'jefe' && prueba.estado().tiempo > 5", "timeout": 12000, "nombre": "recomienza la pelea"},
+    {"hasta": "!prueba.fondo().fundiendo", "timeout": 3000, "nombre": "termina el fundido"},
+    {"verificar": "vuelve el fondo del jefe", "eval": "prueba.fondo()", "espera": {"clave": "fondo-jefe", "alfa": 1}}
+  ]
+}

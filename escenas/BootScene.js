@@ -1,5 +1,5 @@
 import { i18n } from '../i18n.js';
-import { ARRANQUE_DEBUG, TILES } from '../config.js';
+import { ARRANQUE_DEBUG, CONFIG, TILES } from '../config.js';
 import { GRAFICOS, GRAFICOS_ANIMADOS, GRAFICOS_ANIMADOS_24, GRAFICOS_CUADROS } from '../datos/Graficos.js';
 import { armarCartas } from '../reglas/Pergaminos.js';
 import { Guardado } from '../sistemas/Guardado.js';
@@ -23,6 +23,8 @@ export default class BootScene extends Phaser.Scene {
 
     const A = 'public/assets/';
     this.load.image('fondo-cielo', `${A}Cielo.webp`);
+    // Fondos de cada fase (ver CONFIG.FONDOS_FASE): se reemplaza el PNG para cambiarlos
+    Object.values(CONFIG.FONDOS_FASE.archivos).filter(Boolean).forEach(archivo => this.load.image(`fondo-${archivo}`, `${A}fondos/${archivo}.png`));
     this.load.spritesheet('MapTileSet', `${A}MapTileSet.png`, { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('ninja', `${A}NinjaSpriteSheet.png`, { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('ninja_coop', `${A}NinjaCoopSprite.png`, { frameWidth: 16, frameHeight: 16 });

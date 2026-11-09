@@ -104,6 +104,9 @@ export const CONFIG = {
   // Al cambiar de fase el juego frena hasta quedar quieto, sale el cartel (y se va rápido por arriba) y recién
   // después recupera la velocidad (sistemas/PausaDeFase.js). Con activa: false, los carteles salen con el juego andando.
   PAUSA_FASE: { activa: true, frenado: 450, cartel: 1000, salida: 220, arranque: 450 },
+  // Fondo de cada fase (mundo/Fondo.js): PNG de public/assets/fondos/. La Recolección usa el del nivel; una fase en null también.
+  // transicion: lo que dura el fundido (ms, tiempo real). Con activa: false todo el nivel tiene el fondo del nivel.
+  FONDOS_FASE: { activa: true, transicion: 700, archivos: { caceria: 'caceria', fantasma: 'fantasma', jefe: 'jefe', sala: 'sala' } },
   // Golpe final: al completar el nivel la cámara se acerca a la última baja con un destello y el panel sale un momento
   // después. zoom: 1 lo apaga (el panel igual espera esperaPanel ms).
   GOLPE_FINAL: { zoom: 1.4, duracion: 350, esperaPanel: 600 },

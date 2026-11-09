@@ -5,6 +5,17 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-09 — Claude: un fondo por fase (5.3) y música de la sala (5.7)
+
+- 5.3: `mundo/Fondo.js` y `CONFIG.FONDOS_FASE`. La Recolección usa el fondo del nivel; Cacería, fantasmas, jefe y sala
+  tienen PNG propios en `public/assets/fondos/` (provisorios, pixel art generado). El cambio es un fundido que corre en
+  tiempo real durante la pausa de fase. Si falta un PNG queda el fondo del nivel.
+- 5.7: el juego respeta la música que tenga la sala; la prueba lo verifica. Vacía, suena la del nivel siguiente (antes del 5, la del jefe).
+- Escenarios nuevos `fondos` y `fondos_jefe`; la puerta suma `fondo()` y `musica()`.
+- Pendiente (Mariano): reemplazar los 4 fondos y elegir la música de la sala en el editor.
+
+---
+
 ## 2026-11-09 — Claude: golpe final, vida perdida sin cartel, puntos de rescate y revisión de los mapas base
 
 - Golpe final (`CONFIG.GOLPE_FINAL`): al completar el nivel la cámara se acerca a la última baja (o al jefe) con un destello

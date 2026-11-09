@@ -16,6 +16,7 @@ import { RECOMIENZO, reglasDe } from '../reglas/Fases.js';
 import { PROTECCION, crearGolpe, golpeaAliado, itemLanzado, resolverGolpe } from '../reglas/Resolvedor.js';
 import { marcarPeligros } from '../mundo/Peligros.js';
 import { actualizarPausaDeFase, cartelesDeFase, cortarPausaDeFase } from '../sistemas/PausaDeFase.js';
+import { crearFondo, cambiarFondo, actualizarFondo } from '../mundo/Fondo.js';
 import { actualizarCombos, anularCombo, cobroDeMonedas, prepararCombos, sumarMoneda } from '../reglas/Combo.js';
 import { ARMAS, actualizarProyectiles, arrastrarItem, chocarProyectil, soltarBomba } from '../entidades/Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
@@ -92,7 +93,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     Sonido.musica(this, datosNivel.musica || musicaDelNivel(this.nivelActual), 0.4);
     Sonido.ritmoMusica(1);
 
-    this.add.image(256, 144, datosNivel.fondoImagen).setDisplaySize(512, 288);
+    crearFondo(this, datosNivel.fondoImagen, this.esSala ? 'sala' : (this.esNivelJefe ? 'jefe' : null));
 
     this.spawns = construirNivel(this, datosNivel);
     if (!this.esSala) trampasAlAzar(this, this.modsGlobal.trampasAlAzar);
@@ -256,7 +257,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.cameras.main.flash(250, 255, 255, 255);
     this.enemigos.getChildren().forEach(enemigo => enemigo.enfurecer());
 
-    // El juego frena, salen los carteles y la Cacería empieza recién cuando recupera la velocidad
+    // El juego frena, cambia el fondo, salen los carteles y la Cacería empieza recién cuando recupera la velocidad
+    cambiarFondo(this, 'caceria');
     cartelesDeFase(this, [
       { titulo: i18n.t('sello_roto'), subtitulo: `${i18n.t('bono_tiempo')} +${bono}`, color: '#EF4444', duracion: CONFIG.DURACION_SELLO },
       { titulo: i18n.t('caceria'), subtitulo: i18n.t('objetivo_caceria'), color: '#EF4444', duracion: CONFIG.DURACION_CARTEL_CACERIA, chico: true }
@@ -596,6 +598,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.persecucion = true;
     Sonido.ritmoMusica(1.3);
     Sonido.beep(this, 110, 0.6, 0.15, 'sawtooth');
+    cambiarFondo(this, 'fantasma');
     cartelesDeFase(this, [
       { titulo: i18n.t('fantasma'), subtitulo: i18n.t('fantasma_sub'), color: '#E5E7EB', duracion: CONFIG.DURACION_CARTEL_FANTASMA }
     ], () => { if (this.persecucion) this.aparecerFantasmas(); });
@@ -630,6 +633,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   terminarPersecucion() {
+    if (this.persecucion) cambiarFondo(this, this.esNivelJefe ? 'jefe' : 'caceria');
     this.persecucion = false;
     this.fantasmas.forEach(fantasma => this.quitarFantasma(fantasma));
   }
@@ -909,6 +913,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // ==========================================
   update(time, delta) {
     actualizarPausaDeFase(this, delta);
+    actualizarFondo(this, delta);
     if (this.brilloActual !== this.reglas.brilloInmortal) this.aplicarBrillo();
     if (this.fase === 'fin') {
       if (!this.listoParaContinuar) return;
