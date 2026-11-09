@@ -1,5 +1,6 @@
 // Enemigo.js
-import { BANDO, CONFIG } from '../config.js';
+import { BANDO, CONFIG, FISICA } from '../config.js';
+import { ANIMACIONES, claveAnimacion, duracionAnimacion } from '../datos/Animaciones.js';
 import { envolverX, fueraDeVista } from '../mundo/Mundo.js';
 
 export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
@@ -21,6 +22,19 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         this.muerto = false;
         this.inmuneStun = false;
         this.multVelocidad = 1;
+        this.animaciones = ANIMACIONES[configConfiguracion.textura] || null;  // Si tiene hoja con animaciones
+    }
+
+    // Pone la animación si el enemigo la tiene (si ya está puesta, la deja seguir). Devuelve si la tiene.
+    animar(nombre, { reiniciar = false } = {}) {
+        if (!this.animaciones || !this.animaciones[nombre]) return false;
+        const clave = claveAnimacion(this.texture.key, nombre);
+        if (reiniciar || !this.anims.currentAnim || this.anims.currentAnim.key !== clave) this.play(clave);
+        return true;
+    }
+
+    tieneAnimacion(nombre) {
+        return !!(this.animaciones && this.animaciones[nombre]);
     }
 
     // Este método se llama desde la escena DESPUÉS de agregarlo al grupo de físicas
@@ -105,7 +119,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         if (this.lanzado && this.scene.time.now >= this.lanzado.fin) {
             const { duenio } = this.lanzado;
             this.lanzado = null;
-            if (this.aturdido) this.setTint(0x88ccff);
+            if (this.aturdido && !this.animar('aturdido')) this.setTint(0x88ccff);
             this.scene.terminarLanzamiento(this, duenio);
             if (this.muerto) return;
         }
@@ -113,6 +127,9 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         if (this.estrellaStun) {
             this.estrellaStun.setPosition(this.x + Math.sin(this.scene.time.now / 80) * 6, this.y - 12);
         }
+
+        // Empujado como proyectil: cae
+        if (this.lanzado) this.animar('caer');
 
         if (this.aturdido) {
             if (this.rasgos.volador.activo) this.setVelocity(this.body.velocity.x * 0.95, this.body.velocity.y * 0.95);
@@ -197,6 +214,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         const config = this.rasgos.caminante;
         const ahora = this.scene.time.now;
         const enPiso = this.body.blocked.down || this.body.touching.down;
+        this.estabaEnPiso = enPiso;  // Lo que vio en su último cuadro (durante el paso de la física todavía no se sabe)
 
         if (this.accion && this.seguirAccion(config, ahora, enPiso)) {
             this.animarCaminante(enPiso);
@@ -266,11 +284,17 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         if (opcion === 'pausa') {
             this.accion = { tipo: 'pausa', fin: ahora + config.pausa };
         } else if (opcion === 'salto') {
-            this.setVelocityY(config.salto);
+            // Con su cuadro de preparación, primero se agacha
+            if (this.tieneAnimacion('preparaSalto')) this.accion = { tipo: 'preparaSalto', fin: ahora + duracionAnimacion(this.animaciones.preparaSalto) };
+            else this.setVelocityY(config.salto);
         } else if (opcion === 'bajar') {
             this.atravesando = ahora + 300;
         } else if (opcion === 'lanzar' && config.lanza) {
-            this.accion = { tipo: 'aviso', fin: ahora + config.lanza.aviso };
+            // Con animación, la cuchilla sale cuando llega a su último cuadro
+            const animacion = this.tieneAnimacion('lanzar') && this.animaciones.lanzar;
+            const aviso = animacion ? duracionAnimacion(animacion) - 1000 / (animacion.fps ?? 10) : config.lanza.aviso;
+            this.accion = { tipo: 'aviso', fin: ahora + aviso };
+            this.animar('lanzar', { reiniciar: true });
         }
     }
 
@@ -304,7 +328,15 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(0);
         if (ahora < accion.fin) return true;
         this.accion = null;
-        if (accion.tipo === 'aviso') this.lanzarCuchilla(config.lanza);
+        if (accion.tipo === 'aviso') {
+            this.lanzarCuchilla(config.lanza);
+            // Se queda un momento en el último cuadro, con el brazo estirado
+            if (this.tieneAnimacion('lanzar')) {
+                this.accion = { tipo: 'tiro', fin: ahora + 1000 / (this.animaciones.lanzar.fps ?? 10) };
+                return true;
+            }
+        }
+        if (accion.tipo === 'preparaSalto') this.setVelocityY(config.salto);
         if (accion.tipo === 'preparar') {
             this.accion = { tipo: 'carga', fin: ahora + config.carga.duracion, direccion: accion.direccion };
             this.setVelocityX(accion.direccion * config.carga.velocidad * this.multVelocidad);
@@ -316,12 +348,26 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
 
     lanzarCuchilla(lanza) {
         const direccion = this.flipX ? -1 : 1;
-        const cuchilla = this.scene.dispararProyectilEnemigo(this.x + direccion * 6, this.y - 3, direccion * lanza.vx, lanza.vy,
-            { gravedad: true, textura: 'cuchilla', gravedadY: lanza.gravedad });
-        if (cuchilla) cuchilla.setAngularVelocity(direccion * 720);
+        const cuchilla = this.scene.dispararProyectilEnemigo(this.x + direccion * 6, this.y - 4, direccion * lanza.vx, 0, { textura: 'cuchilla' });
+        if (!cuchilla) return;
+        cuchilla.body.setAccelerationY(lanza.caida);
+        cuchilla.setAngularVelocity(direccion * lanza.giro);
+        cuchilla.setFlipX(direccion < 0);
+        cuchilla.autor = this;  // Si mata a un ninja, el esqueleto se ríe
+    }
+
+    // Mató a un ninja: si está en el piso y tiene con qué, se ríe un rato
+    festejar() {
+        const config = this.rasgos.caminante;
+        if (this.muerto || this.aturdido || !this.estabaEnPiso || !config.activo || !this.tieneAnimacion('risa')) return;
+        this.accion = { tipo: 'risa', fin: this.scene.time.now + (config.risa ?? 1500) };
     }
 
     animarCaminante(enPiso) {
+        if (this.animaciones) {
+            this.animarConHoja(enPiso);
+            return;
+        }
         if (!this.config.cuadros) return;
         const tipo = this.accion && this.accion.tipo;
         let cuadro;
@@ -330,6 +376,19 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         else if (!enPiso) cuadro = 1;
         else cuadro = this.body.velocity.x !== 0 ? Math.floor(this.scene.time.now / 160) % 2 : 0;
         this.setFrame(cuadro);
+    }
+
+    // Con las animaciones de datos/Animaciones.js
+    animarConHoja(enPiso) {
+        const tipo = this.accion && this.accion.tipo;
+        if (tipo === 'risa' && this.animar('risa')) return;
+        if ((tipo === 'aviso' || tipo === 'tiro') && this.animar('lanzar')) return;
+        if (tipo === 'preparaSalto' && this.animar('preparaSalto')) return;
+        if (!enPiso) {
+            this.animar(this.body.velocity.y < 0 ? 'subir' : 'caer');
+            return;
+        }
+        this.animar(this.body.velocity.x !== 0 ? 'caminar' : 'quieto');
     }
 
     logicaVolador() {
@@ -426,25 +485,53 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
 
         this.accion = null;  // Un golpe corta lo que estaba haciendo (el aviso, la carga)
         this.aturdido = true;
-        this.setTint(0x88ccff);
+        // Con su dibujo de aturdido no hace falta el tinte celeste
+        if (!this.animar('aturdido', { reiniciar: true })) this.setTint(0x88ccff);
         if (!this.estrellaStun) this.estrellaStun = this.scene.add.image(this.x, this.y - 12, 'estrella').setDepth(61);
 
+        // Con animación para despertarse, la pone al final del aturdimiento (sin alargarlo)
+        const despertar = this.tieneAnimacion('despertar') ? Math.min(duracion, duracionAnimacion(this.animaciones.despertar)) : 0;
         if (this.timerStun) this.timerStun.remove();
-        this.timerStun = this.scene.time.delayedCall(duracion, () => {
+        this.timerStun = this.scene.time.delayedCall(duracion - despertar, () => {
             if (!this.active) return;
-            this.aturdido = false;
-            if (this.enfurecido) this.setTint(0xff9999); else this.clearTint();
-            if (this.estrellaStun) { this.estrellaStun.destroy(); this.estrellaStun = null; }
-            if (this.rasgos.caminante.activo) {
-                this.setVelocityX(this.rasgos.caminante.velocidadX * this.multVelocidad * Phaser.Math.RND.pick([-1, 1]));
+            if (despertar > 0) {
+                this.animar('despertar', { reiniciar: true });
+                this.timerStun = this.scene.time.delayedCall(despertar, () => this.active && this.terminarAturdimiento());
+            } else {
+                this.terminarAturdimiento();
             }
         });
     }
 
-    morir() {
+    terminarAturdimiento() {
+        this.aturdido = false;
+        if (this.enfurecido) this.setTint(0xff9999); else this.clearTint();
+        if (this.estrellaStun) { this.estrellaStun.destroy(); this.estrellaStun = null; }
+        if (this.rasgos.caminante.activo) {
+            this.setVelocityX(this.rasgos.caminante.velocidadX * this.multVelocidad * Phaser.Math.RND.pick([-1, 1]));
+        }
+    }
+
+    // fuenteX: de dónde vino el golpe (el cuerpo sale despedido para el otro lado)
+    morir(fuenteX = null) {
         if (this.muerto) return;
         this.muerto = true;
+        if (this.tieneAnimacion('muerto')) this.dejarCuerpo(fuenteX);
         this.destroy();
+    }
+
+    // Como Moncho: sale despedido y cae fuera de la pantalla atravesando el escenario. Es solo un dibujo: el enemigo
+    // ya no está en juego (no cuenta, no choca, no daña).
+    dejarCuerpo(fuenteX) {
+        const escena = this.scene;
+        const lado = fuenteX === null ? (this.flipX ? 1 : -1) : (this.x < fuenteX ? -1 : 1);
+        const cuerpo = escena.physics.add.sprite(this.x, this.y, this.texture.key).setFlipX(this.flipX).setDepth(60);
+        if (this.enfurecido) cuerpo.setTint(0xff9999);
+        cuerpo.play(claveAnimacion(this.texture.key, 'muerto'));
+        cuerpo.body.setGravityY(FISICA.gravedadJugador);
+        cuerpo.setVelocity(lado * FISICA.knockbackX, FISICA.knockbackY);
+        cuerpo.esCuerpo = true;
+        escena.time.delayedCall(3000, () => cuerpo.destroy());
     }
 
     destroy(fromScene) {

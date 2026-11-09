@@ -1,0 +1,39 @@
+{
+  "descripcion": "Katana hacia arriba (arriba + katana) con el teclado de los dos jugadores, salto en tecla propia y J/P según el idioma",
+  "query": "?debug&nivel=1&jugadores=2",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.proteger(1), prueba.proteger(2), true)"},
+    {"hasta": "prueba.listo(1) && prueba.listo(2)", "timeout": 4000, "nombre": "los dos en el piso"},
+
+    {"down": "ArrowUp"},
+    {"wait": 100},
+    {"verificar": "J1: la flecha arriba ya no salta", "eval": "({ enPiso: prueba.jugador(1).enPiso })", "espera": {"enPiso": true}},
+    {"press": "KeyX", "delay": 60},
+    {"verificar": "J1: arriba + X tira el tajo arriba de la cabeza", "eval": "(() => { const j = prueba.jugador(1); return { arriba: j.katanaArriba, encima: !!j.katana && j.katana.top + j.katana.alto <= j.y - 2 }; })()", "espera": {"arriba": true, "encima": true}},
+    {"up": "ArrowUp"},
+    {"wait": 350},
+    {"press": "KeyX", "delay": 60},
+    {"verificar": "J1: X solo sigue siendo el tajo de frente", "eval": "(() => { const j = prueba.jugador(1); return { arriba: j.katanaArriba, adelante: !!j.katana && j.katana.top < j.y && j.katana.top + j.katana.alto > j.y }; })()", "espera": {"arriba": false, "adelante": true}},
+    {"wait": 300},
+    {"press": "KeyZ", "delay": 120},
+    {"verificar": "J1 salta con Z", "eval": "({ sube: prueba.jugador(1).vy < 0 })", "espera": {"sube": true}},
+
+    {"down": "KeyW"},
+    {"wait": 100},
+    {"press": "KeyJ", "delay": 60},
+    {"verificar": "J2: W ya no salta y W + J tira el tajo arriba", "eval": "(() => { const j = prueba.jugador(2); return { enPiso: j.enPiso, arriba: j.katanaArriba, encima: !!j.katana && j.katana.top + j.katana.alto <= j.y - 2 }; })()", "espera": {"enPiso": true, "arriba": true, "encima": true}},
+    {"up": "KeyW"},
+    {"wait": 200},
+    {"press": "KeyH", "delay": 120},
+    {"verificar": "J2 salta con H", "eval": "({ sube: prueba.jugador(2).vy < 0 })", "espera": {"sube": true}},
+
+    {"hasta": "prueba.listo(1)", "timeout": 4000, "nombre": "J1 en el piso"},
+    {"eval": "(() => { const j = prueba.jugador(1); window.ie = prueba.crearEnemigo('demonio_caminante', j.x, j.y - 20); prueba.atacar(1, true); return true; })()"},
+    {"hasta": "prueba.enemigos()[ie] && prueba.enemigos()[ie].aturdido", "timeout": 1000, "nombre": "el tajo alcanza al demonio de arriba"},
+    {"verificar": "lo que está arriba sale para arriba, casi sin empuje de costado", "eval": "(() => { const e = window.game.scene.getScene('NinjaMonchoScene').enemigos.getChildren()[ie]; return { sube: e.body.velocity.y < 0, poco: Math.abs(e.body.velocity.x) <= 60 }; })()", "espera": {"sube": true, "poco": true}},
+
+    {"eval": "(async () => { const { i18n } = await import('./i18n.js'); const ui = window.game.scene.getScene('UIScene'); i18n.setIdioma('en'); ui.actualizarPuntajes([0, 0]); const en = [ui.textosPuntaje[0].text, ui.textosPuntaje[1].text]; i18n.setIdioma('es'); ui.actualizarPuntajes([0, 0]); window.textos = { en, es: [ui.textosPuntaje[0].text, ui.textosPuntaje[1].text] }; return true; })()"},
+    {"verificar": "en inglés el HUD dice P1 y P2; en castellano, J1 y J2", "eval": "({ en: textos.en.map(t => t.slice(0, 2)).join(), es: textos.es.map(t => t.slice(0, 2)).join() })", "espera": {"en": "P1,P2", "es": "J1,J2"}}
+  ]
+}

@@ -13,7 +13,7 @@
     {"eval": "window.x0 = prueba.jugador(1).x"},
     {"down": "ArrowRight"},
     {"wait": 400},
-    {"press": "ArrowUp", "delay": 300},
+    {"press": "KeyZ", "delay": 300},
     {"wait": 300},
     {"up": "ArrowRight"},
     {"verificar": "las flechas mueven al ninja y saltan", "eval": "({ avanzo: prueba.jugador(1).x - x0 })", "espera": {"avanzo": {"min": 20}}},

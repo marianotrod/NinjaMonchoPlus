@@ -76,6 +76,7 @@ export const CONFIG = {
   PROB_MINA: 0.25,              // Con el pergamino: probabilidad de que caiga una mina en vez de una moneda
   PROB_BOMBA_ESPECIAL: 0.25,    // Con el pergamino: lo mismo con la bomba especial
   ESPERA_BOMBA_ESPECIAL: 4000,  // La bomba especial explota sola después de esto (ms)
+  ESPERA_BOMBA_FURIOSO: 1800,   // Pergamino negativo: la bomba que suelta un furioso al morir explota después de esto (ms)
   ESPERA_RESPAWN: 2000,         // Tras caer fuera de la pantalla, el ninja reaparece arriba después de esto (ms)
   INVUL_RESPAWN: 2500,          // Invulnerabilidad al reaparecer, desde que toca el piso (ms)
   INVUL_INICIO: 1500,           // Lo mismo al aparecer al empezar el nivel (ms)
@@ -210,14 +211,17 @@ export const FISICA = {
   katanaDuracion: 230,
   katanaCooldown: 320,
   katanaExtra: 16,              // Pergaminos: lo que suma la katana hacia adelante o hacia arriba (px)
+  // Katana hacia arriba (arriba + katana): lo que toca sale para arriba. lado: fracción del empuje de costado que conserva
+  katanaArriba: { subida: 260, lado: 0.25 },
   radioParry360: 22             // Pergamino: el parry alcanza esto alrededor del centro del ninja (px)
 };
 
 // Índices estándar de botones de joystick (layout Xbox / "standard gamepad")
 // Teclas de cada jugador, con los nombres de Phaser.Input.Keyboard.KeyCodes
 export const TECLAS = {
-  J1: { up: 'UP', down: 'DOWN', left: 'LEFT', right: 'RIGHT', ataque: 'X', especial: 'C' },
-  J2: { up: 'W', down: 'S', left: 'A', right: 'D', ataque: 'J', especial: 'K' }
+  // up apunta hacia arriba (katana hacia arriba); el salto tiene tecla propia
+  J1: { up: 'UP', down: 'DOWN', left: 'LEFT', right: 'RIGHT', salto: 'Z', ataque: 'X', especial: 'C' },
+  J2: { up: 'W', down: 'S', left: 'A', right: 'D', salto: 'H', ataque: 'J', especial: 'K' }
 };
 
 export const PAD = { A: 0, B: 1, X: 2, Y: 3, L1: 4, R1: 5, SELECT: 8, START: 9, ARRIBA: 12, ABAJO: 13, IZQUIERDA: 14, DERECHA: 15 };

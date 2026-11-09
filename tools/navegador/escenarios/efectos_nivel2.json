@@ -9,9 +9,9 @@
 
     {"eval": "(prueba.darHabilidades(1, ['dobleSalto'], 2), escena.duracion = 600, prueba.proteger(1), prueba.ponerJugador(1, 200, 264), window.pasarelas = prueba.contarTiles(2), true)"},
     {"wait": 300},
-    {"press": "ArrowUp", "delay": 80},
+    {"press": "KeyZ", "delay": 80},
     {"wait": 150},
-    {"press": "ArrowUp", "delay": 80},
+    {"press": "KeyZ", "delay": 80},
     {"wait": 50},
     {"verificar": "doble salto nivel 2: deja una plataforma fantasma de pasarelas alineadas a la grilla", "eval": "prueba.contarTiles(2) > pasarelas"},
     {"wait": 900},

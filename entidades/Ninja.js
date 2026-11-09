@@ -242,7 +242,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   // Los controles en orden. Cada salto o dash que se usa corta lo que sigue, así que este orden no se puede cambiar sin probar.
   actuar(input) {
-    if (input.recienAtaque) this.atacar();
+    if (input.recienAtaque) this.atacar({ arriba: input.arriba });
     if (input.recienEspecial) this.usarEspecial();
 
     const ahora = this.sceneRef.time.now;
@@ -519,8 +519,9 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  // --- KATANA: tajo corto delante del ninja. Lo que toca lo resuelve la escena en procesarKatana() ---
-  atacar({ forzar = false, duracion = FISICA.katanaDuracion } = {}) {
+  // --- KATANA: tajo corto delante del ninja, o arriba de la cabeza con arriba apretado.
+  // Lo que toca lo resuelve la escena en procesarKatana() ---
+  atacar({ forzar = false, duracion = FISICA.katanaDuracion, arriba = false } = {}) {
     if (!forzar && arrojarLlave(this.sceneRef, this)) return;  // Rescate: con la llave en la mano, la arroja
     const ahora = this.sceneRef.time.now;
     if (!forzar && ahora < this.ultimoAtaque + FISICA.katanaCooldown) return;
@@ -528,6 +529,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     if (this.katana) this.katana.destroy();
     this.katanaGolpeados = new Set();
+    this.katanaArriba = arriba;
     // Pergaminos: la katana llega un tile más adelante o un tile más arriba. La zona del golpe es el dibujo estirado.
     const { katanaExtra } = FISICA;
     this.katana = this.sceneRef.add.image(this.x, this.y, 'katana-corte').setDepth(15);
@@ -549,12 +551,17 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  // La katana sigue al ninja: delante, y más arriba si es más alta (crece hacia arriba desde la altura del ninja)
+  // La katana sigue al ninja: delante, y más arriba si es más alta (crece hacia arriba desde la altura del ninja).
+  // Hacia arriba es el mismo tajo girado: el largo va para arriba y el alto, hacia adelante.
   posicionarKatana() {
     const direccion = this.flipX ? -1 : 1;
     const { katanaExtra } = FISICA;
     const adelante = 12 + (this.mods.katanaLarga ? katanaExtra / 2 : 0);
     const arriba = this.mods.katanaAlta ? katanaExtra / 2 : 0;
+    if (this.katanaArriba) {
+      this.katana.setAngle(-90 * direccion).setFlipX(direccion < 0).setPosition(this.x + direccion * arriba, this.y - adelante);
+      return;
+    }
     this.katana.setPosition(this.x + direccion * adelante, this.y - arriba).setFlipX(direccion < 0);
   }
 

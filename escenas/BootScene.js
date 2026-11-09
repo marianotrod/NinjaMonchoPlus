@@ -1,6 +1,7 @@
 import { i18n } from '../i18n.js';
 import { ARRANQUE_DEBUG, CONFIG, TILES } from '../config.js';
 import { GRAFICOS, GRAFICOS_ANIMADOS, GRAFICOS_ANIMADOS_24, GRAFICOS_CUADROS } from '../datos/Graficos.js';
+import { crearAnimaciones } from '../datos/Animaciones.js';
 import { armarCartas } from '../reglas/Pergaminos.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { nuevaPartida } from '../reglas/Partida.js';
@@ -121,6 +122,7 @@ export default class BootScene extends Phaser.Scene {
       frames: this.anims.generateFrameNumbers('MapTileSet', { start: TILES.FUEGO, end: this.ultimoCuadroDelTile(TILES.FUEGO) })
     });
 
+    crearAnimaciones(this.anims);  // Las de los enemigos con hoja de cuadros (datos/Animaciones.js)
     this.anims.create({ key: 'escudo-roto', frames: this.anims.generateFrameNumbers('escudo_roto', { start: 0, end: 3 }), frameRate: 8 });
   }
 }

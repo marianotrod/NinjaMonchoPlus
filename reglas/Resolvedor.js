@@ -4,8 +4,10 @@
 //   tipo:      katana | proyectil | pisoton | explosion | contacto | trampa | llama | fantasma | boulder
 //   lanza:     boulder nivel 2: el enemigo sale disparado como proyectil en vez de recibir el golpe
 //   direccion: -1 o 1, para empujar con la fuerza propia de cada objetivo
+//   arriba:    katana hacia arriba: empuja para arriba (FISICA.katanaArriba)
 //   origen:    desde dónde empuja: los ítems se alejan de ese punto
 //   empuje:    { vx, vy }, para los golpes que empujan distinto a cada objetivo (explosiones)
+//   autor:     el enemigo que pegó (por contacto o con su proyectil): si mata, festeja
 import { BANDO, CONFIG, FISICA } from '../config.js';
 import { i18n } from '../i18n.js';
 import { Sonido } from '../sistemas/Sonido.js';
@@ -20,7 +22,12 @@ export function crearGolpe(tipo, datos = {}) {
 }
 
 function empujeDe(golpe, fuerza) {
-  return golpe.empuje ?? { vx: (golpe.direccion ?? 1) * fuerza.x, vy: fuerza.y };
+  if (golpe.empuje) return golpe.empuje;
+  if (golpe.arriba) {
+    const { subida, lado } = FISICA.katanaArriba;
+    return { vx: (golpe.direccion ?? 1) * fuerza.x * lado, vy: -subida };
+  }
+  return { vx: (golpe.direccion ?? 1) * fuerza.x, vy: fuerza.y };
 }
 
 function empujeDesde(origen, objetivo) {
@@ -66,6 +73,7 @@ function golpearNinja(escena, ninja, golpe) {
   if (muere) {
     // Sale despedido, atraviesa el escenario y cae fuera de la pantalla: recién ahí pierde la vida (jugadorCayoFuera)
     ninja.morir(golpe.fuenteX);
+    if (golpe.autor && golpe.autor.active && golpe.autor.festejar) golpe.autor.festejar();
     escena.cameras.main.shake(250, 0.012);
     escena.alMorirNinja(ninja);
   } else if (ninja.aplicarDaño(golpe.fuenteX)) {

@@ -22,8 +22,10 @@ Una arena por pantalla: juntá los talismanes, rompé el sello y cazá a los dem
 
 | Acción | Jugador 1 | Jugador 2 | Joystick |
 |---|---|---|---|
-| Mover / saltar | Flechas | WASD | Stick o cruceta / A |
+| Mover | Flechas | WASD | Stick o cruceta |
+| Saltar | Z | H | A |
 | Katana | X | J | X |
+| Katana hacia arriba | Arriba + X | W + J | Stick arriba + X |
 | Arma especial | C | K | Y |
 | Dash | Doble toque a un costado | Doble toque a un costado | R1 |
 | Pausa | ESC | ESC | START |

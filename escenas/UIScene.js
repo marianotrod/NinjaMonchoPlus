@@ -120,8 +120,8 @@ export default class UIScene extends Phaser.Scene {
   }
 
   actualizarPuntajes(puntajes) {
-    this.textosPuntaje[0].setText(`J1 ${String(puntajes[0]).padStart(6, '0')}`);
-    this.textosPuntaje[1].setText(`J2 ${String(puntajes[1]).padStart(6, '0')}`).setVisible(this.cantidadJugadores === 2);
+    this.textosPuntaje[0].setText(`${i18n.jugador(0)} ${String(puntajes[0]).padStart(6, '0')}`);
+    this.textosPuntaje[1].setText(`${i18n.jugador(1)} ${String(puntajes[1]).padStart(6, '0')}`).setVisible(this.cantidadJugadores === 2);
   }
 
   mostrarCombo(indice, combo, subio) {
@@ -282,8 +282,8 @@ export default class UIScene extends Phaser.Scene {
   }
 
   lineasPuntaje(puntajes, cantidad) {
-    const lineas = [[`J1  ${puntajes[0]}`, '#FFFFFF']];
-    if (cantidad === 2) lineas.push([`J2  ${puntajes[1]}`, '#86EFAC']);
+    const lineas = [[`${i18n.jugador(0)}  ${puntajes[0]}`, '#FFFFFF']];
+    if (cantidad === 2) lineas.push([`${i18n.jugador(1)}  ${puntajes[1]}`, '#86EFAC']);
     return lineas;
   }
 
@@ -300,7 +300,7 @@ export default class UIScene extends Phaser.Scene {
     // Una línea por jugador: lo que valían sus monedas, su combo máximo y lo que le falta pasar al puntaje
     const monedas = (datos.monedas || []).slice(0, cantidad);
     const conMonedas = monedas.some(cobro => cobro.monedas > 0) ? monedas : [];
-    const textoMonedas = (i, restan) => `J${i + 1} ${i18n.t('monedas')} ${conMonedas[i].valor} X${conMonedas[i].combo} +${restan}`;
+    const textoMonedas = (i, restan) => `${i18n.jugador(i)} ${i18n.t('monedas')} ${conMonedas[i].valor} X${conMonedas[i].combo} +${restan}`;
     const antes = datos.puntajes.map((puntaje, i) => puntaje - totalBonos - (conMonedas[i] ? conMonedas[i].puntos : 0));
 
     const lineas = bonos.map(bono => [textoBono(bono, bono.valor), bono.color]);

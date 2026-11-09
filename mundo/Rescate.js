@@ -81,7 +81,7 @@ function abrirJaula(escena, jugador) {
   escena.events.emit(EVENTOS.VIDAS, escena.partida.vidas);
   // Vuelve desde su spawn, como al reaparecer (intocable un rato al tocar el piso)
   r.muerto.revivir(escena.spawnDe(r.muerto));
-  escena.events.emit(EVENTOS.BANNER, { titulo: `J${r.muerto.indice + 1} ${i18n.t('rescatado')}`, color: '#4ADE80', duracion: 1400, chico: true });
+  escena.events.emit(EVENTOS.BANNER, { titulo: `${i18n.jugador(r.muerto.indice)} ${i18n.t('rescatado')}`, color: '#4ADE80', duracion: 1400, chico: true });
   Sonido.beep(escena, 784, 0.1, 0.1, 'triangle');
   escena.time.delayedCall(90, () => Sonido.beep(escena, 1047, 0.18, 0.1, 'triangle'));
 }

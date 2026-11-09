@@ -19,8 +19,11 @@
     {"verificar": "sin escudo, el golpe mata; con el pergamino, al morir suelta una bomba", "eval": "prueba.jugador(1).muerto && prueba.proyectiles().jugador.some(p => p.tipo === 'bomba')"},
     {"hasta": "!prueba.jugador(1).muerto && prueba.listo(1)", "timeout": 6000, "nombre": "J1 vuelve"},
     {"eval": "(window.game.scene.getScene('NinjaMonchoScene').proyectiles.clear(true, true), prueba.ponerModGlobal('explotanAlMorir', true), prueba.sinEnemigos(), prueba.crearEnemigo('demonio_caminante', 214, 264), prueba.crearEnemigo('demonio_caminante', 460, 264), prueba.enfurecerEnemigo(0), prueba.quitarProteccion(1), prueba.ponerJugador(1, 200, 264), true)"},
-    {"eval": "(window.game.scene.getScene('NinjaMonchoScene').matarEnemigo(window.game.scene.getScene('NinjaMonchoScene').enemigos.getChildren()[0], null), true)"},
-    {"verificar": "con el pergamino, un demonio furioso explota al morir y golpea al que está cerca", "eval": "prueba.jugador(1).muerto"},
+    {"eval": "(window.game.scene.getScene('NinjaMonchoScene').matarEnemigo(window.game.scene.getScene('NinjaMonchoScene').enemigos.getChildren()[0], prueba.jugador(1) && window.game.scene.getScene('NinjaMonchoScene').jugador), true)"},
+    {"wait": 300},
+    {"verificar": "con el pergamino, un demonio furioso suelta una bomba al morir; tocarla no la hace explotar", "eval": "({ bombas: window.game.scene.getScene('NinjaMonchoScene').peligros.countActive(true), muerto: prueba.jugador(1).muerto })", "espera": {"bombas": 1, "muerto": false}},
+    {"hasta": "prueba.jugador(1).muerto", "timeout": 2500, "nombre": "la bomba explota sola al rato"},
+    {"verificar": "y la explosión golpea al que se quedó cerca", "eval": "({ bombas: window.game.scene.getScene('NinjaMonchoScene').peligros.countActive(true) })", "espera": {"bombas": 0}},
     {"eval": "(prueba.sinEnemigos(), true)"},
     {"hasta": "!prueba.jugador(1).muerto && prueba.listo(1)", "timeout": 6000, "nombre": "J1 vuelve"},
     {"eval": "(prueba.ponerModGlobal('explotanAlMorir', false), prueba.proteger(1), true)"},
@@ -29,7 +32,7 @@
     {"down": "ArrowLeft"},
     {"wait": 60},
     {"eval": "(prueba.quitarProteccion(1), true)"},
-    {"press": "ArrowUp", "delay": 60},
+    {"press": "KeyZ", "delay": 60},
     {"verificar": "salto de pared nivel 2: mientras salta de la pared es intocable", "eval": "prueba.jugador(1)", "espera": {"estado": "saltoPared", "invulnerable": true}},
     {"up": "ArrowLeft"}
   ]

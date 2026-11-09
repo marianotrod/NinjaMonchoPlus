@@ -24,6 +24,7 @@ const textos = {
     credito_programacion: 'PROGRAMACIÓN',
     credito_graficos: 'GRÁFICOS',
     credito_musica: 'MÚSICA Y SFX',
+    jugador_corto: 'J',
     hotjoin_prompt: 'J2: MANTENÉ WASD/BOTÓN',
     hotjoin_joined: "¡JUGADOR 2 AL RESCATE!",
 
@@ -81,7 +82,7 @@ const textos = {
     perg_contagio: 'LA FURIA SE CONTAGIA',
     perg_primerEnemigoEscudo: 'EL PRIMER DEMONIO TIENE ESCUDO',
     perg_fuegoAmigo: 'FUEGO AMIGO',
-    perg_explotanAlMorir: 'LOS FURIOSOS EXPLOTAN AL MORIR',
+    perg_explotanAlMorir: 'LOS FURIOSOS SUELTAN UNA BOMBA AL MORIR',
     perg_ocultarNegativos: 'NEGATIVOS OCULTOS AL ELEGIR',
     perg_cadena: 'UNA CARTA ENCADENADA AL ELEGIR',
     perg_positivosIlegibles: 'POSITIVOS QUE SE BORRAN AL ELEGIR',
@@ -136,11 +137,12 @@ const textos = {
       'ENTRE NIVELES ELEGÍS UN PERGAMINO DE PACTO: UNA VENTAJA Y UNA DESVENTAJA PARA EL NIVEL SIGUIENTE.',
     ayuda_controles_titulo: 'CONTROLES',
     ayuda_controles:
-      'J1: FLECHAS · X KATANA · C ARMA\n' +
-      'J2: WASD · J KATANA · K ARMA\n' +
+      'J1: FLECHAS · Z SALTO · X KATANA · C ARMA\n' +
+      'J2: WASD · H SALTO · J KATANA · K ARMA\n' +
       'JOYSTICK: A SALTO · X KATANA · Y ARMA · R1 DASH\n' +
       'ESC / START: PAUSA\n\n' +
       'SALTO ALTO: MANTENÉ. EN EL AIRE: DOBLE SALTO.\n' +
+      'ARRIBA + KATANA: TAJO HACIA ARRIBA.\n' +
       'DOBLE TOQUE A UN COSTADO: DASH.\n' +
       'ABAJO EN EL AIRE: CAÍDA RÁPIDA.\n' +
       'ABAJO SOBRE UNA PASARELA: LA ATRAVESÁS.\n' +
@@ -168,6 +170,7 @@ const textos = {
     credito_programacion: 'PROGRAMMING',
     credito_graficos: 'GRAPHICS',
     credito_musica: 'MUSIC AND SFX',
+    jugador_corto: 'P',
     hotjoin_prompt: 'P2: HOLD WASD/BUTTON',
     hotjoin_joined: "PLAYER 2 TO THE RESCUE!",
 
@@ -225,7 +228,7 @@ const textos = {
     perg_contagio: 'RAGE IS CONTAGIOUS',
     perg_primerEnemigoEscudo: 'THE FIRST DEMON HAS A SHIELD',
     perg_fuegoAmigo: 'FRIENDLY FIRE',
-    perg_explotanAlMorir: 'ENRAGED DEMONS EXPLODE',
+    perg_explotanAlMorir: 'ENRAGED DEMONS DROP A BOMB WHEN THEY DIE',
     perg_ocultarNegativos: 'HIDDEN DOWNSIDES WHEN CHOOSING',
     perg_cadena: 'ONE CARD CHAINED WHEN CHOOSING',
     perg_positivosIlegibles: 'UPSIDES FADE WHEN CHOOSING',
@@ -280,11 +283,12 @@ const textos = {
       'BETWEEN LEVELS YOU PICK A PACT SCROLL: ONE ADVANTAGE AND ONE DRAWBACK FOR THE NEXT LEVEL.',
     ayuda_controles_titulo: 'CONTROLS',
     ayuda_controles:
-      'P1: ARROWS · X KATANA · C WEAPON\n' +
-      'P2: WASD · J KATANA · K WEAPON\n' +
+      'P1: ARROWS · Z JUMP · X KATANA · C WEAPON\n' +
+      'P2: WASD · H JUMP · J KATANA · K WEAPON\n' +
       'GAMEPAD: A JUMP · X KATANA · Y WEAPON · R1 DASH\n' +
       'ESC / START: PAUSE\n\n' +
       'HIGH JUMP: HOLD IT. IN THE AIR: DOUBLE JUMP.\n' +
+      'UP + KATANA: UPWARD SLASH.\n' +
       'DOUBLE TAP SIDEWAYS: DASH.\n' +
       'DOWN IN THE AIR: FAST FALL.\n' +
       'DOWN ON A LEDGE: DROP THROUGH.\n' +
@@ -345,6 +349,8 @@ export const i18n = {
     idiomaActual = idiomaActual === 'es' ? 'en' : 'es';
   },
   getOrigenes: () => ({ ...origenes }),
+  // J1 en castellano, P1 en inglés (indice: 0 o 1)
+  jugador: (indice) => `${i18n.t('jugador_corto')}${indice + 1}`,
   t: (clave) => {
     const frase = textos[IDIOMA_BASE][clave];
     const remota = frase && remotas[idiomaActual] && remotas[idiomaActual][aClaveRemota(frase)];

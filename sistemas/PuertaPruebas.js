@@ -26,13 +26,14 @@ export function instalarPuertaPruebas(game) {
     muerto: j.muerto, eliminado: j.eliminado,
     estado: j.estado, brillo: !!j.conBrillo, alfa: Math.round(j.alpha * 10) / 10, aturdido: j.aturdido, invulnerable: j.proteccion !== PROTECCION.NORMAL, apareciendo: j.apareciendo,
     arma: j.arma, municion: j.municion, intensidadBrillo: Math.round((j.intensidadBrillo ?? 0) * 100) / 100,
+    katanaArriba: !!j.katanaArriba,
     katana: j.katana ? { ancho: Math.round(j.katana.getBounds().width), alto: Math.round(j.katana.getBounds().height), top: Math.round(j.katana.getBounds().top) } : null
   } : null;
 
   const estadoEnemigo = (e) => ({
     clave: claveEnemigo(e), x: redondear(e.x), y: redondear(e.y),
     enfurecido: e.enfurecido, aturdido: e.aturdido, muerto: e.muerto, hp: e.hp, intocable: e.intocable, brillo: !!e.conBrillo,
-    escudo: !!e.escudo, lanzado: !!e.lanzado, accion: e.accion ? e.accion.tipo : null, vx: redondear(e.body.velocity.x), cuadro: e.frame ? e.frame.name : null
+    escudo: !!e.escudo, lanzado: !!e.lanzado, accion: e.accion ? e.accion.tipo : null, animacion: e.anims && e.anims.currentAnim ? e.anims.currentAnim.key : null, vx: redondear(e.body.velocity.x), cuadro: e.frame ? e.frame.name : null
   });
 
   window.prueba = {
@@ -265,10 +266,10 @@ export function instalarPuertaPruebas(game) {
       resolverGolpe(juego(), j, crearGolpe('contacto', { bando: BANDO.DEMONIOS, fuenteX: j.x + desdeLado * 5 }));
       return true;
     },
-    atacar(n = 1) {
+    atacar(n = 1, arriba = false) {
       const j = jugador(n);
       j.ultimoAtaque = -9999;
-      j.atacar();
+      j.atacar({ arriba });
       return true;
     },
     equipar(n, arma) {

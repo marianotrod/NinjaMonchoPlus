@@ -497,7 +497,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
 
     // Perder una vida se ve en el corazón que late en el HUD; el cartel queda para cuando alguien se queda sin vidas
-    if (sinVidas) this.events.emit(EVENTOS.BANNER, { titulo: `J${jugador.indice + 1} ${i18n.t('eliminado')}`, color: '#EF4444', duracion: 1400, chico: true });
+    if (sinVidas) this.events.emit(EVENTOS.BANNER, { titulo: `${i18n.jugador(jugador.indice)} ${i18n.t('eliminado')}`, color: '#EF4444', duracion: 1400, chico: true });
 
     if (this.debeRecomenzar()) {
       this.recomenzar();
@@ -730,7 +730,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
     this.physics.add.overlap(jugador, this.items, this.tocarItem, enJuego, this);
 
-    this.physics.add.overlap(jugador, this.peligros, (j, peligro) => this.detonarPeligro(peligro), enJuego, this);
+    this.physics.add.overlap(jugador, this.peligros, (j, peligro) => { if (peligro.explotaAlTocar) this.detonarPeligro(peligro); }, enJuego, this);
     this.physics.add.overlap(jugador, this.llamas, (j, llama) => this.golpearConTile(j, 'llama', llama.x), enJuego, this);
 
     this.physics.add.overlap(jugador, this.enemigos, (j, demonio) => {
@@ -1045,13 +1045,15 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   // Una mina explota al tocarla; la bomba especial, además, sola después de un rato. No se van al pasar a la Cacería.
-  soltarPeligro(tipo, x = Phaser.Math.Between(32, 480), y = -8) {
+  // espera: cuándo explota sola (la bomba especial). alTocar: false para que solo explote sola (o con un proyectil).
+  soltarPeligro(tipo, x = Phaser.Math.Between(32, 480), y = -8, { espera = CONFIG.ESPERA_BOMBA_ESPECIAL, alTocar = true } = {}) {
     const peligro = this.peligros.create(x, y, tipo);
     peligro.setBounce(0.3);
     peligro.body.setSize(12, 10).setOffset(2, 6);
+    peligro.explotaAlTocar = alTocar;
     if (tipo === 'bomba-especial') {
-      this.time.delayedCall(CONFIG.ESPERA_BOMBA_ESPECIAL, () => this.detonarPeligro(peligro));
-      this.tweens.add({ targets: peligro, scale: 1.15, duration: 250, yoyo: true, repeat: -1 });
+      this.time.delayedCall(espera, () => this.detonarPeligro(peligro));
+      this.tweens.add({ targets: peligro, scale: 1.15, duration: alTocar ? 250 : 120, yoyo: true, repeat: -1 });
     }
     return peligro;
   }
@@ -1339,7 +1341,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
 
     if (demonio.aturdido) return; // Un demonio aturdido no hace daño
-    resolverGolpe(this, jugador, crearGolpe('contacto', { bando: BANDO.DEMONIOS, fuenteX: demonio.x }));
+    resolverGolpe(this, jugador, crearGolpe('contacto', { bando: BANDO.DEMONIOS, fuenteX: demonio.x, autor: demonio }));
   }
 
   // Boulder nivel 2: el enemigo sale disparado como un proyectil del jugador. Al terminar, si la fase lo permite, muere.
@@ -1363,7 +1365,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
 
   matarEnemigo(enemigo, jugador) {
     if (enemigo.muerto) return;
-    const explota = enemigo.enfurecido && this.modsGlobal.explotanAlMorir; // Pergamino negativo
+    const sueltaBomba = enemigo.enfurecido && this.modsGlobal.explotanAlMorir; // Pergamino negativo
     const puntos = CONFIG.PUNTOS_BAJA * this.modsGlobal.multPuntos;
     if (jugador) {
       this.sumarPuntos(jugador.indice, puntos);
@@ -1372,8 +1374,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.efectoExplosion(enemigo.x, enemigo.y, 10);
     Sonido.efecto(this, 'snd-grito', 0.3, { rate: 1.4 });
     this.ultimaBaja = { x: enemigo.x, y: enemigo.y };  // Para el golpe final
-    enemigo.morir();
-    if (explota) this.explotar(enemigo.x, enemigo.y, { bando: BANDO.DEMONIOS });
+    enemigo.morir(jugador ? jugador.x : null);
+    // Suelta una bomba que explota después de un rato, no al tocarla: hay tiempo para alejarse
+    if (sueltaBomba) this.soltarPeligro('bomba-especial', enemigo.x, enemigo.y, { espera: CONFIG.ESPERA_BOMBA_FURIOSO, alTocar: false }).setVelocityY(-150);
 
     if (this.reglas.cuentaBajas) {
       this.emitirEnemigosRestantes();
@@ -1390,7 +1393,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     const zona = katana.getBounds();
     const direccion = ninja.flipX ? -1 : 1;
 
-    const golpe = crearGolpe('katana', { duenio: ninja, direccion, origen: ninja });
+    const golpe = crearGolpe('katana', { duenio: ninja, direccion, origen: ninja, arriba: !!ninja.katanaArriba });
     const alcanzar = (objeto, accion = () => resolverGolpe(this, objeto, golpe)) => {
       if (!objeto || !objeto.active || ninja.katanaGolpeados.has(objeto)) return;
       if (!Phaser.Geom.Intersects.RectangleToRectangle(zona, objeto.getBounds())) return;
@@ -1536,7 +1539,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   }
 
   golpeDeProyectil(proyectil) {
-    return crearGolpe('proyectil', { bando: proyectil.bando, duenio: proyectil.duenio, fuenteX: proyectil.x });
+    return crearGolpe('proyectil', { bando: proyectil.bando, duenio: proyectil.duenio, fuenteX: proyectil.x, autor: proyectil.autor });
   }
 
   // Los de los demonios siempre. Los de un jugador, si un modificador lo permite y ya se alejaron de quien los tiró.

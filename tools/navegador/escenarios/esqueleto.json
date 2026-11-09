@@ -1,0 +1,48 @@
+{
+  "descripcion": "Animaciones del esqueleto (datos/Animaciones.js): quieto, caminar, lanzar, aturdido y despertar, risa al matar y cuerpo que cae al morir",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 1500, "eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.ponerTiempo(90), prueba.ponerJugador(1, 40, 264), prueba.proteger(1), true)"},
+    {"eval": "(window.E = () => window.game.scene.getScene('NinjaMonchoScene').enemigos.getChildren()[0], prueba.crearEnemigo('esqueleto', 300, 264), prueba.sinDecisiones(0), true)"},
+    {"hasta": "prueba.enemigo(0).animacion === 'esqueleto-caminar'", "timeout": 1500, "nombre": "camina con su animación"},
+    {"verificar": "caminando usa los cuadros 7 a 12", "eval": "({ cuadro: prueba.enemigo(0).cuadro >= 7 && prueba.enemigo(0).cuadro <= 12 })", "espera": {"cuadro": true}},
+    {"eval": "(prueba.accionEnemigo(0, 'pausa'), true)"},
+    {"wait": 100},
+    {"verificar": "quieto, la de quieto", "eval": "({ animacion: prueba.enemigo(0).animacion })", "espera": {"animacion": "esqueleto-quieto"}},
+    {"hasta": "prueba.enemigo(0).accion === null", "timeout": 3000, "nombre": "termina la pausa"},
+
+    {"eval": "(window.E().setFlipX(true), window.E().setVelocityX(0), prueba.accionEnemigo(0, 'lanzar'), prueba.sinDecisiones(0), true)"},
+    {"hasta": "prueba.proyectiles().enemigos === 1", "timeout": 1500, "nombre": "tira la cuchilla"},
+    {"verificar": "la cuchilla sale en el último cuadro de lanzar, y se queda un momento ahí", "eval": "({ cuadro: prueba.enemigo(0).cuadro, accion: prueba.enemigo(0).accion })", "espera": {"cuadro": 16, "accion": "tiro"}},
+    {"wait": 300},
+    {"verificar": "la cuchilla va como el shuriken: casi derecho y girando", "eval": "(() => { const c = window.game.scene.getScene('NinjaMonchoScene').proyectilesDe('demonios')[0]; return { vx: Math.round(c.body.velocity.x), cae: c.body.velocity.y, gira: c.body.angularVelocity !== 0, ancho: c.width }; })()", "espera": {"vx": -160, "cae": {"min": 0, "max": 30}, "gira": true, "ancho": 16}},
+    {"eval": "(window.game.scene.getScene('NinjaMonchoScene').proyectiles.clear(true, true), true)"},
+
+    {"eval": "(window.E().aturdir(1000), true)"},
+    {"wait": 300},
+    {"verificar": "aturdido: hace su animación una vez, queda en el último cuadro y sin tinte", "eval": "({ animacion: prueba.enemigo(0).animacion, cuadro: prueba.enemigo(0).cuadro, tinte: window.E().isTinted })", "espera": {"animacion": "esqueleto-aturdido", "cuadro": 24, "tinte": false}},
+    {"hasta": "prueba.enemigo(0).animacion === 'esqueleto-despertar'", "timeout": 1200, "nombre": "al final se despierta"},
+    {"verificar": "mientras se despierta sigue aturdido", "eval": "({ aturdido: prueba.enemigo(0).aturdido })", "espera": {"aturdido": true}},
+    {"hasta": "!prueba.enemigo(0).aturdido", "timeout": 1000, "nombre": "deja de estar aturdido"},
+    {"eval": "prueba.sinEnemigos()"},
+
+    {"eval": "(prueba.completarRecoleccion(), true)"},
+    {"hasta": "prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "empieza la Cacería"},
+    {"eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.crearEnemigo('esqueleto', 200, 264), prueba.sinDecisiones(0), prueba.ponerJugador(1, 40, 264), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 3000, "nombre": "J1 en el piso"},
+    {"hasta": "prueba.enemigo(0).vx !== 0 && !prueba.enemigo(0).intocable", "timeout": 3000, "nombre": "el esqueleto ya está en juego"},
+    {"eval": "(prueba.quitarProteccion(1), window.E().setFlipX(true), window.E().setVelocityX(0), prueba.accionEnemigo(0, 'lanzar'), prueba.sinDecisiones(0), true)"},
+    {"hasta": "prueba.jugador(1).muerto", "timeout": 3000, "nombre": "la cuchilla del esqueleto mata a J1"},
+    {"wait": 100},
+    {"verificar": "si mata a un ninja estando en el piso, se ríe quieto", "eval": "({ accion: prueba.enemigo(0).accion, animacion: prueba.enemigo(0).animacion, vx: prueba.enemigo(0).vx })", "espera": {"accion": "risa", "animacion": "esqueleto-risa", "vx": 0}},
+    {"hasta": "!prueba.jugador(1).muerto && prueba.listo(1)", "timeout": 8000, "nombre": "J1 vuelve"},
+
+    {"eval": "(() => { prueba.proteger(1); const s = window.game.scene.getScene('NinjaMonchoScene'); window.antes = s.children.list.length; window.y0 = window.E().y; s.matarEnemigo(window.E(), s.jugador); return true; })()"},
+    {"wait": 50},
+    {"verificar": "al morir deja de contar enseguida y queda su cuerpo, con el cuadro de muerto", "eval": "(() => { const s = window.game.scene.getScene('NinjaMonchoScene'); const c = s.children.list.find(o => o.esCuerpo); return { enemigos: s.enemigos.countActive(true), cuerpo: !!c, cuadro: c ? c.frame.name : null }; })()", "espera": {"enemigos": 0, "cuerpo": true, "cuadro": 30}},
+    {"shot": "cuerpo"},
+    {"hasta": "(() => { const c = window.game.scene.getScene('NinjaMonchoScene').children.list.find(o => o.esCuerpo); return !c || c.y > 300; })()", "timeout": 3000, "nombre": "el cuerpo cae fuera de la pantalla"},
+    {"verificar": "salió despedido hacia arriba y cayó atravesando el escenario", "eval": "true"}
+  ]
+}

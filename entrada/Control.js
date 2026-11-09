@@ -37,6 +37,8 @@ export default class Control {
       izquierda: pad.left || izqX < -UMBRAL_STICK || derX < -UMBRAL_STICK,
       derecha: pad.right || izqX > UMBRAL_STICK || derX > UMBRAL_STICK,
       abajo: pad.down || izqY > UMBRAL_STICK || derY > UMBRAL_STICK,
+      // Arriba solo si el stick va más para arriba que para el costado: corriendo en diagonal no apunta arriba
+      arriba: pad.up || (izqY < -UMBRAL_STICK && -izqY > Math.abs(izqX)) || (derY < -UMBRAL_STICK && -derY > Math.abs(derX)),
       salto: boton(pad, PAD.A),
       dash: boton(pad, PAD.R1),
       ataque: boton(pad, PAD.X),
@@ -49,17 +51,18 @@ export default class Control {
     const pad = this.leerPad();
     const recien = (accion) => !!pad[accion] && !this.padAnterior[accion];
     const { JustDown } = Phaser.Input.Keyboard;
-    const { left, right, down, up, ataque, especial } = this.teclas;
+    const { left, right, down, up, salto, ataque, especial } = this.teclas;
 
     const acciones = {
       izquierda: left.isDown || !!pad.izquierda,
       derecha: right.isDown || !!pad.derecha,
       abajo: down.isDown || !!pad.abajo,
-      salto: up.isDown || !!pad.salto,
+      arriba: up.isDown || !!pad.arriba,
+      salto: salto.isDown || !!pad.salto,
 
       recienIzquierda: JustDown(left) || recien('izquierda'),
       recienDerecha: JustDown(right) || recien('derecha'),
-      recienSalto: JustDown(up) || recien('salto'),
+      recienSalto: JustDown(salto) || recien('salto'),
       recienDash: recien('dash'),
       recienAtaque: JustDown(ataque) || recien('ataque'),
       recienEspecial: JustDown(especial) || recien('especial')

@@ -14,7 +14,7 @@ export const GRAFICOS = [
 export const GRAFICOS_ANIMADOS = ['llama'];
 
 // Hojas de cuadros de 16x16 en una fila, sin animación propia: el código elige el cuadro.
-//   esqueleto: 0 y 1 caminar, 2 aviso antes de tirar la cuchilla
+//   esqueleto: sus animaciones están en datos/Animaciones.js
 //   samurai:   0 y 1 caminar, 2 se prepara, 3 corre
 export const GRAFICOS_CUADROS = ['esqueleto', 'samurai'];
 

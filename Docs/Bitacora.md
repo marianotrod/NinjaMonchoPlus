@@ -5,6 +5,28 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-10 — Claude: katana hacia arriba, salto en tecla propia, P1/P2 en inglés y animaciones del esqueleto
+
+- Katana hacia arriba: arriba + katana (flecha arriba + X, W + J, stick arriba + X). Es el mismo tajo girado, arriba de la cabeza;
+  lo que toca sale para arriba (`FISICA.katanaArriba`). En el joystick el stick cuenta como arriba solo si va más arriba que al costado.
+- El salto del teclado pasó a tecla propia: J1 **Z**, J2 **H** (`TECLAS` en `config.js`). Arriba y W quedan para apuntar.
+  Actualizados Cómo jugar (es/en) y el README.
+- En inglés el HUD, los paneles y los carteles dicen P1/P2 (`i18n.jugador()`).
+- Escenario nuevo `katana_arriba`; los escenarios que saltaban con la flecha arriba ahora usan Z.
+- Animaciones de enemigos: le pasé a Mariano la lista de lo que falta dibujar. Él agrega cuadros a las hojas (a la derecha, sin
+  mover los que están) y manda una guía; con eso se arma una tabla de animaciones (`datos/Animaciones.js`) para no tocar código después.
+- Esqueleto con hoja nueva (`esqueleto.png`, 2 filas de 16 cuadros): tabla de animaciones en `datos/Animaciones.js`
+  (quieto, risa, caminar, lanzar, preparaSalto, subir, caer, aturdido, despertar, muerto). Para otro enemigo se agrega su entrada.
+  - Se agacha antes de saltar; la cuchilla sale en el último cuadro de lanzar y va como el shuriken (derecho, girando, cae apenas).
+  - Aturdido: su animación en lugar del tinte celeste; al final se despierta (sin alargar el aturdimiento).
+  - Si mata a un ninja (contacto o cuchilla) estando en el piso, se ríe quieto un rato (`risa` en el Bestiario).
+  - Al morir deja de contar enseguida y su cuerpo sale despedido y cae fuera de la pantalla, como Moncho.
+- Escenario nuevo `esqueleto`; `enemigos_nuevos` adaptado.
+- Pergamino negativo "los furiosos explotan al morir": ahora sueltan una bomba que explota sola a los 1,8 s
+  (`CONFIG.ESPERA_BOMBA_FURIOSO`); tocarla no la hace explotar. Antes, matarlo con la katana te mataba siempre.
+- Pendiente (Mariano): probar el tajo hacia arriba, las teclas nuevas y el esqueleto; decidir el pergamino de katana alta;
+  borrar `esqueleto_backup_borrar.png`; seguir con los otros enemigos.
+
 ## 2026-11-09 — Claude: un fondo por fase (5.3) y música de la sala (5.7)
 
 - 5.3: `mundo/Fondo.js` y `CONFIG.FONDOS_FASE`. La Recolección usa el fondo del nivel; Cacería, fantasmas, jefe y sala

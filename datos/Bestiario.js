@@ -61,7 +61,10 @@ export const Bestiario = {
                 pesos: { seguir: 5, pausa: 2, salto: 2, bajar: 1, lanzar: 1 },
                 pausa: 900,                    // Lo que se queda quieto (ms)
                 salto: -260,                   // Unos 2,5 tiles
-                lanza: { aviso: 450, vx: 160, vy: -70, gravedad: 150 }
+                // La cuchilla va como el shuriken de Moncho: derecho, girando y cayendo apenas. Con la animación
+                // 'lanzar' el aviso dura lo que tarda en llegar a su último cuadro; sin ella, 'aviso' (ms).
+                lanza: { aviso: 450, vx: 160, caida: 10, giro: 900 },  // caida: px/s², más baja que la del shuriken porque va más lento
+                risa: 1500                     // Lo que se ríe cuando mata a un ninja (ms)
             },
             volador: { activo: false },
             lanzador: { activo: false }
