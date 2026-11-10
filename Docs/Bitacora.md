@@ -5,6 +5,12 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-10 — Claude: volador con hoja nueva
+
+- `volador.png` ahora es una hoja (Mariano): vuela con 0-3 en loop, mirando hacia donde va, y al morir explota en su
+  lugar con 4-5 y desaparece (`cae: false` en `datos/Animaciones.js`). Pasó de `GRAFICOS` a `GRAFICOS_CUADROS`.
+- Aturdido sigue con el tinte celeste (no tiene cuadros de aturdido). Escenario nuevo `volador`.
+
 ## 2026-11-10 — Claude: agarre de pared, salto de pared por timing, enemigos al probar un mapa y samurái arquero
 
 - Agarre de pared (todos, sin pergamino): en el aire, empujando contra una pared, el ninja se queda colgado 0,7 s y después

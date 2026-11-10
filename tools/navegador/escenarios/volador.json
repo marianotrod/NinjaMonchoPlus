@@ -1,0 +1,20 @@
+{
+  "descripcion": "Volador con hoja nueva: vuela en loop mirando hacia donde va y al morir explota en su lugar",
+  "query": "?debug&nivel=3&mapa=b-09&fase=caceria&enemigos=ninguno&sinTiempo",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "arranca en la Cacería"},
+    {"eval": "(window.S = () => window.game.scene.getScene('NinjaMonchoScene'), window.E = () => S().enemigos.getChildren()[0], prueba.proteger(1), prueba.crearEnemigo('espiritu_volador', 256, 120), true)"},
+    {"wait": 300},
+    {"verificar": "vuela con su animación", "eval": "({ animacion: prueba.enemigo(0).animacion, cuadro: prueba.enemigo(0).cuadro <= 3 })", "espera": {"animacion": "volador-volar", "cuadro": true}},
+    {"eval": "(E().setVelocityX(-50), true)"},
+    {"wait": 100},
+    {"verificar": "hacia la izquierda se da vuelta", "eval": "({ flip: E().flipX })", "espera": {"flip": true}},
+    {"eval": "(E().setVelocityX(50), true)"},
+    {"wait": 100},
+    {"verificar": "hacia la derecha no", "eval": "({ flip: E().flipX })", "espera": {"flip": false}},
+    {"eval": "(window.pos = { x: E().x, y: E().y }, S().matarEnemigo(E(), S().jugador), true)"},
+    {"wait": 50},
+    {"verificar": "al morir explota en su lugar, sin caer", "eval": "(() => { const c = S().children.list.find(o => o.esCuerpo); return { cuerpo: !!c, anim: c ? c.anims.currentAnim.key : null, quieto: c ? Math.abs(c.y - pos.y) < 1 : false }; })()", "espera": {"cuerpo": true, "anim": "volador-muerto", "quieto": true}},
+    {"hasta": "!S().children.list.some(o => o.esCuerpo)", "timeout": 1500, "nombre": "y desaparece al terminar la explosión"}
+  ]
+}

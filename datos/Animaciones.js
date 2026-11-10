@@ -5,8 +5,9 @@
 //   cuadros: '0-2' (del 0 al 2), '2-0' (al revés), '18' (uno solo) o '4,5,4' (en ese orden)
 //   fps:     cuadros por segundo (si no está, 10)
 //   loop:    se repite; si no, queda en el último cuadro
+//   cae:     solo en 'muerto'. false: muere en su lugar (explota) y desaparece al terminar; si no, cae fuera de la pantalla
 // Nombres que usa el juego (el que falte, se reemplaza por el comportamiento de antes):
-//   quieto, caminar, preparaSalto, subir, caer, lanzar, aturdido, despertar, risa, muerto,
+//   quieto, caminar, volar, preparaSalto, subir, caer, lanzar, aturdido, despertar, risa, muerto,
 //   preparaArco y disparar (el arco del samurái), preparaCarga y carga (la embestida del samurái)
 export const ANIMACIONES = {
   esqueleto: {
@@ -36,6 +37,10 @@ export const ANIMACIONES = {
     // Provisorios hasta que tenga cuadros propios: se agacha y corre con los de caminar, más rápido
     preparaCarga: { cuadros: '21' },
     carga:        { cuadros: '8-13', fps: 20, loop: true }
+  },
+  volador: {
+    volar:        { cuadros: '0-3', fps: 10, loop: true },
+    muerto:       { cuadros: '4-5', fps: 10, cae: false }  // Explota en su lugar
   }
 };
 

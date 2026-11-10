@@ -159,6 +159,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
 
         if (this.rasgos.volador.activo) {
             this.logicaVolador();
+            this.animar('volar');
         }
 
         if (this.rasgos.lanzador.activo) {
@@ -581,6 +582,16 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
     // ya no está en juego (no cuenta, no choca, no daña).
     dejarCuerpo(fuenteX) {
         const escena = this.scene;
+        const muerto = this.animaciones.muerto;
+        if (muerto.cae === false) {
+            // Muere en su lugar (explota) y desaparece cuando termina la animación
+            const resto = escena.add.sprite(this.x, this.y, this.texture.key).setFlipX(this.flipX).setDepth(60);
+            resto.esCuerpo = true;
+            resto.play(claveAnimacion(this.texture.key, 'muerto'));
+            resto.once('animationcomplete', () => resto.destroy());
+            escena.time.delayedCall(duracionAnimacion(muerto) + 500, () => resto.active && resto.destroy());
+            return;
+        }
         const lado = fuenteX === null ? (this.flipX ? 1 : -1) : (this.x < fuenteX ? -1 : 1);
         const cuerpo = escena.physics.add.sprite(this.x, this.y, this.texture.key).setFlipX(this.flipX).setDepth(60);
         if (this.enfurecido) cuerpo.setTint(0xff9999);
