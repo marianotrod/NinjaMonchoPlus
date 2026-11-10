@@ -9,3 +9,6 @@ __pycache__/
 
 # Banco de pruebas en navegador
 tools/navegador/capturas/
+
+# Respaldos de gráficos que se borran a mano
+*_backup_borrar.*
