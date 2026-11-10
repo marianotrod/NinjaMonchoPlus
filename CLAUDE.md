@@ -28,14 +28,18 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - Tiles de `MapTileSet.png`: la hoja crece hacia abajo y no cambia de ancho. Los índices especiales están en `TILES` (`config.js`). Los cuadros del fuego se animan solos desde el 91 hasta el primer tile vacío.
 - `public/niveles/`: un JSON por nivel más `indice.json`. `public/assets/`: sprites, tiles y audio. `Docs/`: GDD, GDD técnico, lore, `Roadmap.md` y `Bitacora.md`.
 - `tools/editor/`: editor de niveles. Con el juego servido, abrir http://localhost:5501/tools/editor/ en Chrome o Edge.
-  Online, Probar no guarda: le pasa el nivel al juego por localStorage (`?debug&borrador`).
+  Online, Probar no guarda: le pasa el nivel al juego por localStorage (`?debug&borrador`). Junto a Probar se elige en qué
+  fase empieza (`&fase=caceria`), si corre el reloj (`&sinTiempo`) y qué enemigos aparecen (`&enemigos=nivel:5`, `esqueleto:2,samurai:1` o `ninguno`).
 - `tools/`: scripts de soporte (no son parte del juego). `.venv/` y `node_modules/` no se versionan.
 
 ## Para ahorrar tokens
 - Probar cambios sin abrir el juego: desde **PowerShell** (desde Git Bash Edge no arranca), `.\tools\navegador\probar.ps1`
   corre todos los escenarios de `tools/navegador/escenarios/` (o `probar.ps1 golpes` uno solo). Usa su propio servidor (`servidor.py`) en el
   puerto 5599, para no chocar con Live Server, que recarga la página al guardarse una captura; usa Edge sin ventana, verifica resultados y termina con ✔/✘ por verificación y un total. Si no hay Node
-  instalado, usa el portable de `%LOCALAPPDATA%\node-portable`. **Correrlo antes y después de cada cambio.**
+  instalado, usa el portable de `%LOCALAPPDATA%\node-portable`. **Cuánto correr** (la batería completa tarda más de 10 minutos):
+  - Cambio chico o de calibración (números, textos, editor, un enemigo): solo los escenarios relacionados (`probar.ps1 paredes`).
+  - Cambio en algo compartido (física o estados del ninja, reglas, golpes, fases, carga de niveles): la batería completa.
+  - Antes de subir (push): siempre la batería completa.
 - Los escenarios hablan con el juego a través de `window.prueba` (`sistemas/PuertaPruebas.js`, solo con `?debug`), no con
   las variables internas. Al reorganizar código se adapta la puerta, no los escenarios. Formato de los pasos: ver `probar.js`.
 - Revisar sintaxis rápido: copiar el `.js` a un `.mjs` temporal y `node --check`.

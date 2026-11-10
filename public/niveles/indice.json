@@ -15,6 +15,7 @@
     {"id":"n-caos","tipo":"normal","tier":1},
     {"id":"n-wrap","tipo":"prueba","tier":null},
     {"id":"n-peligros","tipo":"prueba","tier":null},
+    {"id":"n-paredes","tipo":"prueba","tier":null},
     {"id":"sala-pergaminos","tipo":"pergaminos","tier":null},
     {"id":"b-01","tipo":"normal","tier":1},
     {"id":"b-02","tipo":"normal","tier":1},

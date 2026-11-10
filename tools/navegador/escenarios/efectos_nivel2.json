@@ -18,11 +18,13 @@
     {"verificar": "la plataforma desaparece sola", "eval": "prueba.contarTiles(2) === pasarelas"},
 
     {"eval": "(prueba.darHabilidades(1, ['caidaPesada'], 2), prueba.ponerJugador(1, 200, 150), true)"},
+    {"press": "ArrowDown", "delay": 40},
     {"down": "ArrowDown"},
     {"hasta": "prueba.proyectiles().jugador.filter(p => p.tipo === 'bolaCeleste').length === 2", "timeout": 1500, "nombre": "la caída pesada toca el piso"},
     {"up": "ArrowDown"},
     {"verificar": "caída pesada nivel 2: al golpear el piso salen dos bolas celestes del jugador", "eval": "window.escena.proyectilesDe('jugadores').filter(p => p.tipo === 'bolaCeleste').every(p => p.tintTopLeft === 0x7dd3fc)"},
     {"eval": "(prueba.crearEnemigo('lanzador', 104, 264), prueba.crearEnemigo('lanzador', 296, 264), prueba.ponerJugador(1, 200, 150), true)"},
+    {"press": "ArrowDown", "delay": 40},
     {"down": "ArrowDown"},
     {"hasta": "prueba.enemigos().some(e => e.aturdido)", "timeout": 2000, "nombre": "una bola celeste toca a un demonio"},
     {"up": "ArrowDown"},

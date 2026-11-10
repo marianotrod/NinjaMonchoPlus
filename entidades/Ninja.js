@@ -77,7 +77,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     // Banderas para interactuar con plataformas
     this.quiereAtravesarOneWay = false;
-    this.bloquearCaidaPesada = false;
+    this.ultimoToqueAbajo = -Infinity;
 
     this.control = new Control(scene, teclas);
 
@@ -187,6 +187,9 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     }
 
     const input = this.control.leer();
+    this.aplicarGravedad();
+    // Si pasa a un estado sin control (golpe, muerte, aparecer), se suelta de la pared. El dash maneja su gravedad.
+    if (this.agarre && this.estado !== ESTADO.LIBRE && this.estado !== ESTADO.DASH) this.soltarPared();
 
     if (this.katana) {
       this.posicionarKatana();
@@ -253,11 +256,16 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.cortarSaltoSiSuelta(input);
 
     let enElPiso = this.body.touching.down || this.body.blocked.down;
-    // Fuera de la pantalla no hay agarre: si no, el ninja podría colgarse de una pared que no se ve
+    // Cayendo y empujando contra una pared, la física puede tomar la esquina del bloque de la pared como piso (resuelve
+    // primero lo vertical): eso no es estar en el piso. Si no, el ninja queda parado en el costado de la pared.
+    if (enElPiso && (this.body.blocked.left || this.body.blocked.right) && !this.hayPisoDebajo()) enElPiso = false;
+    // Fuera de la pantalla no hay agarre: si no, el ninja podría colgarse de una pared que no se ve.
+    // Solo cuentan las paredes (blocked): el compañero o un enemigo al costado no son pared.
     const hayAgarre = !fueraDeVista(this);
-    const paredIzquierda = hayAgarre && (this.body.blocked.left || this.body.touching.left);
-    const paredDerecha = hayAgarre && (this.body.blocked.right || this.body.touching.right);
+    const paredIzquierda = hayAgarre && this.body.blocked.left;
+    const paredDerecha = hayAgarre && this.body.blocked.right;
     const tocandoPared = paredIzquierda || paredDerecha;
+    this.registrarPared(enElPiso, paredIzquierda, paredDerecha, ahora);
 
     this.medirCaida(enElPiso, tocandoPared);
     if (enElPiso && this.enAire && this.aterrizar(ahora)) return;
@@ -268,7 +276,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
     this.prepararCaida(input, enElPiso, ahora);
 
-    if (!enElPiso && tocandoPared) this.intentarSaltoPared(paredIzquierda);
+    // Primero el salto de pared (si saltó a tiempo), después el agarre (trepar con el salto)
+    if (!enElPiso) this.intentarSaltoPared(input, ahora);
+    const agarrado = !enElPiso && hayAgarre && this.agarrarPared(input, paredIzquierda, paredDerecha, ahora);
+    if (!agarrado && (enElPiso || !hayAgarre)) this.soltarPared();
 
     const puedeUsarCoyote = ahora < this.coyoteTimer;
     if ((enElPiso || puedeUsarCoyote) && this.quiereSaltar) {
@@ -280,10 +291,14 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       Sonido.efecto(this.sceneRef, 'snd-salto', 1);
     }
 
-    if (!enElPiso && input.abajo && !this.bloquearCaidaPesada && this.tieneHabilidad('caidaPesada')) {
-      this.setVelocityY(FISICA.caidaRapida);
-      this.enCaidaPesada = true;
+    // Caída pesada: doble toque abajo en el aire. Sigue hasta tocar el piso o agarrarse de una pared.
+    if (input.recienAbajo) {
+      const dobleToque = ahora - this.ultimoToqueAbajo < FISICA.dobleToque;
+      this.ultimoToqueAbajo = dobleToque ? -Infinity : ahora;
+      if (dobleToque && !enElPiso && !agarrado && this.tieneHabilidad('caidaPesada')) this.enCaidaPesada = true;
     }
+    if (agarrado) this.enCaidaPesada = false;
+    if (!enElPiso && this.enCaidaPesada) this.setVelocityY(FISICA.caidaRapida);
     // Caída pesada nivel 2: al golpear el piso salen dos bolas celestes
     if (enElPiso && this.enCaidaPesada) {
       this.enCaidaPesada = false;
@@ -293,12 +308,11 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (!enElPiso && !this.tieneControlAereo && !input.izquierda && !input.derecha) {
       this.tieneControlAereo = true;
     }
-    if (!this.enSaltoPared && (enElPiso || this.tieneControlAereo)) this.moverHorizontal(input, enElPiso);
+    // Agarrado no empuja contra la pared (alcanza con que esté al lado): empujar hace que la física tome la esquina del
+    // bloque de abajo como piso o como techo y lo trabe
+    if (!this.enSaltoPared && !this.agarre && (enElPiso || this.tieneControlAereo)) this.moverHorizontal(input, enElPiso);
 
-    if (!enElPiso && !this.enSaltoPared) {
-      this.intentarDobleSalto();
-      if (tocandoPared && this.body.velocity.y > 0) this.setVelocityY(this.body.velocity.y * 0.8);
-    }
+    if (!enElPiso && !this.enSaltoPared && !agarrado) this.intentarDobleSalto();
 
     this.animar(enElPiso);
   }
@@ -323,7 +337,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       this.tiempoUltimoTap[lado] = ahora;
       return false;
     };
-    if (dobleToque('left', input.recienIzquierda, -1) || dobleToque('right', input.recienDerecha, 1)) return true;
+    if (dobleToque('left', input.toqueIzquierda, -1) || dobleToque('right', input.toqueDerecha, 1)) return true;
 
     if (input.recienDash && puedeDashear) {
       const mirando = this.flipX ? -1 : 1;
@@ -335,8 +349,6 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   // Lo que recarga el piso y las dos formas de usar abajo: caída pesada en el aire y atravesar pasarelas
   prepararCaida(input, enElPiso, ahora) {
-    if (enElPiso && input.abajo) this.bloquearCaidaPesada = true;
-    if (!input.abajo) this.bloquearCaidaPesada = false;
 
     if (enElPiso) {
       this.tieneControlAereo = true;
@@ -348,8 +360,38 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.quiereAtravesarOneWay = ahora < this.dropThroughTimer;
   }
 
-  intentarSaltoPared(paredIzquierda) {
-    if (!this.quiereSaltar || !this.tieneHabilidad('wallJump')) return;
+  // Llegada a una pared: el salto de pared vale solo un instante desde que llega (FISICA.ventanaSaltoPared), aunque
+  // ya se haya despegado (por ejemplo, al apretar hacia afuera justo antes del salto).
+  // También hay un "coyote" de pared: si se despegó dentro de la ventana, tiene FISICA.coyotePared más desde que se despegó.
+  registrarPared(enElPiso, paredIzquierda, paredDerecha, ahora) {
+    const lado = paredIzquierda ? -1 : (paredDerecha ? 1 : 0);
+    if (enElPiso) this.llegadaPared = null;
+    // Agarrado o trepando, volver a tocar la pared (después de cada saltito) no es una llegada nueva
+    else if (lado !== 0 && lado !== this.ladoPared && !this.agarre) this.llegadaPared = { lado, desde: ahora, hasta: null };
+    else if (lado === 0 && this.llegadaPared && this.llegadaPared.hasta === null) this.llegadaPared.hasta = ahora;
+    this.ladoPared = enElPiso ? 0 : lado;
+  }
+
+  // Si todavía vale el salto de pared desde la última llegada
+  saltoParedATiempo(llegada, ahora) {
+    const { ventanaSaltoPared, coyotePared } = FISICA;
+    if (ahora - llegada.desde <= ventanaSaltoPared) return true;
+    // Se despegó dentro de la ventana: le queda el coyote desde que se despegó
+    return llegada.hasta !== null && llegada.hasta - llegada.desde <= ventanaSaltoPared && ahora - llegada.hasta <= coyotePared;
+  }
+
+  // Salto de pared (pergamino): es cuestión de timing y de dirección. Hay que saltar apretando hacia el lado contrario
+  // a la pared, al llegar o un instante después de despegarse. Saltar apretando contra la pared es trepar.
+  intentarSaltoPared(input, ahora) {
+    const llegada = this.llegadaPared;
+    if (!this.quiereSaltar || !llegada || !this.tieneHabilidad('wallJump')) return false;
+    const haciaAfuera = llegada.lado < 0 ? input.derecha : input.izquierda;
+    if (!haciaAfuera) return false;
+    if (!this.saltoParedATiempo(llegada, ahora)) return false;
+    const paredIzquierda = llegada.lado < 0;
+    this.llegadaPared = null;
+    this.enCaidaPesada = false;
+    this.soltarPared();
     if (!this.enSaltoPared) {
       this.sceneRef.time.delayedCall(FISICA.bloqueoSaltoPared, () => {
         if (this.enSaltoPared) this.estado = ESTADO.LIBRE;
@@ -360,9 +402,92 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.bufferSaltoTimer = 0;
     this.saltoCortable = true;
     this.setVelocityY(FISICA.saltoPared * this.factorSalto);
+    this.flotandoPared = true;   // Sube con menos gravedad hasta que empieza a bajar (aplicarGravedad)
     this.setVelocityX(paredIzquierda ? FISICA.empujePared : -FISICA.empujePared);
     this.setFlipX(!paredIzquierda);
     Sonido.efecto(this.sceneRef, 'snd-salto', 1.2);
+    return true;
+  }
+
+  // Agarre de pared, sin pergamino: en el aire y empujando contra la pared se queda colgado; después de un rato se
+  // desliza. Con el salto trepa un poquito y el agarre empieza de nuevo. Soltando la dirección, cae.
+  // Devuelve si está agarrado (entonces el salto no es doble salto).
+  agarrarPared(input, paredIzquierda, paredDerecha, ahora) {
+    // Para agarrarse hay que chocar la pared; para seguir agarrado alcanza con que esté al lado y se apriete hacia ella
+    // (trepando no se empuja contra la pared: si no, la física toma el bloque de arriba como un techo y frena el saltito)
+    const lado = this.agarre ? this.agarre.lado : (paredIzquierda ? -1 : (paredDerecha ? 1 : 0));
+    const hacia = lado < 0 ? input.izquierda : (lado > 0 ? input.derecha : false);
+    const empujando = hacia && (this.agarre ? this.hayParedAl(lado) : true);
+    if (!empujando || this.enSaltoPared) {
+      this.soltarPared();
+      return false;
+    }
+    const config = FISICA.agarrePared;
+    const vy = this.body.velocity.y;
+    if (!this.agarre) {
+      if (vy < 0) return false;  // Subiendo pasa de largo: se agarra cuando empieza a bajar
+      this.agarre = { lado, desde: ahora, trepando: false, proximoTrepe: 0 };
+    }
+    const agarre = this.agarre;
+    if (agarre.trepando) {
+      if (vy < 0) return true;
+      agarre.trepando = false;   // Terminó el saltito: se vuelve a agarrar y el deslizamiento empieza de nuevo
+      agarre.desde = ahora;
+    }
+    if (this.quiereSaltar && ahora >= agarre.proximoTrepe) {
+      agarre.trepando = true;
+      agarre.proximoTrepe = ahora + config.esperaTrepar;
+      this.bufferSaltoTimer = 0;
+      this.saltoCortable = false;
+      this.body.allowGravity = true;
+      this.setVelocity(0, config.trepar);
+      Sonido.efecto(this.sceneRef, 'snd-salto', 0.4, { rate: 1.4 });
+      return true;
+    }
+    const colgado = ahora - agarre.desde < config.duracion;
+    this.setVelocityX(0);
+    this.body.allowGravity = !colgado;
+    if (colgado) this.setVelocityY(0);
+    else if (vy > config.deslizar) this.setVelocityY(config.deslizar);
+    return true;
+  }
+
+  // Hay algo debajo del cuerpo (bloque, pasarela, el compañero...), sin contar los bordes: ahí puede estar la pared
+  hayPisoDebajo() {
+    const { body } = this;
+    return this.sceneRef.physics.overlapRect(body.left + 2, body.bottom, body.width - 4, 2, true, true).some(cuerpo => cuerpo !== body);
+  }
+
+  // Hay una pared (no una pasarela) pegada al costado
+  hayParedAl(lado) {
+    const { body } = this;
+    const x = lado < 0 ? body.left - 2 : body.right;
+    return this.sceneRef.physics.overlapRect(x, body.top + 2, 2, body.height - 4, false, true)
+      .some(cuerpo => !(cuerpo.gameObject && cuerpo.gameObject.esOneWay));
+  }
+
+  // Después de un salto de pared sube más flotón, hasta que empieza a bajar o pasa a otra cosa
+  aplicarGravedad() {
+    const libre = this.estado === ESTADO.LIBRE || this.enSaltoPared;
+    if (this.flotandoPared && (!libre || this.body.velocity.y >= 0 || this.agarre)) this.flotandoPared = false;
+    const gravedad = FISICA.gravedadJugador;
+    const total = FISICA.gravedadMundo + gravedad;
+    const buscada = this.flotandoPared ? total * FISICA.gravedadSaltoPared - FISICA.gravedadMundo : gravedad;
+    if (this.body.gravity.y !== buscada) this.body.setGravityY(buscada);
+  }
+
+  soltarPared() {
+    if (!this.agarre) return;
+    this.agarre = null;
+    this.body.allowGravity = true;
+  }
+
+  // Para las pruebas y los cuadros nuevos: agarrado, deslizando, trepando o null
+  get estadoPared() {
+    const agarre = this.agarre;
+    if (!agarre) return null;
+    if (agarre.trepando) return 'trepando';
+    return this.sceneRef.time.now - agarre.desde < FISICA.agarrePared.duracion ? 'agarrado' : 'deslizando';
   }
 
   moverHorizontal(input, enElPiso) {
@@ -386,6 +511,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     // Doble salto nivel 2: deja una plataforma fantasma bajo los pies
     if (this.habilidades.dobleSalto >= 2 && !this.sceneRef.reglas.soloBasico) this.sceneRef.dejarPlataforma(this);
     this.setVelocityY(FISICA.dobleSalto * this.factorSalto);
+    this.enCaidaPesada = false;
     this.saltoExtraDisponible = false;
     this.bufferSaltoTimer = 0;
     this.saltoCortable = true;
@@ -495,6 +621,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   ejecutarDash(direccion) {
+    this.soltarPared();
+    this.enCaidaPesada = false;
     this.estado = ESTADO.DASH;
     this.alturaCaida = 0;
     this.dashDisponible = false;

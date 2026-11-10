@@ -50,6 +50,18 @@ button.activo { background: #2563eb; border-color: #60a5fa; }
 #propiedades label { display: block; margin-bottom: 5px; color: #9ca3af; font-size: 12px; }
 #propiedades input, #propiedades select { display: block; width: 100%; color: #e5e7eb; }
 
+#opciones-prueba { position: relative; }
+#opciones-prueba summary { cursor: pointer; padding: 3px 7px; border: 1px solid #4b5563; border-radius: 3px; background: #374151; list-style: none; }
+#opciones-prueba summary::-webkit-details-marker { display: none; }
+#panel-prueba { position: absolute; z-index: 10; top: 100%; left: 0; margin-top: 4px; width: 240px; padding: 8px 10px;
+  background: #1f2937; border: 1px solid #4b5563; border-radius: 4px; box-shadow: 0 4px 12px #0008; }
+#panel-prueba label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+#panel-prueba strong { display: block; margin: 6px 0 4px; font-size: 11px; text-transform: uppercase; color: #9ca3af; }
+#panel-prueba strong:first-child { margin-top: 0; }
+#panel-prueba input[type=number] { width: 52px; }
+#panel-prueba .enemigo { justify-content: space-between; padding-left: 20px; }
+#panel-prueba .enemigo.apagado { opacity: 0.4; }
+
 #mensaje { margin-left: 10px; color: #fbbf24; }
 #mensaje.error { color: #f87171; }
 #mensaje.ok { color: #4ade80; }

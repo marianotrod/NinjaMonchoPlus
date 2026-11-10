@@ -8,7 +8,7 @@ import { cambiarTile, construirNivel, crearPlataformaFantasma, extenderTrampa, t
 import { bordeVerticalOpuesto, costadoLibre, wrapear } from '../mundo/Mundo.js';
 import { actualizarFuego, crearBola, crearBolaCeleste } from '../mundo/Fuego.js';
 import { actualizarRescate, objetosSueltos, prepararRescate } from '../mundo/Rescate.js';
-import { BANDO, COLORES, CONFIG, DEBUG, FISICA, LOGICA, MUNDO, PAD, TECLAS, TILES } from '../config.js';
+import { ARRANQUE_DEBUG, BANDO, COLORES, CONFIG, DEBUG, FISICA, LOGICA, MUNDO, PAD, TECLAS, TILES } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
 import { armarCartas, textoEfecto, tomarCarta } from '../reglas/Pergaminos.js';
 import { efectoPorId } from '../datos/Pergaminos.js';
@@ -201,12 +201,24 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       });
       this.time.delayedCall(CONFIG.APARICION_JEFE, () => this.spawnearJefe());
       this.time.delayedCall(CONFIG.DURACION_INTRO, () => this.iniciarFaseJefe());
+    } else if (ARRANQUE_DEBUG.fase === 'caceria') {
+      // Probando un mapa desde el editor: directo a la Cacería, sin Recolección ni bono
+      this.events.emit(EVENTOS.BANNER, { titulo: `${i18n.t('nivel')} ${this.nivelActual}`, duracion: CONFIG.DURACION_INTRO });
+      this.time.delayedCall(CONFIG.DURACION_INTRO, () => this.empezarEnCaceria());
     } else {
       this.events.emit(EVENTOS.BANNER, {
         titulo: `${i18n.t('nivel')} ${this.nivelActual}`, subtitulo: i18n.t('objetivo_recoleccion'), iconos: true, duracion: CONFIG.DURACION_INTRO
       });
       this.time.delayedCall(CONFIG.DURACION_INTRO, () => this.iniciarRecoleccion());
     }
+  }
+
+  empezarEnCaceria() {
+    if (this.fase !== 'intro') return;
+    this.fase = 'caceria';
+    cambiarFondo(this, 'caceria');
+    this.puntajesCaceria = [...this.partida.puntajes];
+    this.arrancarCaceria();
   }
 
   iniciarRecoleccion() {
@@ -281,8 +293,10 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.events.emit(EVENTOS.FASE, 'caceria');
     if (conCartel) this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('caceria'), subtitulo: i18n.t('objetivo_caceria'), color: '#EF4444', duracion: 1400, chico: true });
 
-    // Cupo de demonios a cazar: crece con el nivel
-    const cupo = Math.min(CONFIG.CUPO_CACERIA_BASE + Math.floor(this.nivelActual / 2), CONFIG.CUPO_CACERIA_MAX);
+    // Cupo de demonios a cazar: crece con el nivel (al probar un mapa, lo que se eligió en el editor)
+    const lista = this.listaEnemigosDePrueba();
+    const cupo = lista ? Object.values(lista).reduce((a, b) => a + b, 0)
+      : Math.min(CONFIG.CUPO_CACERIA_BASE + Math.floor(this.nivelEnemigos / 2), CONFIG.CUPO_CACERIA_MAX);
     this.enemigosPorAparecer = Math.max(0, cupo - this.enemigos.countActive(true));
     if (this.timerCaceria) this.timerCaceria.remove();
     if (this.enemigosPorAparecer > 0) {
@@ -578,6 +592,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // ==========================================
   tickReloj() {
     if (this.persecucion) return;
+    if (ARRANQUE_DEBUG.sinTiempo && !this.esSala) return;  // Probando un mapa sin reloj (opción del editor)
     this.tiempoRestante = Math.max(0, this.tiempoRestante - 1);
     this.events.emit(EVENTOS.TIEMPO, this.tiempoRestante);
 
@@ -1230,16 +1245,46 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // ==========================================
   // ENEMIGOS
   // ==========================================
+  // Al probar un mapa desde el editor se puede elegir qué enemigos aparecen (ARRANQUE_DEBUG.enemigos)
+  get nivelEnemigos() {
+    const prueba = ARRANQUE_DEBUG.enemigos;
+    return prueba && prueba.modo === 'nivel' ? prueba.nivel : this.nivelActual;
+  }
+
+  // { clave: cantidad } con los que se eligieron, o null si no se eligió una lista. 'ninguno' es una lista vacía.
+  listaEnemigosDePrueba() {
+    const prueba = ARRANQUE_DEBUG.enemigos;
+    if (!prueba || prueba.modo === 'nivel') return null;
+    if (prueba.modo === 'ninguno') return {};
+    let lugar = CONFIG.TOPE_ENEMIGOS_PRUEBA;
+    return Object.fromEntries(Object.entries(prueba.lista)
+      .filter(([clave]) => Bestiario[clave])
+      .map(([clave, n]) => { const cantidad = Math.min(n, lugar); lugar -= cantidad; return [clave, cantidad]; }));
+  }
+
+  // Con una lista de prueba: uno de los que todavía faltan en pantalla (o null si están todos)
+  enemigoQueFalta(lista) {
+    const enJuego = (clave) => this.enemigos.getChildren().filter(e => e.active && e.config === Bestiario[clave]).length;
+    const faltan = Object.entries(lista).filter(([clave, n]) => enJuego(clave) < n).map(([clave]) => clave);
+    return faltan.length ? Phaser.Utils.Array.GetRandom(faltan) : null;
+  }
+
   spawnearDemonio(enCaceria = false) {
     if (!this.enemigosHabilitados) return null;
+    const lista = this.listaEnemigosDePrueba();
+    if (!enCaceria && !this.reglas.aparecenEnemigos) return null;
+    if (lista) {
+      // En la Recolección, los elegidos a la vez; en la Cacería, cualquiera de la lista hasta completar el cupo
+      const clave = this.enemigoQueFalta(lista) || (enCaceria ? Phaser.Utils.Array.GetRandom(Object.keys(lista).filter(c => lista[c] > 0)) : null);
+      return clave ? this.crearEnemigo(clave, enCaceria) : null;
+    }
     if (!enCaceria) {
-      if (!this.reglas.aparecenEnemigos) return null;
-      const tope = Math.min(CONFIG.TOPE_ENEMIGOS_BASE + Math.floor((this.nivelActual - 1) / 2), CONFIG.TOPE_ENEMIGOS_MAX);
+      const tope = Math.min(CONFIG.TOPE_ENEMIGOS_BASE + Math.floor((this.nivelEnemigos - 1) / 2), CONFIG.TOPE_ENEMIGOS_MAX);
       if (this.enemigos.countActive(true) >= tope) return null;
     }
 
     // Elección ponderada entre los enemigos habilitados para este nivel
-    const disponibles = Object.entries(Bestiario).filter(([, datos]) => datos.nivelMinimo <= this.nivelActual);
+    const disponibles = Object.entries(Bestiario).filter(([, datos]) => datos.nivelMinimo <= this.nivelEnemigos);
     const pesoTotal = disponibles.reduce((suma, [, datos]) => suma + datos.peso, 0);
     let tirada = Math.random() * pesoTotal;
     const [clave] = disponibles.find(([, datos]) => (tirada -= datos.peso) < 0) || disponibles[0];

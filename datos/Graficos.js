@@ -11,11 +11,11 @@ export const GRAFICOS = [
 ];
 
 // Hojas de cuadros de 16x16 en una fila. La animación usa todos los cuadros que tenga el PNG: se pueden agregar sin tocar código.
-export const GRAFICOS_ANIMADOS = ['llama'];
+export const GRAFICOS_ANIMADOS = ['llama', 'flechasamurai'];
 
 // Hojas de cuadros de 16x16 en una fila, sin animación propia: el código elige el cuadro.
 //   esqueleto: sus animaciones están en datos/Animaciones.js
-//   samurai:   0 y 1 caminar, 2 se prepara, 3 corre
+//   samurai: sus animaciones están en datos/Animaciones.js
 export const GRAFICOS_CUADROS = ['esqueleto', 'samurai'];
 
 // Como los animados, pero con cuadros de 24x24.

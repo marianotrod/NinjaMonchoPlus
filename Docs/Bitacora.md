@@ -5,6 +5,47 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-10 — Claude: agarre de pared, salto de pared por timing, enemigos al probar un mapa y samurái arquero
+
+- Agarre de pared (todos, sin pergamino): en el aire, empujando contra una pared, el ninja se queda colgado 0,7 s y después
+  se desliza. Con el salto trepa un poquito (una vez cada 0,3 s) y el agarre empieza de nuevo; soltando la dirección, cae.
+  Así ya no se queda atrapado en pozos. Calibración en `FISICA.agarrePared`.
+- Salto de pared (pergamino): ahora es de timing. Vale solo si salta hasta 130 ms después de llegar a la pared
+  (`FISICA.ventanaSaltoPared`), aunque ya haya apretado hacia afuera. Más tarde, ya está agarrado y el salto trepa.
+- Solo las paredes cuentan para agarrarse: el compañero o un enemigo al costado no.
+- Mapa de prueba `n-paredes` (tipo prueba): pozo donde arranca J1, paredes de 5, 9 y 13 tiles y repisas.
+- Editor: junto a Probar, "Enemigos": según un nivel (1 a 10), elegidos uno por uno (hasta 12 en total) o ninguno.
+  Llega al juego como `?debug&enemigos=...` y solo cambia la prueba. Se recuerda en el navegador.
+- Escenarios nuevos `paredes`, `enemigos_prueba`, `enemigos_prueba_nivel` y `editor_prueba`.
+- Samurái con hoja nueva (`samurai.png`, 3 filas) y flecha (`flechasamurai.png`, 2 cuadros, en `GRAFICOS_ANIMADOS`):
+  - Además de embestir, cada 2,5 a 4,5 s se da vuelta hacia el ninja más cercano, apunta (cuadro 15) y dispara (17-19)
+    una flecha en arco fijo hacia adelante que apunta hacia donde va (`arco` en el Bestiario). Corta: unos 120 px.
+  - La embestida no tiene cuadros propios: provisorios `preparaCarga` (21) y `carga` (caminar rápido) en `datos/Animaciones.js`.
+  - Aturdido queda en el 28 (la guía decía 24) y la muerte es 33-36 (la guía decía 30-36): así está en la hoja.
+  - La katana sigue rebotando si no está aturdido. Se ríe si mata estando en el piso.
+- `Animaciones.js` acepta rangos al revés ('2-0'). Escenario nuevo `samurai`.
+- Después de probarlo (Mariano): salto de pared más fácil de encadenar. Ventana de 180 ms desde que llega a la pared y
+  "coyote" de pared de 100 ms después de despegarse (`FISICA.ventanaSaltoPared`, `FISICA.coyotePared`).
+- Caída pesada con doble toque abajo en el aire (antes bastaba mantener abajo y molestaba para el salto de pared). Sigue
+  hasta el piso; la cortan el doble salto, el salto de pared, el dash y agarrarse de una pared.
+- Dash con doble toque al costado solo con teclado; con joystick, solo R1 (salía sin querer con el stick).
+- Editor, opciones de Probar: además de los enemigos, "Empieza en" Recolección o Cacería (`?debug&fase=caceria`):
+  el nivel común arranca directo en la Cacería, sin bono ni carteles de sello. Escenario nuevo `fase_prueba`.
+  Y "Sin reloj" (`?debug&sinTiempo`): el tiempo no baja, salvo en la sala de pergaminos.
+- Salto de pared: ahora pide apretar hacia el lado contrario a la pared (además del timing). Salto apretando contra la
+  pared es siempre trepar. Agarrado o trepando, volver a tocar la pared no abre la ventana de nuevo (antes, trepando a
+  veces salía un salto de pared).
+- Salto de pared más flotón: mientras sube, gravedad al 60% (`gravedadSaltoPared`), impulso -240 (antes -300) y empuje
+  200 (antes 260): misma altura, más lento. Ventana 210 ms y coyote 120 ms.
+- Arreglo: cayendo y empujando contra una pared, la física podía tomar la esquina del bloque de la pared como piso y el
+  ninja quedaba parado en el costado de la pared (sin poder agarrarse). Ahora "en el piso" pide algo debajo del cuerpo,
+  y agarrado no empuja contra la pared (alcanza con que esté al lado).
+- Al soltar la cuchilla o la flecha, el enemigo muestra el último cuadro aunque la animación venga atrasada.
+- Esqueleto y samurái dibujados mirando a la derecha (Mariano). Roadmap: 5.10 animaciones de Moncho, 5.11 sacar el
+  demonio caminante, 5.12 pergamino "parry que devuelve".
+- Pendiente (Mariano): probar el agarre y el salto de pared en `n-paredes`; cuadros nuevos (agarre, trepar, salto de pared);
+  cuadros de embestida del samurái; probar el alcance de la flecha; borrar `samurai_backup_borrar.png`.
+
 ## 2026-11-10 — Claude: katana hacia arriba, salto en tecla propia, P1/P2 en inglés y animaciones del esqueleto
 
 - Katana hacia arriba: arriba + katana (flecha arriba + X, W + J, stick arriba + X). Es el mismo tajo girado, arriba de la cabeza;

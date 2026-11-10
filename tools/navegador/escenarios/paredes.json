@@ -1,0 +1,550 @@
+{
+ "descripcion": "Paredes (mapa n-paredes): agarre y deslizamiento sin pergamino, trepar con el salto y salto de pared por timing",
+ "query": "?debug&nivel=3&mapa=n-paredes&enemigos=ninguno",
+ "pasos": [
+  {
+   "hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'",
+   "timeout": 8000,
+   "nombre": "arranca la Recolección"
+  },
+  {
+   "verificar": "con enemigos=ninguno no aparece ninguno",
+   "wait": 2500,
+   "eval": "({ enemigos: prueba.estado().enemigos })",
+   "espera": {
+    "enemigos": 0
+   }
+  },
+  {
+   "eval": "(prueba.sinItems(), prueba.proteger(1), prueba.ponerJugador(1, 104, 150, 0, 60), true)"
+  },
+  {
+   "down": "ArrowLeft"
+  },
+  {
+   "wait": 150
+  },
+  {
+   "verificar": "en el aire, empujando contra la pared, se agarra (sin pergamino) y se queda quieto",
+   "eval": "(window.y0 = prueba.jugador(1).y, { pared: prueba.jugador(1).pared, vy: prueba.jugador(1).vy })",
+   "espera": {
+    "pared": "agarrado",
+    "vy": 0
+   }
+  },
+  {
+   "wait": 300
+  },
+  {
+   "verificar": "colgado no baja",
+   "eval": "({ baja: prueba.jugador(1).y - y0 })",
+   "espera": {
+    "baja": {
+     "min": -1,
+     "max": 1
+    }
+   }
+  },
+  {
+   "hasta": "prueba.jugador(1).pared === 'deslizando'",
+   "timeout": 1000,
+   "nombre": "después de un rato se desliza"
+  },
+  {
+   "wait": 200
+  },
+  {
+   "verificar": "deslizándose baja despacio",
+   "eval": "({ vy: prueba.jugador(1).vy })",
+   "espera": {
+    "vy": {
+     "min": 35,
+     "max": 50
+    }
+   }
+  },
+  {
+   "eval": "(window.y0 = prueba.jugador(1).y, true)"
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "verificar": "con el salto trepa un poquito (no es salto de pared ni doble salto)",
+   "eval": "({ pared: prueba.jugador(1).pared, estado: prueba.jugador(1).estado })",
+   "espera": {
+    "pared": "trepando",
+    "estado": "libre"
+   }
+  },
+  {
+   "wait": 300
+  },
+  {
+   "verificar": "y se vuelve a agarrar más arriba: el deslizamiento empieza de nuevo",
+   "eval": "({ pared: prueba.jugador(1).pared, subio: y0 - prueba.jugador(1).y })",
+   "espera": {
+    "pared": "agarrado",
+    "subio": {
+     "min": 8,
+     "max": 20
+    }
+   }
+  },
+  {
+   "up": "ArrowLeft"
+  },
+  {
+   "wait": 150
+  },
+  {
+   "verificar": "soltando la dirección, cae",
+   "eval": "({ pared: prueba.jugador(1).pared, cae: prueba.jugador(1).vy > 60 })",
+   "espera": {
+    "pared": null,
+    "cae": true
+   }
+  },
+  {
+   "eval": "(prueba.ponerJugador(1, 106, 150, -140, 0), true)"
+  },
+  {
+   "down": "ArrowLeft"
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 40
+  },
+  {
+   "verificar": "sin el pergamino, saltar al llegar a la pared también trepa",
+   "eval": "({ estado: prueba.jugador(1).estado })",
+   "espera": {
+    "estado": "libre"
+   }
+  },
+  {
+   "up": "ArrowLeft"
+  },
+  {
+   "wait": 400
+  },
+  {
+   "eval": "(prueba.darHabilidades(1, ['wallJump'], 1), prueba.ponerJugador(1, 106, 150, -140, 0), true)"
+  },
+  {
+   "down": "ArrowLeft"
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 30
+  },
+  {
+   "verificar": "con el pergamino, saltar apretando contra la pared al llegar es trepar, no salto de pared",
+   "eval": "({ estado: prueba.jugador(1).estado, pared: prueba.jugador(1).pared })",
+   "espera": {
+    "estado": "libre",
+    "pared": "trepando"
+   }
+  },
+  {
+   "up": "ArrowLeft"
+  },
+  {
+   "wait": 500
+  },
+  {
+   "eval": "(prueba.ponerJugador(1, 104, 150, -100, 0), true)"
+  },
+  {
+   "down": "ArrowLeft"
+  },
+  {
+   "wait": 400
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 30
+  },
+  {
+   "verificar": "saltando tarde, ya agarrado, trepa: el salto de pared es de timing",
+   "eval": "({ estado: prueba.jugador(1).estado, pared: prueba.jugador(1).pared })",
+   "espera": {
+    "estado": "libre",
+    "pared": "trepando"
+   }
+  },
+  {
+   "up": "ArrowLeft"
+  },
+  {
+   "wait": 500
+  },
+  {
+   "eval": "(prueba.ponerJugador(1, 106, 150, -140, 0), true)"
+  },
+  {
+   "down": "ArrowLeft"
+  },
+  {
+   "hasta": "prueba.jugador(1).pared !== null",
+   "timeout": 500,
+   "nombre": "llega a la pared",
+   "up": "ArrowLeft"
+  },
+  {
+   "down": "ArrowRight"
+  },
+  {
+   "press": "KeyZ",
+   "delay": 30
+  },
+  {
+   "wait": 30
+  },
+  {
+   "verificar": "hacia afuera + salto, a tiempo, también sale (aunque ya se haya despegado)",
+   "eval": "({ estado: prueba.jugador(1).estado, afuera: prueba.jugador(1).vx > 0 })",
+   "espera": {
+    "estado": "saltoPared",
+    "afuera": true
+   }
+  },
+  {
+   "verificar": "salto de pared flotón: mientras sube, menos gravedad",
+   "eval": "({ menos: window.game.scene.getScene('NinjaMonchoScene').jugador.body.gravity.y < 600, sube: prueba.jugador(1).vy < 0 })",
+   "espera": {
+    "menos": true,
+    "sube": true
+   }
+  },
+  {
+   "hasta": "prueba.jugador(1).vy > 0",
+   "timeout": 1500,
+   "nombre": "llega arriba y empieza a bajar"
+  },
+  {
+   "wait": 30
+  },
+  {
+   "verificar": "al bajar vuelve la gravedad normal",
+   "eval": "({ g: window.game.scene.getScene('NinjaMonchoScene').jugador.body.gravity.y })",
+   "espera": {
+    "g": 600
+   }
+  },
+  {
+   "up": "ArrowRight"
+  },
+  {
+   "wait": 500
+  },
+  {
+   "eval": "(prueba.darHabilidades(1, ['wallJump'], 1), prueba.ponerJugador(1, 106, 150, -140, 0), true)"
+  },
+  {
+   "down": "ArrowLeft"
+  },
+  {
+   "hasta": "prueba.jugador(1).pared !== null",
+   "timeout": 500,
+   "nombre": "llega a la pared otra vez",
+   "up": "ArrowLeft"
+  },
+  {
+   "down": "ArrowRight"
+  },
+  {
+   "wait": 70
+  },
+  {
+   "verificar": "ya se despegó de la pared",
+   "eval": "({ pared: prueba.jugador(1).pared, estado: prueba.jugador(1).estado })",
+   "espera": {
+    "pared": null,
+    "estado": "libre"
+   }
+  },
+  {
+   "press": "KeyZ",
+   "delay": 30
+  },
+  {
+   "wait": 30
+  },
+  {
+   "verificar": "coyote de pared: despegado hace un ratito, todavía sale el salto de pared",
+   "eval": "({ estado: prueba.jugador(1).estado, afuera: prueba.jugador(1).vx > 0 })",
+   "espera": {
+    "estado": "saltoPared",
+    "afuera": true
+   }
+  },
+  {
+   "up": "ArrowRight"
+  },
+  {
+   "wait": 500
+  },
+  {
+   "eval": "(prueba.ponerJugador(1, 104, 200, -100, 0), window.saltos = 0, window.espiaSalto = setInterval(() => { if (prueba.jugador(1).estado === 'saltoPared') saltos++; }, 15), true)"
+  },
+  {
+   "down": "ArrowLeft"
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 260
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 260
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 260
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 260
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 260
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 260
+  },
+  {
+   "up": "ArrowLeft"
+  },
+  {
+   "eval": "(clearInterval(espiaSalto), true)"
+  },
+  {
+   "verificar": "con el pergamino, trepando varias veces nunca sale un salto de pared",
+   "eval": "({ saltos })",
+   "espera": {
+    "saltos": 0
+   }
+  },
+  {
+   "up": "ArrowRight"
+  },
+  {
+   "wait": 500
+  },
+  {
+   "eval": "(prueba.darHabilidades(1, ['wallJump'], 0), prueba.ponerJugador(1, 120, 264), true)"
+  },
+  {
+   "hasta": "prueba.listo(1)",
+   "timeout": 2000,
+   "nombre": "J1 en el fondo del pozo"
+  },
+  {
+   "eval": "(() => { window.minY = 999; window.espia = setInterval(() => { minY = Math.min(minY, prueba.jugador(1).y); }, 20); return true; })()"
+  },
+  {
+   "down": "ArrowLeft"
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "press": "KeyZ",
+   "delay": 40
+  },
+  {
+   "wait": 280
+  },
+  {
+   "up": "ArrowLeft"
+  },
+  {
+   "eval": "(clearInterval(espia), true)"
+  },
+  {
+   "verificar": "del fondo del pozo se sale trepando, sin habilidades (arriba de la pared, y < 48)",
+   "eval": "({ arriba: minY < 44 })",
+   "espera": {
+    "arriba": true
+   }
+  },
+  {
+   "shot": "pozo"
+  }
+ ]
+}

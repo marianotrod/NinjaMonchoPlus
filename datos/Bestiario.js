@@ -90,7 +90,11 @@ export const Bestiario = {
                 pesos: { seguir: 5, pausa: 2, salto: 2, bajar: 1 },
                 pausa: 900,
                 salto: -260,
-                carga: { distancia: 128, aviso: 350, velocidad: 240, duracion: 700, espera: 1500 }
+                carga: { distancia: 128, aviso: 350, velocidad: 240, duracion: 700, espera: 1500 },
+                // Cada tanto se da vuelta hacia el ninja más cercano y tira una flecha en arco hacia adelante
+                // (sube empinada y cae). intervalo: cada cuánto (ms, al azar entre los dos); gravedad: la suya, más la del mundo
+                arco: { intervalo: [2500, 4500], vx: 130, vy: -230, gravedad: 300 },
+                risa: 1500
             },
             volador: { activo: false },
             lanzador: { activo: false }

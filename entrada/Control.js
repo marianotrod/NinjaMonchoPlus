@@ -52,6 +52,9 @@ export default class Control {
     const recien = (accion) => !!pad[accion] && !this.padAnterior[accion];
     const { JustDown } = Phaser.Input.Keyboard;
     const { left, right, down, up, salto, ataque, especial } = this.teclas;
+    // JustDown da verdadero una sola vez por pulsación: se lee una vez y se usa en los dos lugares
+    const toqueIzquierda = JustDown(left);
+    const toqueDerecha = JustDown(right);
 
     const acciones = {
       izquierda: left.isDown || !!pad.izquierda,
@@ -60,8 +63,12 @@ export default class Control {
       arriba: up.isDown || !!pad.arriba,
       salto: salto.isDown || !!pad.salto,
 
-      recienIzquierda: JustDown(left) || recien('izquierda'),
-      recienDerecha: JustDown(right) || recien('derecha'),
+      recienIzquierda: toqueIzquierda || recien('izquierda'),
+      recienDerecha: toqueDerecha || recien('derecha'),
+      recienAbajo: JustDown(down) || recien('abajo'),
+      // Solo teclado: el doble toque al costado es el dash del teclado. Con joystick el dash es R1, así no sale sin querer
+      toqueIzquierda,
+      toqueDerecha,
       recienSalto: JustDown(salto) || recien('salto'),
       recienDash: recien('dash'),
       recienAtaque: JustDown(ataque) || recien('ataque'),

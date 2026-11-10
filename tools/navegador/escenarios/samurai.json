@@ -1,0 +1,186 @@
+{
+ "descripcion": "Samurái con hoja nueva: quieto, caminar, flecha en arco hacia el ninja más cercano, embestida, aturdido, risa y cuerpo al morir",
+ "query": "?debug&nivel=3&mapa=b-09&enemigos=ninguno",
+ "pasos": [
+  {
+   "hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'",
+   "timeout": 8000,
+   "nombre": "arranca la Recolección"
+  },
+  {
+   "eval": "(window.S = () => window.game.scene.getScene('NinjaMonchoScene'), window.E = () => S().enemigos.getChildren()[0], prueba.sinItems(), prueba.ponerJugador(1, 40, 264), prueba.proteger(1), true)"
+  },
+  {
+   "hasta": "prueba.listo(1)",
+   "timeout": 3000,
+   "nombre": "J1 en el piso"
+  },
+  {
+   "eval": "(prueba.crearEnemigo('samurai', 300, 264), prueba.sinDecisiones(0), true)"
+  },
+  {
+   "hasta": "prueba.enemigo(0).animacion === 'samurai-caminar'",
+   "timeout": 1500,
+   "nombre": "camina con su animación"
+  },
+  {
+   "eval": "(prueba.accionEnemigo(0, 'pausa'), true)"
+  },
+  {
+   "wait": 100
+  },
+  {
+   "verificar": "quieto, mira a un lado y vuelve",
+   "eval": "({ animacion: prueba.enemigo(0).animacion })",
+   "espera": {
+    "animacion": "samurai-quieto"
+   }
+  },
+  {
+   "hasta": "prueba.enemigo(0).accion === null",
+   "timeout": 3000,
+   "nombre": "termina la pausa"
+  },
+  {
+   "eval": "(E().setFlipX(false), E().setVelocityX(50), E().proximoArco = 0, true)"
+  },
+  {
+   "hasta": "prueba.enemigo(0).accion === 'apuntar'",
+   "timeout": 1000,
+   "nombre": "le toca disparar"
+  },
+  {
+   "wait": 50
+  },
+  {
+   "verificar": "se da vuelta hacia el ninja más cercano y apunta, quieto",
+   "eval": "({ animacion: prueba.enemigo(0).animacion, mira: E().flipX, vx: prueba.enemigo(0).vx })",
+   "espera": {
+    "animacion": "samurai-preparaArco",
+    "mira": true,
+    "vx": 0
+   }
+  },
+  {
+   "hasta": "prueba.proyectiles().enemigos === 1",
+   "timeout": 1500,
+   "nombre": "dispara la flecha"
+  },
+  {
+   "verificar": "la flecha sale en el último cuadro de disparar",
+   "eval": "({ cuadro: prueba.enemigo(0).cuadro, accion: prueba.enemigo(0).accion })",
+   "espera": {
+    "cuadro": 19,
+    "accion": "tiro"
+   }
+  },
+  {
+   "eval": "(() => { const f = S().proyectilesDe('demonios')[0]; window.f0 = { vx: f.body.velocity.x, vy: f.body.velocity.y, textura: f.texture.key, anim: f.anims.currentAnim && f.anims.currentAnim.key }; return true; })()"
+  },
+  {
+   "verificar": "es la flecha animada, sale hacia el ninja y para arriba",
+   "eval": "f0",
+   "espera": {
+    "vx": -130,
+    "vy": {
+     "max": -150
+    },
+    "textura": "flechasamurai",
+    "anim": "flechasamurai"
+   }
+  },
+  {
+   "wait": 600
+  },
+  {
+   "verificar": "va en arco: después baja, y apunta hacia donde va",
+   "eval": "(() => { const f = S().proyectilesDe('demonios')[0]; if (!f) return { baja: true, apunta: true }; return { baja: f.body.velocity.y > 0, apunta: Math.abs(f.rotation - Math.atan2(f.body.velocity.y, f.body.velocity.x)) < 0.2 }; })()",
+   "espera": {
+    "baja": true,
+    "apunta": true
+   }
+  },
+  {
+   "eval": "(S().proyectiles.clear(true, true), E().aturdir(1000), true)"
+  },
+  {
+   "wait": 400
+  },
+  {
+   "verificar": "aturdido: queda en el cuadro 28, sin tinte",
+   "eval": "({ animacion: prueba.enemigo(0).animacion, cuadro: prueba.enemigo(0).cuadro, tinte: E().isTinted })",
+   "espera": {
+    "animacion": "samurai-aturdido",
+    "cuadro": 28,
+    "tinte": false
+   }
+  },
+  {
+   "hasta": "prueba.enemigo(0).animacion === 'samurai-despertar'",
+   "timeout": 1200,
+   "nombre": "se despierta"
+  },
+  {
+   "hasta": "!prueba.enemigo(0).aturdido",
+   "timeout": 1000,
+   "nombre": "deja de estar aturdido"
+  },
+  {
+   "eval": "(() => { S().enemigos.getChildren().slice().forEach(e => e.destroy()); return true; })()"
+  },
+  {
+   "eval": "(prueba.completarRecoleccion(), true)"
+  },
+  {
+   "hasta": "prueba.estado().fase === 'caceria'",
+   "timeout": 8000,
+   "nombre": "empieza la Cacería"
+  },
+  {
+   "eval": "(prueba.sinItems(), prueba.ponerJugador(1, 88, 264), prueba.crearEnemigo('samurai', 200, 264), prueba.sinDecisiones(0), true)"
+  },
+  {
+   "hasta": "prueba.listo(1) && !prueba.enemigo(0).intocable",
+   "timeout": 4000,
+   "nombre": "J1 en el piso y el samurái en juego"
+  },
+  {
+   "eval": "(prueba.quitarProteccion(1), E().setVelocityX(0), E().proximoArco = 0, true)"
+  },
+  {
+   "hasta": "prueba.jugador(1).muerto",
+   "timeout": 4000,
+   "nombre": "la flecha mata a J1"
+  },
+  {
+   "wait": 100
+  },
+  {
+   "verificar": "si mata a un ninja estando en el piso, se ríe",
+   "eval": "({ accion: prueba.enemigo(0).accion, animacion: prueba.enemigo(0).animacion })",
+   "espera": {
+    "accion": "risa",
+    "animacion": "samurai-risa"
+   }
+  },
+  {
+   "hasta": "!prueba.jugador(1).muerto && prueba.listo(1)",
+   "timeout": 8000,
+   "nombre": "J1 vuelve"
+  },
+  {
+   "eval": "(prueba.proteger(1), E().aturdir(5000), S().matarEnemigo(E(), S().jugador), true)"
+  },
+  {
+   "wait": 300
+  },
+  {
+   "verificar": "al morir, su cuerpo cae con la animación de muerte",
+   "eval": "(() => { const c = S().children.list.find(o => o.esCuerpo); return { cuerpo: !!c, anim: c && c.anims.currentAnim ? c.anims.currentAnim.key : null }; })()",
+   "espera": {
+    "cuerpo": true,
+    "anim": "samurai-muerto"
+   }
+  }
+ ]
+}

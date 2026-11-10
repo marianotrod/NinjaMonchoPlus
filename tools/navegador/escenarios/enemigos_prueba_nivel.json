@@ -1,0 +1,9 @@
+{
+  "descripcion": "Enemigos al probar un mapa: según un nivel (más a la vez y de los que salen en ese nivel)",
+  "query": "?debug&nivel=1&enemigos=nivel:9",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"eval": "(() => { const s = window.game.scene.getScene('NinjaMonchoScene'); (() => { const s = window.game.scene.getScene('NinjaMonchoScene'); s.timerDemonios.paused = true; s.enemigos.getChildren().slice().forEach(e => e.destroy()); })(); for (let i = 0; i < 40; i++) { s.spawnearDemonio(); } return true; })()"},
+    {"verificar": "según el nivel 9: en el nivel 1 aparecen 5 a la vez (el tope del nivel 9), no 3", "eval": "({ total: prueba.enemigos().length, nivel: window.game.scene.getScene('NinjaMonchoScene').nivelEnemigos })", "espera": {"total": 5, "nivel": 9}}
+  ]
+}

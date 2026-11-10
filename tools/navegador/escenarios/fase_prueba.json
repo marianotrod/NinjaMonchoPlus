@@ -1,0 +1,15 @@
+{
+  "descripcion": "Probar un mapa desde el editor arrancando directo en la Cacería (?debug&fase=caceria)",
+  "query": "?debug&nivel=3&mapa=b-09&fase=caceria&enemigos=esqueleto:2&sinTiempo",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "arranca en la Cacería"},
+    {"verificar": "sin pasar por la Recolección: sin bono, con el fondo de la Cacería y las reglas de la Cacería", "eval": "({ puntos: prueba.estado().puntajes[0], fondo: prueba.fondo().clave, vulnerables: prueba.reglas().enemigosVulnerables })", "espera": {"puntos": 0, "fondo": "fondo-caceria", "vulnerables": true}},
+    {"eval": "(window.t0 = prueba.estado().tiempo, true)"},
+    {"hasta": "prueba.enemigos().length === 2", "timeout": 3000, "nombre": "aparecen los enemigos elegidos"},
+    {"wait": 2200},
+    {"verificar": "sin reloj: el tiempo no baja", "eval": "({ igual: prueba.estado().tiempo === t0 })", "espera": {"igual": true}},
+    {"verificar": "los enemigos de la Cacería están furiosos", "eval": "({ furiosos: prueba.enemigos().every(e => e.enfurecido) })", "espera": {"furiosos": true}},
+    {"eval": "(prueba.proteger(1), prueba.terminarCaceria(true))"},
+    {"hasta": "prueba.panel() !== null", "timeout": 5000, "nombre": "matándolos termina el nivel"}
+  ]
+}

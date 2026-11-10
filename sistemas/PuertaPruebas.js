@@ -26,7 +26,7 @@ export function instalarPuertaPruebas(game) {
     muerto: j.muerto, eliminado: j.eliminado,
     estado: j.estado, brillo: !!j.conBrillo, alfa: Math.round(j.alpha * 10) / 10, aturdido: j.aturdido, invulnerable: j.proteccion !== PROTECCION.NORMAL, apareciendo: j.apareciendo,
     arma: j.arma, municion: j.municion, intensidadBrillo: Math.round((j.intensidadBrillo ?? 0) * 100) / 100,
-    katanaArriba: !!j.katanaArriba,
+    katanaArriba: !!j.katanaArriba, pared: j.estadoPared,
     katana: j.katana ? { ancho: Math.round(j.katana.getBounds().width), alto: Math.round(j.katana.getBounds().height), top: Math.round(j.katana.getBounds().top) } : null
   } : null;
 
@@ -334,7 +334,9 @@ export function instalarPuertaPruebas(game) {
     },
     // Sin decisiones al azar por un rato largo: el enemigo i solo camina
     sinDecisiones(i) {
-      juego().enemigos.getChildren()[i].proximaDecision = Infinity;
+      const e = juego().enemigos.getChildren()[i];
+      e.proximaDecision = Infinity;
+      e.proximoArco = Infinity;  // Tampoco dispara flechas
       return true;
     },
     // Los textos del último panel de la UI (nivel completado, fin de partida)

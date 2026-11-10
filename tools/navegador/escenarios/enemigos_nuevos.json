@@ -47,9 +47,9 @@
     {"eval": "(() => { const e = window.game.scene.getScene('NinjaMonchoScene').enemigos.getChildren()[0]; e.setVelocityX(-50); e.setFlipX(true); return true; })()"},
     {"hasta": "prueba.enemigo(0).accion === 'preparar'", "timeout": 1000, "nombre": "el samurái ve al ninja delante"},
     {"wait": 50},
-    {"verificar": "el samurái se prepara: quieto y con su cuadro", "eval": "({ vx: prueba.enemigo(0).vx, cuadro: prueba.enemigo(0).cuadro })", "espera": {"vx": 0, "cuadro": 2}},
+    {"verificar": "el samurái se prepara: quieto y con su cuadro", "eval": "({ vx: prueba.enemigo(0).vx, animacion: prueba.enemigo(0).animacion })", "espera": {"vx": 0, "animacion": "samurai-preparaCarga"}},
     {"hasta": "prueba.enemigo(0).accion === 'carga'", "timeout": 1000, "nombre": "se larga a correr"},
-    {"verificar": "y corre hacia adelante", "eval": "({ vx: prueba.enemigo(0).vx, cuadro: prueba.enemigo(0).cuadro })", "espera": {"vx": {"max": -200}, "cuadro": 3}},
+    {"verificar": "y corre hacia adelante", "eval": "({ vx: prueba.enemigo(0).vx, animacion: prueba.enemigo(0).animacion })", "espera": {"vx": {"max": -200}, "animacion": "samurai-carga"}},
     {"eval": "(prueba.sinEnemigos(), true)"},
 
     {"eval": "(prueba.completarRecoleccion(), true)"},

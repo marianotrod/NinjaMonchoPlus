@@ -32,8 +32,10 @@
     {"down": "ArrowLeft"},
     {"wait": 60},
     {"eval": "(prueba.quitarProteccion(1), true)"},
+    {"up": "ArrowLeft"},
+    {"down": "ArrowRight"},
     {"press": "KeyZ", "delay": 60},
     {"verificar": "salto de pared nivel 2: mientras salta de la pared es intocable", "eval": "prueba.jugador(1)", "espera": {"estado": "saltoPared", "invulnerable": true}},
-    {"up": "ArrowLeft"}
+    {"up": "ArrowRight"}
   ]
 }

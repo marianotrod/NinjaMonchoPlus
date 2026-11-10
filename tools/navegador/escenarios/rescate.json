@@ -31,7 +31,8 @@
     {"hasta": "s.rescate === null", "timeout": 1000, "nombre": "lleva la llave a la jaula"},
     {"verificar": "abrir la jaula rescata al compañero con una vida", "eval": "({ vidas: prueba.estado().vidas[1], eliminado: prueba.jugador(2).eliminado })", "espera": {"vidas": 1, "eliminado": false}},
     {"verificar": "el rescatado vuelve desde su spawn", "eval": "({ x: Math.round(s.jugador2.x) === Math.round(s.spawnDe(s.jugador2).x) })", "espera": {"x": true}},
-    {"hasta": "prueba.listo(2)", "timeout": 3000, "nombre": "J2 cae y toca el piso"},
+    {"eval": "(prueba.ponerJugador(1, s.jugador2.x < 256 ? s.jugador2.x + 120 : s.jugador2.x - 120, 100), true)"},
+    {"hasta": "prueba.listo(2)", "timeout": 3000, "nombre": "J2 cae y toca el piso (J1 se corre: si no, J2 rebota en su cabeza)"},
     {"verificar": "y vuelve protegido, como al reaparecer", "eval": "prueba.jugador(2).invulnerable"},
 
     {"eval": "(prueba.quitarProteccion(1), true)"},

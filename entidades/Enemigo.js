@@ -1,6 +1,6 @@
 // Enemigo.js
 import { BANDO, CONFIG, FISICA } from '../config.js';
-import { ANIMACIONES, claveAnimacion, duracionAnimacion } from '../datos/Animaciones.js';
+import { ANIMACIONES, claveAnimacion, duracionAnimacion, listaDeCuadros } from '../datos/Animaciones.js';
 import { envolverX, fueraDeVista } from '../mundo/Mundo.js';
 
 export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
@@ -31,6 +31,16 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         const clave = claveAnimacion(this.texture.key, nombre);
         if (reiniciar || !this.anims.currentAnim || this.anims.currentAnim.key !== clave) this.play(clave);
         return true;
+    }
+
+    // Al soltar lo que tira se ve el último cuadro, aunque la animación venga atrasada (Phaser avanza de a un cuadro por
+    // actualización: si el juego va lento, la animación queda detrás del reloj)
+    quedarEnUltimoCuadro(nombre) {
+        if (!this.tieneAnimacion(nombre)) return;
+        const clave = claveAnimacion(this.texture.key, nombre);
+        if (!this.anims.currentAnim || this.anims.currentAnim.key !== clave) this.play(clave);
+        this.anims.stop();
+        this.setFrame(listaDeCuadros(this.animaciones[nombre].cuadros).at(-1));
     }
 
     tieneAnimacion(nombre) {
@@ -92,6 +102,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
             this.proximaDecision = this.scene.time.now + this.esperaDecision();
             this.proximoGiro = 0;
             this.proximaCarga = 0;
+            if (config.arco) this.proximoArco = this.scene.time.now + Phaser.Math.Between(...config.arco.intervalo);
             this.atravesando = 0;        // Hasta cuándo atraviesa las pasarelas (para bajar de una)
         }
 
@@ -248,6 +259,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         else if (this.body.velocity.x > 0) this.setFlipX(false);
 
         if (enPiso && config.carga) this.buscarCarga(config.carga, ahora);
+        if (enPiso && config.arco && !this.accion && ahora >= this.proximoArco && !this.intocable) this.apuntar(config.arco, ahora);
         if (enPiso && config.decision && !this.accion && ahora >= this.proximaDecision) this.decidir(config, ahora);
         this.animarCaminante(enPiso);
     }
@@ -310,6 +322,38 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
+    // Samurái: se da vuelta hacia el ninja más cercano y apunta; después dispara (ver seguirAccion)
+    apuntar(arco, ahora) {
+        this.proximoArco = ahora + Phaser.Math.Between(...arco.intervalo);
+        const objetivo = this.scene.jugadorMasCercano(this.x, this.y);
+        if (!objetivo) return;
+        this.setFlipX(objetivo.x < this.x);
+        this.accion = { tipo: 'apuntar', fin: ahora + this.duracionDe('preparaArco', 300) };
+    }
+
+    // Lo que tarda una animación hasta su último cuadro (ahí sale lo que tira); sin animación, 'porDefecto' ms
+    duracionDe(nombre, porDefecto) {
+        if (!this.tieneAnimacion(nombre)) return porDefecto;
+        const animacion = this.animaciones[nombre];
+        return duracionAnimacion(animacion) - (nombre === 'preparaArco' ? 0 : 1000 / (animacion.fps ?? 10));
+    }
+
+    // Lo que dura un cuadro de una animación (el último queda un momento, con el brazo estirado)
+    duracionCuadro(nombre) {
+        return this.tieneAnimacion(nombre) ? 1000 / (this.animaciones[nombre].fps ?? 10) : 0;
+    }
+
+    lanzarFlecha(arco) {
+        const direccion = this.flipX ? -1 : 1;
+        const flecha = this.scene.dispararProyectilEnemigo(this.x + direccion * 6, this.y - 4, direccion * arco.vx, arco.vy,
+            { gravedad: true, textura: 'flechasamurai', gravedadY: arco.gravedad });
+        if (!flecha) return;
+        flecha.play('flechasamurai');
+        flecha.orientar = true;   // Apunta hacia donde va (Armas.actualizarProyectiles)
+        flecha.setRotation(Math.atan2(arco.vy, direccion * arco.vx));
+        flecha.autor = this;
+    }
+
     // Devuelve true mientras la acción sigue y manda sobre el caminar
     seguirAccion(config, ahora, enPiso) {
         const { accion } = this;
@@ -332,9 +376,21 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
             this.lanzarCuchilla(config.lanza);
             // Se queda un momento en el último cuadro, con el brazo estirado
             if (this.tieneAnimacion('lanzar')) {
-                this.accion = { tipo: 'tiro', fin: ahora + 1000 / (this.animaciones.lanzar.fps ?? 10) };
+                this.quedarEnUltimoCuadro('lanzar');
+                this.accion = { tipo: 'tiro', animacion: 'lanzar', fin: ahora + this.duracionCuadro('lanzar') };
                 return true;
             }
+        }
+        if (accion.tipo === 'apuntar') {
+            this.accion = { tipo: 'disparo', fin: ahora + this.duracionDe('disparar', 200) };
+            this.animar('disparar', { reiniciar: true });
+            return true;
+        }
+        if (accion.tipo === 'disparo') {
+            this.lanzarFlecha(config.arco);
+            this.quedarEnUltimoCuadro('disparar');
+            this.accion = { tipo: 'tiro', animacion: 'disparar', fin: ahora + this.duracionCuadro('disparar') };
+            return true;
         }
         if (accion.tipo === 'preparaSalto') this.setVelocityY(config.salto);
         if (accion.tipo === 'preparar') {
@@ -381,9 +437,10 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
     // Con las animaciones de datos/Animaciones.js
     animarConHoja(enPiso) {
         const tipo = this.accion && this.accion.tipo;
-        if (tipo === 'risa' && this.animar('risa')) return;
-        if ((tipo === 'aviso' || tipo === 'tiro') && this.animar('lanzar')) return;
-        if (tipo === 'preparaSalto' && this.animar('preparaSalto')) return;
+        // Qué animación va con cada acción
+        const deAccion = { risa: 'risa', aviso: 'lanzar', apuntar: 'preparaArco', disparo: 'disparar', preparaSalto: 'preparaSalto',
+            preparar: 'preparaCarga', carga: 'carga', tiro: this.accion && this.accion.animacion };
+        if (tipo && deAccion[tipo] && this.animar(deAccion[tipo])) return;
         if (!enPiso) {
             this.animar(this.body.velocity.y < 0 ? 'subir' : 'caer');
             return;

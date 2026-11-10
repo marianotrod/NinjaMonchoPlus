@@ -1,7 +1,8 @@
 // editor.js
 // Editor de niveles de Ninja Moncho. Se abre con el juego servido: http://localhost:5501/tools/editor/
 // Pinta las capas de un nivel (fondo, skin, lógica y objetos) sobre la grilla completa, incluida la zona oculta.
-import { LOGICA, MUNDO } from '../../config.js';
+import { CONFIG, LOGICA, MUNDO } from '../../config.js';
+import { Bestiario } from '../../datos/Bestiario.js';
 import { CLAVE_BORRADOR, validarNivel } from '../../mundo/Niveles.js';
 import { nivelNuevo } from './formato.js';
 import { guardarNivel, leerIndice, leerNivel } from './almacen.js';
@@ -608,7 +609,79 @@ async function guardar() {
 function direccionDePrueba(extra = '') {
   const { id, tipo, jefe } = estado.nivel;
   const parametros = tipo === 'jefe' ? `nivel=5${jefe && jefe !== 'rey' ? `&jefe=${jefe}` : ''}` : (tipo === 'pergaminos' ? 'nivel=2&sala' : 'nivel=3');
-  return `../../index.html?debug&${parametros}&mapa=${id}${extra}`;
+  const fase = tipo !== 'jefe' && tipo !== 'pergaminos' && opcionesPrueba.fase === 'caceria' ? '&fase=caceria' : '';
+  const reloj = opcionesPrueba.sinTiempo ? '&sinTiempo' : '';
+  return `../../index.html?debug&${parametros}&mapa=${id}&enemigos=${parametroEnemigos()}${fase}${reloj}${extra}`;
+}
+
+// ------------------------------------------
+// Al probar: en qué fase empieza (Recolección o Cacería) y qué enemigos aparecen (según un nivel, elegidos uno por uno o
+// ninguno). Solo cambian la prueba; se recuerdan en este navegador.
+// ------------------------------------------
+const CLAVE_OPCIONES_PRUEBA = 'ninja-moncho-editor-prueba';
+const MAX_POR_ENEMIGO = 8;
+const opcionesPrueba = { modo: 'nivel', nivel: 3, lista: {}, fase: 'recoleccion', sinTiempo: false };
+
+function leerOpcionesPrueba() {
+  try {
+    Object.assign(opcionesPrueba, JSON.parse(localStorage.getItem(CLAVE_OPCIONES_PRUEBA)) || {});
+  } catch (error) { /* Sin opciones guardadas: las de siempre */ }
+}
+
+function guardarOpcionesPrueba() {
+  try { localStorage.setItem(CLAVE_OPCIONES_PRUEBA, JSON.stringify(opcionesPrueba)); } catch (error) { /* No importa */ }
+}
+
+const totalElegidos = () => Object.values(opcionesPrueba.lista).reduce((a, b) => a + b, 0);
+
+function parametroEnemigos() {
+  const { modo, nivel, lista } = opcionesPrueba;
+  if (modo === 'ninguno') return 'ninguno';
+  if (modo === 'nivel') return `nivel:${nivel}`;
+  const elegidos = Object.entries(lista).filter(([clave, n]) => n > 0 && Bestiario[clave]);
+  return elegidos.length ? elegidos.map(([clave, n]) => `${clave}:${n}`).join(',') : 'ninguno';
+}
+
+function resumenPrueba() {
+  const { modo, nivel, fase } = opcionesPrueba;
+  const enemigos = modo === 'ninguno' ? 'sin enemigos' : (modo === 'nivel' ? `enemigos nivel ${nivel}` : `${totalElegidos()} enemigos`);
+  return `${fase === 'caceria' ? 'Cacería' : 'Recolección'}, ${enemigos}${opcionesPrueba.sinTiempo ? ', sin reloj' : ''}`;
+}
+
+function dibujarPanelPrueba() {
+  const panel = $('panel-prueba');
+  const { modo, nivel, lista } = opcionesPrueba;
+  const opcion = (valor, texto, extra = '') =>
+    `<label><input type="radio" name="modo-prueba" value="${valor}" ${modo === valor ? 'checked' : ''}> ${texto} ${extra}</label>`;
+  const filas = Object.keys(Bestiario).map(clave =>
+    `<label class="enemigo ${modo === 'lista' ? '' : 'apagado'}">${clave}
+      <input type="number" min="0" max="${MAX_POR_ENEMIGO}" value="${lista[clave] || 0}" data-enemigo="${clave}" ${modo === 'lista' ? '' : 'disabled'}></label>`).join('');
+  const fase = (valor, texto) =>
+    `<label><input type="radio" name="fase-prueba" value="${valor}" ${opcionesPrueba.fase === valor ? 'checked' : ''}> ${texto}</label>`;
+  panel.innerHTML =
+    '<strong>Empieza en</strong>' + fase('recoleccion', 'Recolección') + fase('caceria', 'Cacería') +
+    `<label><input type="checkbox" id="sin-tiempo" ${opcionesPrueba.sinTiempo ? 'checked' : ''}> Sin reloj <small>(el tiempo no baja)</small></label>` +
+    '<strong>Enemigos</strong>' +
+    opcion('nivel', 'Según el nivel', `<input type="number" id="nivel-prueba" min="1" max="10" value="${nivel}" ${modo === 'nivel' ? '' : 'disabled'}>`) +
+    opcion('lista', `Elegidos <small>(hasta ${CONFIG.TOPE_ENEMIGOS_PRUEBA} en total)</small>`) + filas +
+    opcion('ninguno', 'Ninguno');
+  $('resumen-prueba').textContent = resumenPrueba();
+}
+
+function cambiarOpcionPrueba(evento) {
+  const objetivo = evento.target;
+  if (objetivo.name === 'modo-prueba') opcionesPrueba.modo = objetivo.value;
+  if (objetivo.name === 'fase-prueba') opcionesPrueba.fase = objetivo.value;
+  if (objetivo.id === 'sin-tiempo') opcionesPrueba.sinTiempo = objetivo.checked;
+  if (objetivo.id === 'nivel-prueba') opcionesPrueba.nivel = Math.min(10, Math.max(1, parseInt(objetivo.value, 10) || 1));
+  if (objetivo.dataset.enemigo) {
+    const clave = objetivo.dataset.enemigo;
+    const otros = totalElegidos() - (opcionesPrueba.lista[clave] || 0);
+    const pedido = Math.min(MAX_POR_ENEMIGO, Math.max(0, parseInt(objetivo.value, 10) || 0));
+    opcionesPrueba.lista[clave] = Math.min(pedido, CONFIG.TOPE_ENEMIGOS_PRUEBA - otros);  // El total no pasa del tope
+  }
+  guardarOpcionesPrueba();
+  dibujarPanelPrueba();
 }
 
 // Online el juego publicado no lee ninguna carpeta local: el nivel le llega por localStorage
@@ -681,6 +754,7 @@ function conectarEventos() {
   $('selector-nivel').addEventListener('change', evento => abrir(evento.target.value));
   $('btn-guardar').addEventListener('click', guardar);
   $('btn-probar').addEventListener('click', probar);
+  $('panel-prueba').addEventListener('change', cambiarOpcionPrueba);
   $('btn-nuevo').addEventListener('click', () => { const id = pedirId('Id del nivel nuevo:', 'n-'); if (id) crear(id); });
   $('btn-duplicar').addEventListener('click', () => { const id = pedirId('Id de la copia:', `${estado.nivel.id}-2`); if (id) duplicar(id); });
   $('btn-1a1').addEventListener('click', () => aplicarZoom(1));
@@ -695,8 +769,10 @@ async function iniciar() {
     cargarImagen(imagenFondo, IMAGENES_FONDO['fondo-cielo'])
   ]);
   estado.indice = await leerIndice();
+  leerOpcionesPrueba();
   conectarEventos();
   dibujarBotones();
+  dibujarPanelPrueba();
   aplicarZoom(estado.zoom);
   ponerNivel(await leerNivel(estado.indice[0].id));
   dibujarPaleta();
@@ -704,6 +780,6 @@ async function iniciar() {
 }
 
 // Para el banco de pruebas
-window.editor = { estado, abrir, crear, duplicar, guardar, enviarBorrador, deshacer, rehacer, elegirCapa, elegirHerramienta };
+window.editor = { estado, abrir, crear, duplicar, guardar, enviarBorrador, deshacer, rehacer, elegirCapa, elegirHerramienta, opcionesPrueba, direccionDePrueba };
 
 iniciar().catch(error => avisar(error.message, 'error'));

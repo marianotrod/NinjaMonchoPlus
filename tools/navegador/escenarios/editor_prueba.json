@@ -1,0 +1,20 @@
+{
+  "descripcion": "Editor: al probar se eligen los enemigos (según nivel, elegidos o ninguno) y la dirección los lleva al juego",
+  "pagina": "tools/editor/index.html",
+  "pasos": [
+    {"hasta": "window.editor && editor.estado.nivel && document.getElementById('mensaje').textContent === 'Listo'", "timeout": 8000, "nombre": "abre el editor"},
+    {"eval": "(localStorage.removeItem('ninja-moncho-editor-prueba'), document.getElementById('opciones-prueba').open = true, true)"},
+    {"eval": "(() => { const elegir = (selector, valor) => { const e = document.querySelector(selector); if (valor !== undefined) e.value = valor; else e.checked = true; e.dispatchEvent(new Event('change', { bubbles: true })); }; window.elegir = elegir; elegir('input[name=modo-prueba][value=nivel]'); elegir('#nivel-prueba', 7); return true; })()"},
+    {"verificar": "según el nivel", "eval": "({ dir: editor.direccionDePrueba().includes('&enemigos=nivel:7'), resumen: document.getElementById('resumen-prueba').textContent })", "espera": {"dir": true, "resumen": "Recolección, enemigos nivel 7"}},
+    {"eval": "(elegir('input[name=modo-prueba][value=lista]'), elegir('input[data-enemigo=esqueleto]', 8), elegir('input[data-enemigo=samurai]', 8), true)"},
+    {"verificar": "elegidos, sin pasar del tope total (12)", "eval": "({ dir: editor.direccionDePrueba().split('enemigos=')[1], resumen: document.getElementById('resumen-prueba').textContent })", "espera": {"dir": "esqueleto:8,samurai:4", "resumen": "Recolección, 12 enemigos"}},
+    {"eval": "(elegir('input[name=modo-prueba][value=ninguno]'), true)"},
+    {"verificar": "ninguno, y la elección se recuerda", "eval": "({ dir: editor.direccionDePrueba().endsWith('&enemigos=ninguno'), guardado: JSON.parse(localStorage.getItem('ninja-moncho-editor-prueba')).modo })", "espera": {"dir": true, "guardado": "ninguno"}},
+    {"eval": "(elegir('input[name=fase-prueba][value=caceria]'), true)"},
+    {"verificar": "empezar en la Cacería", "eval": "({ dir: editor.direccionDePrueba().includes('&fase=caceria'), resumen: document.getElementById('resumen-prueba').textContent })", "espera": {"dir": true, "resumen": "Cacería, sin enemigos"}},
+    {"eval": "(document.getElementById('sin-tiempo').checked = true, document.getElementById('sin-tiempo').dispatchEvent(new Event('change', { bubbles: true })), true)"},
+    {"verificar": "sin reloj", "eval": "({ dir: editor.direccionDePrueba().includes('&sinTiempo'), resumen: document.getElementById('resumen-prueba').textContent })", "espera": {"dir": true, "resumen": "Cacería, sin enemigos, sin reloj"}},
+    {"shot": "panel"},
+    {"eval": "(localStorage.removeItem('ninja-moncho-editor-prueba'), true)"}
+  ]
+}

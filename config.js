@@ -14,8 +14,24 @@ export const ARRANQUE_DEBUG = {
   jefe: DEBUG ? parametros.get('jefe') : null,  // ogro | oni | espectro (solo en niveles de jefe intermedio)
   mapa: DEBUG ? parametros.get('mapa') : null,  // id de un nivel de public/niveles (para probarlo)
   borrador: DEBUG && parametros.has('borrador'), // usa el nivel que mandó el editor online (ver mundo/Niveles.js)
-  sala: DEBUG && parametros.has('sala')          // arranca en la sala de pergaminos; con &mapa= usa esa sala
+  sala: DEBUG && parametros.has('sala'),         // arranca en la sala de pergaminos; con &mapa= usa esa sala
+  enemigos: DEBUG ? leerEnemigosDePrueba(parametros.get('enemigos')) : null,  // lo elige el editor al probar (ver abajo)
+  fase: DEBUG ? parametros.get('fase') : null,   // caceria: el nivel común arranca directo en la Cacería (para probar mapas)
+  sinTiempo: DEBUG && parametros.has('sinTiempo') // el reloj no baja (salvo en la sala de pergaminos): para probar mapas
 };
+
+// ?debug&enemigos=... (el botón Probar del editor):
+//   ninguno                  → no aparece ninguno
+//   nivel:7                  → aparecen como en el nivel 7 (cuáles, cuántos a la vez y el cupo de la Cacería)
+//   esqueleto:2,samurai:1    → solo esos, en esas cantidades (en la Recolección a la vez; en la Cacería, el cupo)
+function leerEnemigosDePrueba(texto) {
+  if (!texto) return null;
+  if (texto === 'ninguno') return { modo: 'ninguno' };
+  const [modo, valor] = texto.split(':');
+  if (modo === 'nivel') return { modo: 'nivel', nivel: Math.max(1, parseInt(valor, 10) || 1) };
+  const lista = Object.fromEntries(texto.split(',').map(par => par.split(':')).map(([clave, n]) => [clave, Math.max(0, parseInt(n, 10) || 0)]));
+  return { modo: 'lista', lista };
+}
 
 // Traducciones por API (Traducila: https://traducila.vercel.app). Sin proyecto cargado, o si la API falla,
 // el juego usa la última copia guardada o los textos de i18n.js. Con ?debug se puede cambiar: ?debug&api=...&proyecto=...
@@ -123,6 +139,7 @@ export const CONFIG = {
 
   TOPE_ENEMIGOS_BASE: 3,
   TOPE_ENEMIGOS_MAX: 5,
+  TOPE_ENEMIGOS_PRUEBA: 12,     // Lo más que se puede pedir desde el editor al probar un mapa (todos juntos)
   CUPO_CACERIA_BASE: 3,         // Demonios a cazar: base + nivel / 2, hasta el máximo
   CUPO_CACERIA_MAX: 6,
   INTERVALO_CACERIA: 500,
@@ -177,8 +194,9 @@ export const FISICA = {
   salto: -350,
   dobleSalto: -280,
   corteSalto: 0.45,             // Al soltar el botón en subida, la velocidad se multiplica por esto (salto variable)
-  saltoPared: -300,
-  empujePared: 260,
+  saltoPared: -240,
+  empujePared: 200,
+  gravedadSaltoPared: 0.6,      // Después de un salto de pared, mientras sube, la gravedad es esta fracción: más flotón y lento
   pisoton: -380,
   pisotonSaltado: -520,         // Con el pergamino: saltar justo al pisar lleva más alto
   trampolin: -420,              // Rebote sobre la cabeza del compañero
@@ -187,7 +205,7 @@ export const FISICA = {
   dash: 350,
   dashDuracion: 200,
   dashCooldown: 500,
-  dobleToque: 250,
+  dobleToque: 250,              // Doble toque: al costado (dash, solo teclado) y abajo en el aire (caída pesada)
 
   coyote: 100,
   bufferSalto: 150,
@@ -201,6 +219,11 @@ export const FISICA = {
   parpadeoGolpe: 1200,          // Protección que queda después del aturdimiento (ms)
   parpadeoPisoton: 600,         // Protección después de pisar a un enemigo (ms)
   bloqueoSaltoPared: 250,       // Tiempo sin control horizontal después de saltar de la pared (ms)
+  ventanaSaltoPared: 210,       // Salto de pared: hay que saltar hasta esto después de llegar a la pared (ms); después, se agarra
+  coyotePared: 120,             // ...o hasta esto después de despegarse, si se despegó dentro de la ventana (ms)
+  // Agarre de pared (todos, sin pergamino): en el aire, empujando contra una pared, se queda colgado 'duracion' ms y después
+  // se desliza a 'deslizar' px/s. Con salto trepa un poquito ('trepar', una vez cada 'esperaTrepar' ms) y el agarre empieza de nuevo.
+  agarrePared: { duracion: 700, deslizar: 50, trepar: -150, esperaTrepar: 300 },
   knockbackX: 180,
   knockbackY: -220,
   duracionStun: 500,

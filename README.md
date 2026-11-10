@@ -30,8 +30,10 @@ Una arena por pantalla: juntá los talismanes, rompé el sello y cazá a los dem
 | Dash | Doble toque a un costado | Doble toque a un costado | R1 |
 | Pausa | ESC | ESC | START |
 
-Mantené el salto para saltar más alto; en el aire podés saltar otra vez. Abajo en el aire es caída rápida
-y abajo sobre una pasarela la atravesás. Saltando contra una pared rebotás, y sobre la cabeza del compañero, trampolín.
+Mantené el salto para saltar más alto; en el aire podés saltar otra vez. Doble toque abajo en el aire es caída rápida
+y abajo sobre una pasarela la atravesás. En el aire, empujando contra una pared, te agarrás: te quedás colgado un rato y después resbalás; con el salto
+trepás de a poco. Con el pergamino de salto de pared, saltando justo al llegar a la pared rebotás. Sobre la cabeza
+del compañero, trampolín.
 
 ## Cómo correrlo
 

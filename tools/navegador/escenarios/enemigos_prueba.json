@@ -1,0 +1,42 @@
+{
+ "descripcion": "Enemigos al probar un mapa (?debug&enemigos=...): elegidos uno por uno, según un nivel o ninguno",
+ "query": "?debug&nivel=1&enemigos=esqueleto:2,samurai:1",
+ "pasos": [
+  {
+   "hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'",
+   "timeout": 8000,
+   "nombre": "arranca la Recolección"
+  },
+  {
+   "eval": "(() => { const s = window.game.scene.getScene('NinjaMonchoScene'); (() => { const s = window.game.scene.getScene('NinjaMonchoScene'); s.timerDemonios.paused = true; s.enemigos.getChildren().slice().forEach(e => e.destroy()); })(); for (let i = 0; i < 10; i++) s.spawnearDemonio(); return true; })()"
+  },
+  {
+   "verificar": "elegidos: en la Recolección aparecen esos, en esas cantidades, aunque no sean del nivel",
+   "eval": "(() => { const claves = prueba.enemigos().map(e => e.clave); return { total: claves.length, esqueletos: claves.filter(c => c === 'esqueleto').length, samurais: claves.filter(c => c === 'samurai').length }; })()",
+   "espera": {
+    "total": 3,
+    "esqueletos": 2,
+    "samurais": 1
+   }
+  },
+  {
+   "eval": "((() => { const s = window.game.scene.getScene('NinjaMonchoScene'); s.timerDemonios.paused = true; s.enemigos.getChildren().slice().forEach(e => e.destroy()); })(), prueba.completarRecoleccion(), true)"
+  },
+  {
+   "hasta": "prueba.estado().fase === 'caceria'",
+   "timeout": 8000,
+   "nombre": "empieza la Cacería"
+  },
+  {
+   "wait": 2500
+  },
+  {
+   "verificar": "y en la Cacería el cupo es lo elegido",
+   "eval": "(() => { const claves = prueba.enemigos().map(e => e.clave); return { total: claves.length, solo: claves.every(c => c === 'esqueleto' || c === 'samurai') }; })()",
+   "espera": {
+    "total": 3,
+    "solo": true
+   }
+  }
+ ]
+}

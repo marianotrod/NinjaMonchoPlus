@@ -112,6 +112,16 @@ Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define
       - Una moneda que rebotó vale menos (como antes): se cobra lo que valía cada una.
 - [ ] **5.9 Gastar monedas en pergaminos positivos (M, a decidir).** Idea: en la sala de pergaminos, comprar uno positivo
       con monedas. Choca con 5.8 (si las monedas se gastan, ¿cuentan para el puntaje?): decidir antes de hacerla.
+- [ ] **5.10 Animaciones de Moncho (M).** *Dibujo: Mariano.* Hoja nueva (256 px de ancho, 16 cuadros por fila) y la tabla
+      pasa a `datos/Animaciones.js` (`moncho` y `coop`). Lo que hoy no tiene cuadros: katana (de frente y arriba), disparar,
+      dash, doble salto, aterrizaje fuerte, boulder, agarre, deslizar, trepar, salto de pared, caída pesada, muerte,
+      agacharse, mirar arriba, festejo. Lo que falte en la guía sigue con el cuadro de ahora.
+- [ ] **5.11 Sacar el demonio caminante (S).** El saltarín queda. Hoy ya no sale al azar (peso 0), pero lo usan 21
+      escenarios de prueba como enemigo simple: reemplazarlo ahí (por el esqueleto con `sinDecisiones`, o un enemigo
+      solo de prueba) antes de borrarlo del `Bestiario`. También desaparece de la lista de enemigos del editor.
+- [ ] **5.12 Pergamino "parry que devuelve" (M, a decidir).** Hoy el parry rompe el proyectil (`parryRecarga` puede dar
+      munición; `parry360` alcanza alrededor). Idea: con este pergamino el proyectil enemigo no se rompe: vuelve hacia
+      donde vino y pasa a ser del jugador (aura azul, daña a los demonios). Nivel 2: sale hacia donde apunta la katana.
 
 ---
 
