@@ -84,6 +84,7 @@ export const EFECTOS = [
   marca('katanaLarga', POSITIVO, 'jugador', 'ambos'),
   marca('katanaAlta', POSITIVO, 'jugador', 'ambos'),
   marca('parry360', POSITIVO, 'jugador', 'ambos'),
+  marca('parryDevuelve', POSITIVO, 'jugador', 'ambos'),
 
   // --- Negativos ---
   { id: 'rebotesEnemigos', tipo: NEGATIVO, aplicar: (partida) => { global(partida).rebotesEnemigos++; } },

@@ -303,6 +303,10 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         } else if (opcion === 'bajar') {
             this.atravesando = ahora + 300;
         } else if (opcion === 'lanzar' && config.lanza) {
+            if (config.lanza.apunta) {
+                const objetivo = this.scene.jugadorMasCercano(this.x, this.y);
+                if (objetivo) this.setFlipX(objetivo.x < this.x);
+            }
             // Con animación, la cuchilla sale cuando llega a su último cuadro
             const animacion = this.tieneAnimacion('lanzar') && this.animaciones.lanzar;
             const aviso = animacion ? duracionAnimacion(animacion) - 1000 / (animacion.fps ?? 10) : config.lanza.aviso;

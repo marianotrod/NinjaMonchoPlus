@@ -85,6 +85,9 @@ Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define
 - [ ] **5.2 (más adelante) Jefes mejores, con mecánicas intercambiables (L).** *Diseño: Mariano.* Separar cada jefe en piezas
       (movimiento, ataques, fases según la vida) que se combinen desde un catálogo, como los rasgos de los enemigos en
       `Bestiario.js`, para armar un jefe nuevo sin escribir código.
+      Idea de Mariano (2026-11-10): cada jefe tiene una **base** (el que embiste, el saltón...) y **rasgos al azar** que se
+      sortean en cada pelea (pinchos en el lomo que salen y se van, disparos, ayudantes...), para que no sea siempre igual.
+      Antes, Mariano prueba bien los jefes actuales para ver qué queda y qué no.
 - [x] **5.3 Un fondo por fase, con transición animada (M).** Hecho en `mundo/Fondo.js` (`CONFIG.FONDOS_FASE`). La Recolección
       usa el fondo del nivel (el del editor); la Cacería, los fantasmas, el jefe y la sala tienen el suyo en
       `public/assets/fondos/` (`caceria`, `fantasma`, `jefe`, `sala`, 512x288). Al cambiar de fase hay un fundido que
@@ -110,18 +113,25 @@ Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define
       - En el panel de fin de nivel: el número sube de a poco, con un sonido de incremento lindo y efecto (jugo).
       - Decidido: 1,5 s para la siguiente moneda; "COMBO X1" visible arriba, debajo del puntaje; un combo por jugador.
       - Una moneda que rebotó vale menos (como antes): se cobra lo que valía cada una.
-- [ ] **5.9 Gastar monedas en pergaminos positivos (M, a decidir).** Idea: en la sala de pergaminos, comprar uno positivo
+- [~] **5.9 Gastar monedas en pergaminos positivos.** *Descartada (Mariano, 2026-11-10).* Idea: en la sala de pergaminos, comprar uno positivo
       con monedas. Choca con 5.8 (si las monedas se gastan, ¿cuentan para el puntaje?): decidir antes de hacerla.
 - [ ] **5.10 Animaciones de Moncho (M).** *Dibujo: Mariano.* Hoja nueva (256 px de ancho, 16 cuadros por fila) y la tabla
       pasa a `datos/Animaciones.js` (`moncho` y `coop`). Lo que hoy no tiene cuadros: katana (de frente y arriba), disparar,
       dash, doble salto, aterrizaje fuerte, boulder, agarre, deslizar, trepar, salto de pared, caída pesada, muerte,
       agacharse, mirar arriba, festejo. Lo que falte en la guía sigue con el cuadro de ahora.
-- [ ] **5.11 Sacar el demonio caminante (S).** El saltarín queda. Hoy ya no sale al azar (peso 0), pero lo usan 21
-      escenarios de prueba como enemigo simple: reemplazarlo ahí (por el esqueleto con `sinDecisiones`, o un enemigo
-      solo de prueba) antes de borrarlo del `Bestiario`. También desaparece de la lista de enemigos del editor.
-- [ ] **5.12 Pergamino "parry que devuelve" (M, a decidir).** Hoy el parry rompe el proyectil (`parryRecarga` puede dar
-      munición; `parry360` alcanza alrededor). Idea: con este pergamino el proyectil enemigo no se rompe: vuelve hacia
-      donde vino y pasa a ser del jugador (aura azul, daña a los demonios). Nivel 2: sale hacia donde apunta la katana.
+- [x] **5.11 Sacar el demonio caminante (S).** Fuera del `Bestiario` y del editor. Los escenarios lo siguen usando como
+      enemigo simple: lo agrega la puerta de pruebas (solo con `?debug`, nunca sale al azar).
+- [x] **5.12 Parry que devuelve (M).** Pergamino `parryDevuelve`: el proyectil enemigo no se rompe, vuelve por donde vino
+      (1,3 veces más rápido) y pasa a ser del ninja (aura azul, daña a los demonios, se rompe al pegar). Para probarlo como
+      habilidad de todos, sin pergamino: `CONFIG.PARRY_DEVUELVE.siempre`. *A decidir (Mariano): pergamino o habilidad base.*
+      Pendiente: nivel 2 (sale hacia donde apunta la katana).
+- [x] **5.13 Cartas e íconos de pergaminos (L).** Hecho (íconos provisorios: `tools/generar_iconos_pergaminos.py`). Pedido:
+      - Texto de las cartas más simple, y un ícono por pergamino (provisorios de 16x16, un PNG cada uno, reemplazables).
+        La fuente Press Start 2P se ve nítida solo en múltiplos de 8 px (8 es lo más chico): más chico, otra fuente.
+      - Al agarrar una carta, sube un poco. Elegidas las dos (o al terminar el tiempo), las otras desaparecen, el nivel se
+        oscurece (las cartas no) y quedan a la vista un rato para leerlas, con un brillo en el ícono.
+      - Cada pergamino tomado (positivo y negativo) queda grabado como ícono en la pared de la sala: J1 a la izquierda,
+        J2 a la derecha. Los grabados usan otro archivo que los de las cartas (otra estética, "de piedra").
 
 ---
 

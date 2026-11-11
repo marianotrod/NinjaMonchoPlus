@@ -12,7 +12,7 @@
     {"verificar": "quieto, la de quieto", "eval": "({ animacion: prueba.enemigo(0).animacion })", "espera": {"animacion": "esqueleto-quieto"}},
     {"hasta": "prueba.enemigo(0).accion === null", "timeout": 3000, "nombre": "termina la pausa"},
 
-    {"eval": "(window.E().setFlipX(true), window.E().setVelocityX(0), prueba.accionEnemigo(0, 'lanzar'), prueba.sinDecisiones(0), true)"},
+    {"eval": "(window.E().setFlipX(false), window.E().setVelocityX(0), prueba.accionEnemigo(0, 'lanzar'), prueba.sinDecisiones(0), true)"},
     {"hasta": "prueba.proyectiles().enemigos === 1", "timeout": 1500, "nombre": "tira la cuchilla"},
     {"verificar": "la cuchilla sale en el último cuadro de lanzar, y se queda un momento ahí", "eval": "({ cuadro: prueba.enemigo(0).cuadro, accion: prueba.enemigo(0).accion })", "espera": {"cuadro": 16, "accion": "tiro"}},
     {"wait": 300},

@@ -38,8 +38,8 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
   puerto 5599, para no chocar con Live Server, que recarga la página al guardarse una captura; usa Edge sin ventana, verifica resultados y termina con ✔/✘ por verificación y un total. Si no hay Node
   instalado, usa el portable de `%LOCALAPPDATA%\node-portable`. **Cuánto correr** (la batería completa tarda más de 10 minutos):
   - Cambio chico o de calibración (números, textos, editor, un enemigo): solo los escenarios relacionados (`probar.ps1 paredes`).
-  - Cambio en algo compartido (física o estados del ninja, reglas, golpes, fases, carga de niveles): la batería completa.
-  - Antes de subir (push): siempre la batería completa.
+  - La batería completa, **solo con permiso de Mariano**: proponerla y decir por qué hace falta (por ejemplo, después de
+    varios incrementos o de un cambio en algo compartido: física o estados del ninja, reglas, golpes, fases, carga de niveles).
 - Los escenarios hablan con el juego a través de `window.prueba` (`sistemas/PuertaPruebas.js`, solo con `?debug`), no con
   las variables internas. Al reorganizar código se adapta la puerta, no los escenarios. Formato de los pasos: ver `probar.js`.
 - Revisar sintaxis rápido: copiar el `.js` a un `.mjs` temporal y `node --check`.

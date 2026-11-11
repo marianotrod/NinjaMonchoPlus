@@ -10,7 +10,7 @@ import { actualizarFuego, crearBola, crearBolaCeleste } from '../mundo/Fuego.js'
 import { actualizarRescate, objetosSueltos, prepararRescate } from '../mundo/Rescate.js';
 import { ARRANQUE_DEBUG, BANDO, COLORES, CONFIG, DEBUG, FISICA, LOGICA, MUNDO, PAD, TECLAS, TILES } from '../config.js';
 import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel } from '../reglas/Partida.js';
-import { armarCartas, textoEfecto, tomarCarta } from '../reglas/Pergaminos.js';
+import { armarCartas, textoEfecto, tomarCarta, tomarEfecto } from '../reglas/Pergaminos.js';
 import { efectoPorId } from '../datos/Pergaminos.js';
 import { RECOMIENZO, reglasDe } from '../reglas/Fases.js';
 import { PROTECCION, crearGolpe, golpeaAliado, itemLanzado, resolverGolpe } from '../reglas/Resolvedor.js';
@@ -43,6 +43,11 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.registry.set('partida', partida);
     }
     this.partida = partida;
+    // Probando desde el editor: los dos jugadores arrancan con los pergaminos elegidos (una sola vez por partida)
+    if (ARRANQUE_DEBUG.pergaminos.length && !partida.pergaminosDePrueba) {
+      partida.pergaminosDePrueba = true;
+      ARRANQUE_DEBUG.pergaminos.filter(id => efectoPorId(id)).forEach(id => [0, 1].forEach(j => tomarEfecto(partida, id, j)));
+    }
     this.cantidadJugadores = partida.jugadores;
     this.nivelActual = partida.nivel;
   }
@@ -429,7 +434,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       if (!lugar) return;
       const x = (lugar.col - MUNDO.columnasOcultas) * MUNDO.tile + MUNDO.tile;
       const y = (lugar.fila - MUNDO.filasOcultas) * MUNDO.tile + MUNDO.tile * 2;
-      const carta = this.cartas.create(x, y, 'carta-pergamino');
+      const carta = this.cartas.create(x, y, 'carta-pergamino').setDepth(29);
       carta.datos = datos;
       carta.encadenada = i === encadenada;
       const texto = (id, dy, color) => this.add.text(x, y + dy, this.nombrePergamino(id), estilo(8, color, {
@@ -437,19 +442,46 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       })).setOrigin(0.5, dy < 0 ? 1 : 0).setDepth(30);
       carta.textoPositivo = texto(datos.positivo, -36, '#86EFAC');
       carta.textoNegativo = texto(datos.negativo, 36, '#FCA5A5');
+      // El ícono de cada efecto, en su mitad de la carta
+      carta.iconoPositivo = this.add.image(x, y - 16, this.iconoPergamino(datos.positivo)).setDepth(31);
+      carta.iconoNegativo = this.add.image(x, y + 16, this.iconoPergamino(datos.negativo)).setDepth(31);
+      carta.partes = [carta, carta.textoPositivo, carta.textoNegativo, carta.iconoPositivo, carta.iconoNegativo];
       if (g.ocultarNegativos) {
-        carta.textoNegativo.setVisible(false);
-        this.time.delayedCall(CONFIG.SALA_OCULTA, () => carta.textoNegativo.setVisible(true));
+        [carta.textoNegativo, carta.iconoNegativo].forEach(parte => parte.setVisible(false));
+        this.time.delayedCall(CONFIG.SALA_OCULTA, () => [carta.textoNegativo, carta.iconoNegativo].forEach(parte => parte.active && parte.setVisible(true)));
       }
-      if (g.positivosIlegibles) this.time.delayedCall(CONFIG.SALA_OCULTA, () => carta.textoPositivo.setText('???'));
+      if (g.positivosIlegibles) {
+        this.time.delayedCall(CONFIG.SALA_OCULTA, () => {
+          if (carta.textoPositivo.active) carta.textoPositivo.setText('???');
+          if (carta.iconoPositivo.active) carta.iconoPositivo.setVisible(false);
+        });
+      }
       this.jugadores.forEach(jugador => {
         this.physics.add.overlap(jugador, carta, this.tocarCarta, () => !jugador.muerto && !jugador.eliminado, this);
       });
       if (carta.encadenada) {
-        carta.cadena = this.add.text(x, y, 'X', estilo(32, '#9CA3AF')).setOrigin(0.5).setDepth(31);
+        carta.cadena = this.add.text(x, y, 'X', estilo(32, '#9CA3AF')).setOrigin(0.5).setDepth(32);
         this.time.delayedCall(CONFIG.SALA_CADENA, () => { carta.encadenada = false; carta.cadena.destroy(); });
       }
     });
+    this.grabados = (this.partida.grabados || []).map((grabado, i, todos) => this.grabar(grabado, todos.slice(0, i)));
+  }
+
+  iconoPergamino(id) {
+    const clave = `icono-perg-${id}`;
+    return this.textures.exists(clave) ? clave : 'pergamino';
+  }
+
+  // Un pergamino tomado queda grabado en la pared de la sala: los de J1 a la izquierda y los de J2 a la derecha, en
+  // columnas de arriba hacia abajo (CONFIG.GRABADOS). anteriores: los grabados que van antes que este.
+  grabar({ j, id }, anteriores) {
+    const { filas, desdeY } = CONFIG.GRABADOS;
+    const n = anteriores.filter(otro => otro.j === j).length;
+    const columna = Math.floor(n / filas);
+    const x = j === 0 ? MUNDO.tile / 2 + columna * MUNDO.tile : 512 - MUNDO.tile / 2 - columna * MUNDO.tile;
+    const y = desdeY + (n % filas) * MUNDO.tile;
+    const clave = this.textures.exists(`grabado-perg-${id}`) ? `grabado-perg-${id}` : 'pergamino';
+    return this.add.image(x, y, clave).setDepth(1);
   }
 
   // Los que todavía no funcionan llevan (X) adelante
@@ -467,13 +499,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   tocarCarta(jugador, carta) {
     if (this.fase !== 'sala' || jugador.congelado || carta.tomada || carta.encadenada) return;
     carta.tomada = true;
+    carta.elegida = jugador.indice;
     jugador.congelado = true;
-    const nombre = this.nombrePergamino(carta.datos.positivo); // Antes de tomarla: después el nivel ya cambió
     tomarCarta(this.partida, carta.datos, jugador.indice);
     Sonido.beep(this, 784, 0.1, 0.1);
     this.efectoChispas(carta.x, carta.y, 0xfde047);
-    [carta, carta.textoPositivo, carta.textoNegativo].forEach(objeto => objeto.destroy());
-    this.mostrarTextoFlotante(jugador.x, jugador.y - 16, nombre, '#4ADE80');
+    // La elegida queda a la vista y sube un poco
+    this.tweens.add({ targets: carta.partes, y: '-=8', duration: 180, ease: 'Back.Out' });
     const quedan = this.jugadores.some(j => !j.eliminado && !j.congelado);
     if (!quedan) this.terminarSala();
   }
@@ -483,13 +515,40 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (this.fase !== 'sala') return;
     this.fase = 'transicion';
     this.detenerTimers();
-    this.time.delayedCall(700, () => {
+    const elegidas = this.cartas ? this.cartas.getChildren().filter(carta => carta.elegida !== undefined) : [];
+    if (elegidas.length) this.revelarCartas(elegidas);
+    this.time.delayedCall(elegidas.length ? CONFIG.SALA_REVELAR : 700, () => {
       const partida = this.partida;
       partida.enSala = false;
       partida.cartas = null;
       partida.datosNivel = null;
       this.scene.stop('UIScene');
       this.scene.restart();
+    });
+  }
+
+  // Las que no se eligieron se van, el nivel se oscurece (las cartas no) y las elegidas quedan a la vista un rato para
+  // leerlas, con un destello en los íconos. Sus pergaminos aparecen grabados en las paredes.
+  revelarCartas(elegidas) {
+    this.jugadores.forEach(jugador => { jugador.congelado = true; });
+    this.cartas.getChildren().filter(carta => carta.elegida === undefined).forEach(carta => {
+      const partes = [...carta.partes, carta.cadena].filter(parte => parte && parte.active);
+      this.tweens.add({ targets: partes, alpha: 0, duration: 250, onComplete: () => partes.forEach(parte => parte.destroy()) });
+    });
+    const sombra = this.add.rectangle(256, 144, 512, 288, 0x000000, 0).setDepth(28);
+    this.tweens.add({ targets: sombra, fillAlpha: 0.6, duration: 300 });
+    elegidas.forEach(carta => {
+      [carta.iconoPositivo, carta.iconoNegativo].forEach(icono => {
+        icono.setVisible(true);
+        this.tweens.add({ targets: icono, scale: 1.6, duration: 160, yoyo: true, repeat: 1, delay: 250 });
+      });
+    });
+    // Los grabados nuevos (los últimos de la lista) aparecen en la pared
+    const grabados = this.partida.grabados || [];
+    grabados.slice(this.grabados.length).forEach((grabado, i) => {
+      const imagen = this.grabar(grabado, grabados.slice(0, this.grabados.length + i)).setDepth(29).setAlpha(0).setScale(2);
+      this.tweens.add({ targets: imagen, alpha: 1, scale: 1, duration: 300, delay: 500 + i * 120 });
+      this.grabados.push(imagen);
     });
   }
 
@@ -1474,12 +1533,32 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   pararProyectil(ninja, p) {
     Sonido.efecto(this, 'snd-parry', 0.5);
     this.efectoChispas(p.x, p.y, 0xffffff);
-    p.destroy();
+    if (ninja.mods.parryDevuelve || CONFIG.PARRY_DEVUELVE.siempre) this.devolverProyectil(ninja, p);
+    else p.destroy();
     // Pergamino: el parry a veces da un tiro más por este nivel
     if (ninja.mods.parryRecarga && ninja.arma && Math.random() < CONFIG.PROB_PARRY_RECARGA) {
       ninja.municion++;
       this.events.emit(EVENTOS.ARMA, ninja.indice, ninja.arma, ninja.municion);
     }
+  }
+
+  // Parry que devuelve (roadmap 5.12): el proyectil vuelve por donde vino, más rápido, y pasa a ser del ninja (aura azul,
+  // daña a los demonios). Se rompe al pegarle a uno.
+  devolverProyectil(ninja, p) {
+    const { velocidad, minima } = CONFIG.PARRY_DEVUELVE;
+    let vx = -p.body.velocity.x * velocidad;
+    let vy = -p.body.velocity.y * velocidad;
+    if (Math.hypot(vx, vy) < minima) {  // Uno lento o quieto sale hacia donde mira el ninja
+      vx = (ninja.flipX ? -1 : 1) * minima;
+      vy = 0;
+    }
+    p.bando = BANDO.JUGADORES;
+    p.duenio = ninja;
+    p.devuelto = true;
+    p.autor = null;
+    p.golpeados = new Set();
+    p.nacimiento = this.time.now;
+    p.setVelocity(vx, vy);
   }
 
   proyectilesDe(bando) {
@@ -1496,7 +1575,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
     const direccion = Math.sign(proyectil.body.velocity.x) || 1;
     resolverGolpe(this, objetivo, crearGolpe('proyectil', { duenio: proyectil.duenio, direccion }));
-    if (proyectil.tipo === 'shuriken') proyectil.destroy();
+    if (proyectil.tipo === 'shuriken' || proyectil.devuelto) proyectil.destroy();
   }
 
   explotarBomba(bomba) {

@@ -5,6 +5,23 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-10 — Claude: esqueleto que apunta, sin caminante, parry que devuelve, ayuda del salto de pared y cartas
+
+- Regla nueva: la batería completa de pruebas solo con permiso de Mariano (`CLAUDE.md`).
+- Esqueleto: antes de tirar la cuchilla se da vuelta hacia el ninja más cercano (`lanza.apunta` en el Bestiario).
+- 5.11: el demonio caminante salió del `Bestiario` y del editor; los escenarios lo siguen usando (lo agrega la puerta de pruebas).
+- 5.12: pergamino `parryDevuelve` (o para todos con `CONFIG.PARRY_DEVUELVE.siempre`). Escenario `parry_devuelve`.
+- Editor, Probar: lista de pergaminos con los que arrancan los dos jugadores (`?debug&pergaminos=id1,id2`).
+- Salto de pared: ayuda visual, una rayita celeste en la pared mientras dura la ventana (`FISICA.ayudaSaltoPared`).
+- Roadmap: 5.9 descartada; idea de jefes con base y rasgos al azar (5.2); 5.13 cartas e íconos de pergaminos.
+- 5.13 cartas de la sala: textos más cortos (es/en, siguen en 8 px: la fuente se ve nítida solo en múltiplos de 8) e
+  íconos por pergamino, provisorios, en `public/assets/pergaminos/cartas/` y `.../grabados/` (de piedra, archivo aparte).
+  `tools/generar_iconos_pergaminos.py` solo crea los que faltan. La carta elegida sube; al terminar, las otras se van, el
+  nivel se oscurece y las elegidas quedan 2,5 s (`CONFIG.SALA_REVELAR`) con un destello en los íconos. Cada pergamino
+  tomado queda grabado en la pared de la sala (J1 izquierda, J2 derecha; `CONFIG.GRABADOS`, `partida.grabados`).
+  Escenario nuevo `sala_cartas`; en la puerta, `cartas()` cuenta solo las que se pueden tomar.
+- Pendiente (Mariano): decidir si el parry que devuelve es pergamino o habilidad base; dibujar los íconos y los grabados.
+
 ## 2026-11-10 — Claude: volador con hoja nueva
 
 - `volador.png` ahora es una hoja (Mariano): vuela con 0-3 en loop, mirando hacia donde va, y al morir explota en su

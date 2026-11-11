@@ -190,6 +190,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.aplicarGravedad();
     // Si pasa a un estado sin control (golpe, muerte, aparecer), se suelta de la pared. El dash maneja su gravedad.
     if (this.agarre && this.estado !== ESTADO.LIBRE && this.estado !== ESTADO.DASH) this.soltarPared();
+    if (this.rayaPared && this.estado !== ESTADO.LIBRE) this.rayaPared.setVisible(false);
 
     if (this.katana) {
       this.posicionarKatana();
@@ -266,6 +267,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     const paredDerecha = hayAgarre && this.body.blocked.right;
     const tocandoPared = paredIzquierda || paredDerecha;
     this.registrarPared(enElPiso, paredIzquierda, paredDerecha, ahora);
+    this.mostrarAyudaPared(ahora);
 
     this.medirCaida(enElPiso, tocandoPared);
     if (enElPiso && this.enAire && this.aterrizar(ahora)) return;
@@ -374,10 +376,30 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   // Si todavía vale el salto de pared desde la última llegada
   saltoParedATiempo(llegada, ahora) {
+    return this.tiempoSaltoPared(llegada, ahora) > 0;
+  }
+
+  // Lo que le queda para hacer el salto de pared (ms), y de cuánto era la ventana
+  tiempoSaltoPared(llegada, ahora) {
     const { ventanaSaltoPared, coyotePared } = FISICA;
-    if (ahora - llegada.desde <= ventanaSaltoPared) return true;
+    const enVentana = ventanaSaltoPared - (ahora - llegada.desde);
     // Se despegó dentro de la ventana: le queda el coyote desde que se despegó
-    return llegada.hasta !== null && llegada.hasta - llegada.desde <= ventanaSaltoPared && ahora - llegada.hasta <= coyotePared;
+    const despegado = llegada.hasta !== null && llegada.hasta - llegada.desde <= ventanaSaltoPared;
+    const enCoyote = despegado ? coyotePared - (ahora - llegada.hasta) : 0;
+    return Math.max(0, enVentana, enCoyote);
+  }
+
+  // Ayuda visual (FISICA.ayudaSaltoPared): una rayita en la pared que se apaga mientras se acaba la ventana del salto
+  mostrarAyudaPared(ahora) {
+    const llegada = this.llegadaPared;
+    const queda = FISICA.ayudaSaltoPared && llegada && this.tieneHabilidad('wallJump') ? this.tiempoSaltoPared(llegada, ahora) : 0;
+    if (queda <= 0) {
+      if (this.rayaPared) this.rayaPared.setVisible(false);
+      return;
+    }
+    if (!this.rayaPared) this.rayaPared = this.sceneRef.add.rectangle(0, 0, 2, 14, 0x7dd3fc).setDepth(16);
+    const x = llegada.lado < 0 ? this.body.left - 1 : this.body.right + 1;
+    this.rayaPared.setPosition(x, this.y).setVisible(true).setAlpha(Math.min(1, queda / FISICA.ventanaSaltoPared));
   }
 
   // Salto de pared (pergamino): es cuestión de timing y de dirección. Hay que saltar apretando hacia el lado contrario
@@ -392,6 +414,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.llegadaPared = null;
     this.enCaidaPesada = false;
     this.soltarPared();
+    if (this.rayaPared) this.rayaPared.setVisible(false);
     if (!this.enSaltoPared) {
       this.sceneRef.time.delayedCall(FISICA.bloqueoSaltoPared, () => {
         if (this.enSaltoPared) this.estado = ESTADO.LIBRE;
@@ -735,6 +758,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   // bordes del mundo, así cae fuera de la pantalla. La escena descuenta la vida cuando termina de caer.
   morir(fuenteX) {
     this.estado = ESTADO.MUERTO;
+    if (this.rayaPared) this.rayaPared.setVisible(false);
     this.setAngle(0);
     this.caidaAvisada = false;
     this.saltoCortable = false;
@@ -808,6 +832,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroy(fromScene) {
+    if (this.rayaPared) this.rayaPared.destroy();
     if (this.katana) this.katana.destroy();
     this.katana = null;
     super.destroy(fromScene);

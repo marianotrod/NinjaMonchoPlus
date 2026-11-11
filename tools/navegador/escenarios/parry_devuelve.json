@@ -1,0 +1,19 @@
+{
+  "descripcion": "Parry que devuelve (5.12), activado con los pergaminos de prueba (?debug&pergaminos=...)",
+  "query": "?debug&nivel=3&mapa=b-09&fase=caceria&enemigos=ninguno&sinTiempo&pergaminos=parryDevuelve",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "arranca en la Cacería"},
+    {"eval": "(window.S = () => window.game.scene.getScene('NinjaMonchoScene'), true)"},
+    {"verificar": "los dos jugadores arrancan con el pergamino elegido", "eval": "({ j1: S().partida.mods.jugadores[0].parryDevuelve, j2: S().partida.mods.jugadores[1].parryDevuelve })", "espera": {"j1": true, "j2": true}},
+    {"eval": "(prueba.proteger(1), prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 2000, "nombre": "J1 en el piso"},
+    {"eval": "(window.p = S().dispararProyectilEnemigo(150, 262, -150, 0), prueba.atacar(1), true)"},
+    {"hasta": "p.bando === 'jugadores'", "timeout": 1000, "nombre": "la katana lo devuelve"},
+    {"verificar": "el proyectil no se rompe: vuelve más rápido y pasa a ser del ninja", "eval": "({ activo: p.active, vx: Math.round(p.body.velocity.x), duenio: p.duenio === S().jugador })", "espera": {"activo": true, "vx": 195, "duenio": true}},
+    {"eval": "(S().proyectiles.clear(true, true), prueba.crearEnemigo('demonio_caminante', 230, 264), S().enemigos.getChildren()[0].enfurecer(), S().enemigos.getChildren()[0].setVelocityX(0), prueba.sinDecisiones(0), true)"},
+    {"wait": 200},
+    {"eval": "(window.p = S().dispararProyectilEnemigo(150, 262, -150, 0), prueba.atacar(1), true)"},
+    {"hasta": "prueba.enemigos().length === 0", "timeout": 2000, "nombre": "el proyectil devuelto mata al demonio"},
+    {"verificar": "y se rompe al pegarle", "eval": "({ activo: p.active })", "espera": {"activo": false}}
+  ]
+}

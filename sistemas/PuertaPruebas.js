@@ -13,7 +13,15 @@ import { tomarEfecto } from '../reglas/Pergaminos.js';
 import { EVENTOS } from '../datos/Eventos.js';
 import { Sonido } from './Sonido.js';
 
+// Enemigo solo para las pruebas: camina y da la vuelta en paredes y bordes, sin nada al azar. Salió del juego (roadmap 5.11),
+// pero los escenarios lo usan como enemigo simple. Se agrega al Bestiario solo con ?debug y nunca sale al azar (peso 0).
+const DEMONIO_DE_PRUEBA = {
+  textura: 'demonio', framesVuelo: true, hp: 1, costoIA: 1, nivelMinimo: 99, peso: 0, duracionStun: 2000, soloPruebas: true,
+  rasgos: { saltarin: { activo: false }, caminante: { activo: true, velocidadX: 60 }, volador: { activo: false }, lanzador: { activo: false } }
+};
+
 export function instalarPuertaPruebas(game) {
+  Bestiario.demonio_caminante = DEMONIO_DE_PRUEBA;
   const juego = () => game.scene.getScene('NinjaMonchoScene');
   const jugador = (n = 1) => juego().jugadores[n - 1];
   const claveEnemigo = (enemigo) => Object.keys(Bestiario).find(clave => Bestiario[clave] === enemigo.config) || null;
@@ -103,7 +111,9 @@ export function instalarPuertaPruebas(game) {
     modsJugador: (n = 1) => ({ ...jugador(n).mods }),
     modsGlobal: () => ({ ...juego().modsGlobal }),
     // Sala de pergaminos: las cartas que siguen en juego, y quién está congelado porque ya eligió
-    cartas: () => (juego().cartas ? juego().cartas.getChildren().map(c => ({ ...c.datos, x: Math.round(c.x), y: Math.round(c.y), encadenada: !!c.encadenada })) : []),
+    // Las cartas que todavía se pueden tomar (las elegidas quedan a la vista, pero ya no cuentan)
+    cartasLibres: () => (juego().cartas ? juego().cartas.getChildren().filter(c => !c.tomada) : []),
+    cartas: () => (juego().cartas ? window.prueba.cartasLibres().map(c => ({ ...c.datos, x: Math.round(c.x), y: Math.round(c.y), encadenada: !!c.encadenada })) : []),
     tomados: () => JSON.parse(JSON.stringify(juego().partida.tomados)),
     spawn: (n = 1) => ({ ...juego().spawns[n - 1] }),
     peligros: () => juego().peligros.getChildren().map(p => ({ tipo: p.texture.key, x: Math.round(p.x), y: Math.round(p.y) })),
@@ -140,7 +150,7 @@ export function instalarPuertaPruebas(game) {
     contarTiles: (tipo) => juego().logica.flat().filter(t => t === tipo).length,
     tocarCarta(n, i) {
       const s = juego();
-      const carta = s.cartas.getChildren()[i];
+      const carta = window.prueba.cartasLibres()[i];
       if (!carta) return false;
       s.tocarCarta(jugador(n), carta);
       return true;

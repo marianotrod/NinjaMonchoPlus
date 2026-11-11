@@ -24,23 +24,6 @@ export const Bestiario = {
             lanzador: { activo: false }
         }
     },
-    // Patrullero terrestre simple: camina y da la vuelta en paredes y bordes de plataforma.
-    // Ya no sale al azar (peso 0): lo reemplazó el esqueleto. Queda para las pruebas y para usarlo a mano.
-    'demonio_caminante': {
-        textura: 'demonio',
-        framesVuelo: true,
-        hp: 1,
-        costoIA: 1,
-        nivelMinimo: 2,
-        peso: 0,
-        duracionStun: 2000,
-        rasgos: {
-            saltarin: { activo: false },
-            caminante: { activo: true, velocidadX: 60 },
-            volador: { activo: false },
-            lanzador: { activo: false }
-        }
-    },
     // Esqueleto: camina, a veces frena, a veces salta un par de tiles (así sube y no se traba), a veces baja de una
     // pasarela y de vez en cuando tira una cuchilla hacia adelante, avisando antes con un cuadro.
     // En un tile suelto no intenta caminar: solo se da vuelta.
@@ -63,7 +46,8 @@ export const Bestiario = {
                 salto: -260,                   // Unos 2,5 tiles
                 // La cuchilla va como el shuriken de Moncho: derecho, girando y cayendo apenas. Con la animación
                 // 'lanzar' el aviso dura lo que tarda en llegar a su último cuadro; sin ella, 'aviso' (ms).
-                lanza: { aviso: 450, vx: 160, caida: 10, giro: 900 },  // caida: px/s², más baja que la del shuriken porque va más lento
+                // apunta: antes de tirar se da vuelta hacia el ninja más cercano (false: tira hacia donde camina)
+                lanza: { aviso: 450, vx: 160, caida: 10, giro: 900, apunta: true },  // caida: px/s², más baja que la del shuriken porque va más lento
                 risa: 1500                     // Lo que se ríe cuando mata a un ninja (ms)
             },
             volador: { activo: false },

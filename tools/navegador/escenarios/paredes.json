@@ -184,6 +184,13 @@
    }
   },
   {
+   "verificar": "pasada la ventana, la rayita ya no está",
+   "eval": "({ raya: window.game.scene.getScene('NinjaMonchoScene').jugador.rayaPared.visible })",
+   "espera": {
+    "raya": false
+   }
+  },
+  {
    "up": "ArrowLeft"
   },
   {
@@ -259,6 +266,13 @@
    "timeout": 500,
    "nombre": "llega a la pared otra vez",
    "up": "ArrowLeft"
+  },
+  {
+   "verificar": "ayuda visual: mientras se puede hacer el salto de pared se ve la rayita en la pared",
+   "eval": "({ raya: !!window.game.scene.getScene('NinjaMonchoScene').jugador.rayaPared && window.game.scene.getScene('NinjaMonchoScene').jugador.rayaPared.visible })",
+   "espera": {
+    "raya": true
+   }
   },
   {
    "down": "ArrowRight"

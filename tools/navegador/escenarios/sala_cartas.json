@@ -1,0 +1,17 @@
+{
+  "descripcion": "Cartas de la sala (5.13): íconos, la elegida sube, al terminar se revela con el nivel oscurecido y queda grabada en la pared",
+  "query": "?debug&nivel=2&sala&mapa=sala-pergaminos",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'sala'", "timeout": 8000, "nombre": "arranca la sala"},
+    {"eval": "(window.S = () => window.game.scene.getScene('NinjaMonchoScene'), true)"},
+    {"verificar": "cada carta tiene el ícono de su positivo y de su negativo", "eval": "({ iconos: S().cartas.getChildren().every(c => c.iconoPositivo.texture.key === `icono-perg-${c.datos.positivo}` && c.iconoNegativo.texture.key === `icono-perg-${c.datos.negativo}`) })", "espera": {"iconos": true}},
+    {"shot": "sala"},
+    {"eval": "(window.carta = S().cartas.getChildren()[1], window.y0 = carta.y, prueba.tocarCarta(1, 1))"},
+    {"wait": 400},
+    {"verificar": "la elegida sube un poco y queda a la vista; las demás se van", "eval": "({ sube: Math.round(y0 - carta.y), visible: carta.active, otras: S().cartas.getChildren().filter(c => c !== carta).every(c => !c.active || c.alpha < 0.5) })", "espera": {"sube": 8, "visible": true, "otras": true}},
+    {"verificar": "el nivel se oscurece y los dos pergaminos quedan grabados en la pared izquierda (J1)", "eval": "({ sombra: S().children.list.some(o => o.type === 'Rectangle' && o.depth === 28), grabados: S().grabados.length, izquierda: S().grabados.every(g => g.x < 32), claves: S().grabados.map(g => g.texture.key).join() === `grabado-perg-${carta.datos.positivo},grabado-perg-${carta.datos.negativo}` })", "espera": {"sombra": true, "grabados": 2, "izquierda": true, "claves": true}},
+    {"wait": 600},
+    {"shot": "revelar"},
+    {"hasta": "prueba.enJuego() && prueba.estado().fase !== 'sala' && prueba.estado().fase !== 'transicion'", "timeout": 8000, "nombre": "después sigue el nivel"}
+  ]
+}

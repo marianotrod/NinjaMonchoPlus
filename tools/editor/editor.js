@@ -3,6 +3,8 @@
 // Pinta las capas de un nivel (fondo, skin, lógica y objetos) sobre la grilla completa, incluida la zona oculta.
 import { CONFIG, LOGICA, MUNDO } from '../../config.js';
 import { Bestiario } from '../../datos/Bestiario.js';
+import { EFECTOS } from '../../datos/Pergaminos.js';
+import { i18n } from '../../i18n.js';
 import { CLAVE_BORRADOR, validarNivel } from '../../mundo/Niveles.js';
 import { nivelNuevo } from './formato.js';
 import { guardarNivel, leerIndice, leerNivel } from './almacen.js';
@@ -611,7 +613,8 @@ function direccionDePrueba(extra = '') {
   const parametros = tipo === 'jefe' ? `nivel=5${jefe && jefe !== 'rey' ? `&jefe=${jefe}` : ''}` : (tipo === 'pergaminos' ? 'nivel=2&sala' : 'nivel=3');
   const fase = tipo !== 'jefe' && tipo !== 'pergaminos' && opcionesPrueba.fase === 'caceria' ? '&fase=caceria' : '';
   const reloj = opcionesPrueba.sinTiempo ? '&sinTiempo' : '';
-  return `../../index.html?debug&${parametros}&mapa=${id}&enemigos=${parametroEnemigos()}${fase}${reloj}${extra}`;
+  const pergaminos = opcionesPrueba.pergaminos.length ? `&pergaminos=${opcionesPrueba.pergaminos.join(',')}` : '';
+  return `../../index.html?debug&${parametros}&mapa=${id}&enemigos=${parametroEnemigos()}${fase}${reloj}${pergaminos}${extra}`;
 }
 
 // ------------------------------------------
@@ -620,7 +623,7 @@ function direccionDePrueba(extra = '') {
 // ------------------------------------------
 const CLAVE_OPCIONES_PRUEBA = 'ninja-moncho-editor-prueba';
 const MAX_POR_ENEMIGO = 8;
-const opcionesPrueba = { modo: 'nivel', nivel: 3, lista: {}, fase: 'recoleccion', sinTiempo: false };
+const opcionesPrueba = { modo: 'nivel', nivel: 3, lista: {}, fase: 'recoleccion', sinTiempo: false, pergaminos: [] };
 
 function leerOpcionesPrueba() {
   try {
@@ -645,7 +648,8 @@ function parametroEnemigos() {
 function resumenPrueba() {
   const { modo, nivel, fase } = opcionesPrueba;
   const enemigos = modo === 'ninguno' ? 'sin enemigos' : (modo === 'nivel' ? `enemigos nivel ${nivel}` : `${totalElegidos()} enemigos`);
-  return `${fase === 'caceria' ? 'Cacería' : 'Recolección'}, ${enemigos}${opcionesPrueba.sinTiempo ? ', sin reloj' : ''}`;
+  const pergaminos = opcionesPrueba.pergaminos.length ? `, ${opcionesPrueba.pergaminos.length} pergaminos` : '';
+  return `${fase === 'caceria' ? 'Cacería' : 'Recolección'}, ${enemigos}${opcionesPrueba.sinTiempo ? ', sin reloj' : ''}${pergaminos}`;
 }
 
 function dibujarPanelPrueba() {
@@ -664,8 +668,18 @@ function dibujarPanelPrueba() {
     '<strong>Enemigos</strong>' +
     opcion('nivel', 'Según el nivel', `<input type="number" id="nivel-prueba" min="1" max="10" value="${nivel}" ${modo === 'nivel' ? '' : 'disabled'}>`) +
     opcion('lista', `Elegidos <small>(hasta ${CONFIG.TOPE_ENEMIGOS_PRUEBA} en total)</small>`) + filas +
-    opcion('ninguno', 'Ninguno');
+    opcion('ninguno', 'Ninguno') +
+    `<strong>Pergaminos <small>(los dos jugadores arrancan con estos)</small></strong><div id="lista-pergaminos">${filasPergaminos()}</div>`;
   $('resumen-prueba').textContent = resumenPrueba();
+}
+
+// Una casilla por efecto, primero los positivos. El texto es el de la carta (i18n)
+function filasPergaminos() {
+  const elegidos = new Set(opcionesPrueba.pergaminos);
+  return [...EFECTOS].sort((a, b) => (a.tipo === b.tipo ? 0 : a.tipo === 'positivo' ? -1 : 1)).map(({ id, tipo }) => {
+    const texto = i18n.t(`perg_${id}`);
+    return `<label class="pergamino ${tipo}" title="${id}"><input type="checkbox" data-pergamino="${id}" ${elegidos.has(id) ? 'checked' : ''}> ${texto}</label>`;
+  }).join('');
 }
 
 function cambiarOpcionPrueba(evento) {
@@ -673,6 +687,11 @@ function cambiarOpcionPrueba(evento) {
   if (objetivo.name === 'modo-prueba') opcionesPrueba.modo = objetivo.value;
   if (objetivo.name === 'fase-prueba') opcionesPrueba.fase = objetivo.value;
   if (objetivo.id === 'sin-tiempo') opcionesPrueba.sinTiempo = objetivo.checked;
+  if (objetivo.dataset.pergamino) {
+    const id = objetivo.dataset.pergamino;
+    opcionesPrueba.pergaminos = opcionesPrueba.pergaminos.filter(otro => otro !== id);
+    if (objetivo.checked) opcionesPrueba.pergaminos.push(id);
+  }
   if (objetivo.id === 'nivel-prueba') opcionesPrueba.nivel = Math.min(10, Math.max(1, parseInt(objetivo.value, 10) || 1));
   if (objetivo.dataset.enemigo) {
     const clave = objetivo.dataset.enemigo;

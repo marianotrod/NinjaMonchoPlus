@@ -106,8 +106,8 @@ export function chocarProyectil(scene, proyectil) {
 export function actualizarProyectiles(scene) {
   const ahora = scene.time.now;
   scene.proyectiles.getChildren().slice().forEach(p => {
+    if (p.orientar && p.body) p.setRotation(Math.atan2(p.body.velocity.y, p.body.velocity.x));  // La flecha apunta hacia donde va
     if (p.bando === BANDO.DEMONIOS) {
-      if (p.orientar && p.body) p.setRotation(Math.atan2(p.body.velocity.y, p.body.velocity.x));  // La flecha apunta hacia donde va
       const termino = scene.conWrap ? proyectilVencido(p, ahora) : (p.x < -24 || p.x > 536 || p.y > 310 || p.y < -60);
       if (termino) p.destroy();
       return;

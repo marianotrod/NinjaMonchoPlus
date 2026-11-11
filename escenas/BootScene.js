@@ -3,6 +3,7 @@ import { ARRANQUE_DEBUG, CONFIG, TILES } from '../config.js';
 import { GRAFICOS, GRAFICOS_ANIMADOS, GRAFICOS_ANIMADOS_24, GRAFICOS_CUADROS } from '../datos/Graficos.js';
 import { crearAnimaciones } from '../datos/Animaciones.js';
 import { armarCartas } from '../reglas/Pergaminos.js';
+import { EFECTOS } from '../datos/Pergaminos.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { nuevaPartida } from '../reglas/Partida.js';
 import { cargarNiveles, registrarNiveles } from '../mundo/Niveles.js';
@@ -37,6 +38,11 @@ export default class BootScene extends Phaser.Scene {
     this.load.spritesheet('escudo_roto', `${A}escudo_roto-Sheet.png`, { frameWidth: 16, frameHeight: 16 });
 
     GRAFICOS.forEach(clave => this.load.image(clave, `${A}graficos/${clave}.png`));
+    // Íconos de los pergaminos: el de la carta y el grabado en la pared de la sala (archivos distintos, para cambiar uno sin el otro)
+    EFECTOS.forEach(({ id }) => {
+      this.load.image(`icono-perg-${id}`, `${A}pergaminos/cartas/${id}.png`);
+      this.load.image(`grabado-perg-${id}`, `${A}pergaminos/grabados/${id}.png`);
+    });
     [...GRAFICOS_ANIMADOS, ...GRAFICOS_CUADROS].forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 16, frameHeight: 16 }));
     GRAFICOS_ANIMADOS_24.forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 24, frameHeight: 24 }));
 

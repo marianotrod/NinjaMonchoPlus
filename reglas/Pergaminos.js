@@ -9,7 +9,7 @@ export const MODS_JUGADOR_BASE = {
   rebotesExtra: 0,      // Rebotes de más para sus proyectiles
   escudos: 0,           // Veces que sobrevive a una muerte (no al fantasma)
   iman: false, municionGratis: false, trampaPiedra: false, bombaAlMorir: false,
-  saltoPisoton: false, parryRecarga: false, katanaLarga: false, katanaAlta: false, parry360: false,
+  saltoPisoton: false, parryRecarga: false, katanaLarga: false, katanaAlta: false, parry360: false, parryDevuelve: false,
   pisarEnfurece: false, fantasmaRapido: false
 };
 
@@ -87,4 +87,7 @@ export function tomarEfecto(partida, id, j) {
 export function tomarCarta(partida, carta, j) {
   tomarEfecto(partida, carta.positivo, j);
   tomarEfecto(partida, carta.negativo, j);
+  // Quedan grabados en las paredes de la sala, en orden
+  if (!partida.grabados) partida.grabados = [];
+  partida.grabados.push({ j, id: carta.positivo }, { j, id: carta.negativo });
 }

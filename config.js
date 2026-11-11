@@ -17,7 +17,9 @@ export const ARRANQUE_DEBUG = {
   sala: DEBUG && parametros.has('sala'),         // arranca en la sala de pergaminos; con &mapa= usa esa sala
   enemigos: DEBUG ? leerEnemigosDePrueba(parametros.get('enemigos')) : null,  // lo elige el editor al probar (ver abajo)
   fase: DEBUG ? parametros.get('fase') : null,   // caceria: el nivel común arranca directo en la Cacería (para probar mapas)
-  sinTiempo: DEBUG && parametros.has('sinTiempo') // el reloj no baja (salvo en la sala de pergaminos): para probar mapas
+  sinTiempo: DEBUG && parametros.has('sinTiempo'), // el reloj no baja (salvo en la sala de pergaminos): para probar mapas
+  // pergaminos=parryDevuelve,katanaLarga: los dos jugadores arrancan con esos efectos (ids de datos/Pergaminos.js)
+  pergaminos: DEBUG && parametros.get('pergaminos') ? parametros.get('pergaminos').split(',').filter(Boolean) : []
 };
 
 // ?debug&enemigos=... (el botón Probar del editor):
@@ -82,6 +84,8 @@ export const CONFIG = {
   RADIO_IMAN: 72,               // Distancia a la que el imán atrae talismanes (px)
   FUERZA_IMAN: 500,             // Aceleración hacia el ninja (px/s²)
   PROB_MUNICION_GRATIS: 0.2,
+  // Parry que devuelve (roadmap 5.12): con true lo tienen todos, sin pergamino. velocidad: cuánto más rápido vuelve
+  PARRY_DEVUELVE: { siempre: false, velocidad: 1.3, minima: 160 },
   PROB_PARRY_RECARGA: 0.2,
   PROB_LLAMA_BOLA: 0.3,         // Una llama que se apaga escupe otra bola
   PROB_BOLA_EXTRA: 0.2,
@@ -109,6 +113,9 @@ export const CONFIG = {
   CUENTA_SALA: 600,             // Lo que dura cada número de la cuenta regresiva de la sala (ms)
   SALA_OCULTA: 3000,            // Pergaminos negativos de la sala: tiempo con textos ocultos (ms)
   SALA_CADENA: 5000,            // Tiempo que una carta queda encadenada (ms)
+  SALA_REVELAR: 2500,           // Al terminar la sala, lo que quedan a la vista las cartas elegidas, con el nivel oscurecido (ms)
+  // Íconos grabados en las paredes de la sala (J1 a la izquierda, J2 a la derecha): por columna, desde esta altura (px)
+  GRABADOS: { filas: 14, desdeY: 40 },
   NIVEL_SALA: 'sala-pergaminos',  TIEMPO_CACERIA: 30,
   TIEMPO_JEFE: 99,
   ALARMA_TIEMPO: 10,            // Desde acá el reloj se pone rojo y suena el tic
@@ -220,7 +227,8 @@ export const FISICA = {
   parpadeoPisoton: 600,         // Protección después de pisar a un enemigo (ms)
   bloqueoSaltoPared: 250,       // Tiempo sin control horizontal después de saltar de la pared (ms)
   ventanaSaltoPared: 210,       // Salto de pared: hay que saltar hasta esto después de llegar a la pared (ms); después, se agarra
-  coyotePared: 120,             // ...o hasta esto después de despegarse, si se despegó dentro de la ventana (ms)
+  coyotePared: 120,
+  ayudaSaltoPared: true,        // Una rayita celeste en la pared mientras se puede hacer el salto de pared (se apaga con el tiempo)             // ...o hasta esto después de despegarse, si se despegó dentro de la ventana (ms)
   // Agarre de pared (todos, sin pergamino): en el aire, empujando contra una pared, se queda colgado 'duracion' ms y después
   // se desliza a 'deslizar' px/s. Con salto trepa un poquito ('trepar', una vez cada 'esperaTrepar' ms) y el agarre empieza de nuevo.
   agarrePared: { duracion: 700, deslizar: 50, trepar: -150, esperaTrepar: 300 },
