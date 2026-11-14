@@ -23,19 +23,20 @@ export default class BootScene extends Phaser.Scene {
 
     cargarNiveles(this.load);
 
+    // public/assets: musica/, sonidos/, sprites/ (hojas de cuadros), tiles/, fondos/, graficos/ (sueltos) y pergaminos/
     const A = 'public/assets/';
-    this.load.image('fondo-cielo', `${A}Cielo.webp`);
+    this.load.image('fondo-cielo', `${A}fondos/Cielo.webp`);
     // Fondos de cada fase (ver CONFIG.FONDOS_FASE): se reemplaza el PNG para cambiarlos
     Object.values(CONFIG.FONDOS_FASE.archivos).filter(Boolean).forEach(archivo => this.load.image(`fondo-${archivo}`, `${A}fondos/${archivo}.png`));
-    this.load.spritesheet('MapTileSet', `${A}MapTileSet.png`, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('ninja', `${A}NinjaSpriteSheet.png`, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('ninja_coop', `${A}NinjaCoopSprite.png`, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('cuadrado', `${A}cuadrado.png`, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('triangulo', `${A}triangulo.png`, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('rombo', `${A}rombo.png`, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('coin', `${A}coin.png`, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('demonio', `${A}demonio.png`, { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('escudo_roto', `${A}escudo_roto-Sheet.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('MapTileSet', `${A}tiles/MapTileSet.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('ninja', `${A}sprites/NinjaSpriteSheet.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('ninja_coop', `${A}sprites/NinjaCoopSprite.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('cuadrado', `${A}sprites/cuadrado.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('triangulo', `${A}sprites/triangulo.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('rombo', `${A}sprites/rombo.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('coin', `${A}sprites/coin.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('demonio', `${A}sprites/demonio.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('escudo_roto', `${A}sprites/escudo_roto-Sheet.png`, { frameWidth: 16, frameHeight: 16 });
 
     GRAFICOS.forEach(clave => this.load.image(clave, `${A}graficos/${clave}.png`));
     // Íconos de los pergaminos: el de la carta y el grabado en la pared de la sala (archivos distintos, para cambiar uno sin el otro)
@@ -46,19 +47,19 @@ export default class BootScene extends Phaser.Scene {
     [...GRAFICOS_ANIMADOS, ...GRAFICOS_CUADROS, ...GRAFICOS_UNA_VEZ].forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 16, frameHeight: 16 }));
     GRAFICOS_ANIMADOS_24.forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 24, frameHeight: 24 }));
 
-    this.load.audio('musica-fondo', [`${A}GameMusic.ogg`, `${A}GameMusic.mp3`]);
-    this.load.audio('musica-cueva', [`${A}CaveMusic.mp3`]);
-    this.load.audio('musica-agua', [`${A}WaterMusic.mp3`]);
-    this.load.audio('musica-jefe', [`${A}BossMusic.mp3`]);
-    this.load.audio('musica-win', [`${A}WinMusic.ogg`, `${A}WinMusic.mp3`]);
-    this.load.audio('musica-lose', [`${A}LoseMusic.ogg`, `${A}LoseMusic.mp3`]);
-    this.load.audio('snd-salto', [`${A}Jump.ogg`, `${A}Jump.mp3`]);
-    this.load.audio('snd-caida', [`${A}Fall.ogg`, `${A}Fall.mp3`]);
-    this.load.audio('snd-parry', [`${A}Parry.ogg`, `${A}Parry.mp3`]);
-    this.load.audio('snd-grito', [`${A}Shout.ogg`, `${A}Shout.mp3`]);
-    this.load.audio('snd-grito-final', [`${A}FinalShout.ogg`, `${A}FinalShout.mp3`]);
-    this.load.audio('snd-shuriken', [`${A}Shuriken.ogg`, `${A}Shuriken.mp3`]);
-    this.load.audio('snd-stun', [`${A}Stun.ogg`, `${A}Stun.mp3`]);
+    this.load.audio('musica-fondo', [`${A}musica/GameMusic.ogg`, `${A}musica/GameMusic.mp3`]);
+    this.load.audio('musica-cueva', [`${A}musica/CaveMusic.mp3`]);
+    this.load.audio('musica-agua', [`${A}musica/WaterMusic.mp3`]);
+    this.load.audio('musica-jefe', [`${A}musica/BossMusic.mp3`]);
+    this.load.audio('musica-win', [`${A}musica/WinMusic.ogg`, `${A}musica/WinMusic.mp3`]);
+    this.load.audio('musica-lose', [`${A}musica/LoseMusic.ogg`, `${A}musica/LoseMusic.mp3`]);
+    this.load.audio('snd-salto', [`${A}sonidos/Jump.ogg`, `${A}sonidos/Jump.mp3`]);
+    this.load.audio('snd-caida', [`${A}sonidos/Fall.ogg`, `${A}sonidos/Fall.mp3`]);
+    this.load.audio('snd-parry', [`${A}sonidos/Parry.ogg`, `${A}sonidos/Parry.mp3`]);
+    this.load.audio('snd-grito', [`${A}sonidos/Shout.ogg`, `${A}sonidos/Shout.mp3`]);
+    this.load.audio('snd-grito-final', [`${A}sonidos/FinalShout.ogg`, `${A}sonidos/FinalShout.mp3`]);
+    this.load.audio('snd-shuriken', [`${A}sonidos/Shuriken.ogg`, `${A}sonidos/Shuriken.mp3`]);
+    this.load.audio('snd-stun', [`${A}sonidos/Stun.ogg`, `${A}sonidos/Stun.mp3`]);
   }
 
   create() {

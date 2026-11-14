@@ -70,7 +70,7 @@ mundo/                  Carga y armado de los niveles
 sistemas/               Sonido, Guardado y puerta de pruebas
 entrada/                MenuInputManager
 public/niveles/         Un JSON por nivel e indice.json
-public/assets/          Sprites, tiles y audio (graficos/: un PNG por cada gráfico suelto)
+public/assets/          musica/, sonidos/, sprites/ (hojas de cuadros), tiles/, fondos/, graficos/ (un PNG por gráfico suelto), pergaminos/
 lib/                    Phaser 3.80.1
 Docs/                   GDD, lore, roadmap y bitácora de trabajo
 tools/                  Herramientas de soporte: editor de niveles y banco de pruebas (no son parte del juego)

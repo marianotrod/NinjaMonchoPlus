@@ -5,6 +5,15 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-14 - Claude: public/assets ordenado
+
+- `public/assets/` pasó a carpetas por tipo: `musica/`, `sonidos/`, `sprites/` (hojas de cuadros: Moncho, ítems, demonio,
+  escudo roto), `tiles/` (`MapTileSet.png`), `fondos/` (ahora también `Cielo.webp`), y siguen `graficos/` y `pergaminos/`.
+  `favicon.ico` queda en la raíz. Las claves de las texturas y sonidos no cambiaron: solo las rutas (`BootScene`, editor).
+- `piso.png` no lo carga nadie: quedó en `sin_usar/` (Mariano: borrarlo o usarlo).
+- Sonidos de Ninja-Kid II separados en `SonidosRipeados/` (fuera de git), con un `LEEME.txt` de cuáles se identificaron.
+- Pasan `editor_prueba`, `niveles` y `moncho_animaciones`, y una prueba temporal de que carga todo (borrada).
+
 ## 2026-11-13 - Claude: animaciones nuevas de Moncho
 
 - Hojas nuevas de Moncho (Mariano), las dos con los mismos números de cuadro. La tabla pasó a `datos/Animaciones.js`

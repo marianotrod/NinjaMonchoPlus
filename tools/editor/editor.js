@@ -15,7 +15,7 @@ const ZOOM_MAXIMO = 5;
 const MAX_DESHACER = 100;
 const MAX_RECIENTES = 18;
 
-const IMAGENES_FONDO = { 'fondo-cielo': '../../public/assets/Cielo.webp' };
+const IMAGENES_FONDO = { 'fondo-cielo': '../../public/assets/fondos/Cielo.webp' };
 const CAPAS = [
   { id: 'fondo', nombre: 'Fondo' },
   { id: 'skin', nombre: 'Skin' },
@@ -784,7 +784,7 @@ function conectarEventos() {
 
 async function iniciar() {
   await Promise.all([
-    cargarImagen(imagenTileset, '../../public/assets/MapTileSet.png'),
+    cargarImagen(imagenTileset, '../../public/assets/tiles/MapTileSet.png'),
     cargarImagen(imagenFondo, IMAGENES_FONDO['fondo-cielo'])
   ]);
   estado.indice = await leerIndice();
