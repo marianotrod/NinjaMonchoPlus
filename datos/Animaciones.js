@@ -1,15 +1,42 @@
 // Animaciones.js
-// Animaciones de los enemigos dibujados en una hoja de cuadros de 16x16. Los cuadros se numeran desde 0, de izquierda a
+// Animaciones de Moncho y de los enemigos dibujados en una hoja de cuadros de 16x16. Los cuadros se numeran desde 0, de izquierda a
 // derecha y fila por fila (una hoja de 256 px de ancho tiene 16 cuadros por fila: la segunda fila empieza en el 16).
 // Para cambiar un dibujo se reemplaza el PNG; si cambian los números de cuadro, se corrige esta tabla, sin tocar código.
 //   cuadros: '0-2' (del 0 al 2), '2-0' (al revés), '18' (uno solo) o '4,5,4' (en ese orden)
 //   fps:     cuadros por segundo (si no está, 10)
 //   loop:    se repite; si no, queda en el último cuadro
 //   cae:     solo en 'muerto'. false: muere en su lugar (explota) y desaparece al terminar; si no, cae fuera de la pantalla
-// Nombres que usa el juego (el que falte, se reemplaza por el comportamiento de antes):
+// Nombres que usa Moncho (NinjaSpriteSheet.png y NinjaCoopSprite.png, con los mismos números de cuadro):
+//   idle, poses, caminar, saltar, caer, caidaAlta, stun, lanzar, saltoPared, colgado, trepar, aterrizajeJusto, golpePiso,
+//   aturdidoPiso, rodar
+// Nombres que usan los enemigos (el que falte, se reemplaza por el comportamiento de antes):
 //   quieto, caminar, volar, preparaSalto, subir, caer, lanzar, aturdido, despertar, risa, muerto,
 //   preparaArco y disparar (el arco del samurái), preparaCarga y carga (la embestida del samurái)
+const MONCHO = {
+  idle:            { cuadros: '9' },                           // Recién quieto
+  // Quieto un rato (espera, ms): poses. fps 0.5 = cada pose dura 2 segundos
+  poses:           { cuadros: '22-27', fps: 0.5, loop: true, espera: 3000 },
+  caminar:         { cuadros: '0-4', fps: 12, loop: true },
+  saltar:          { cuadros: '5' },
+  caer:            { cuadros: '7' },
+  caidaAlta:       { cuadros: '54-55', fps: 8, loop: true },  // Cayendo desde tan alto que el aterrizaje es peligroso
+  stun:            { cuadros: '10-13', fps: 12, loop: true }, // Golpeado, y cayendo al perder una vida
+  lanzar:          { cuadros: '15-17', fps: 15 },             // Al tirar el arma (shuriken, bumerán, bomba)
+  // Salto de pared: pica en la pared y vuela mirándola, hasta que vuelve a mover o hace otra cosa.
+  // Dibujado con la pared a la derecha (el juego lo da vuelta).
+  saltoPared:      { cuadros: '19-20', fps: 10 },
+  colgado:         { cuadros: '50' },                         // Agarrado o deslizando por la pared (pared a la derecha)
+  trepar:          { cuadros: '50-52', fps: 12 },             // El saltito para trepar
+  aterrizajeJusto: { cuadros: '29-30', fps: 8 },              // Boulder: saltó apenas a tiempo, aterriza sin perder el control
+  golpePiso:       { cuadros: '37', fps: 8 },                 // Aterrizaje pesado: el golpe contra el piso...
+  aturdidoPiso:    { cuadros: '38-39', fps: 6, loop: true },  // ...y queda aturdido hasta que termina el castigo
+  rodar:           { cuadros: '32-35', fps: 14, loop: true }  // Boulder
+  // 41-48: combo de ataques (todavía no se usa)
+};
+
 export const ANIMACIONES = {
+  ninja: MONCHO,
+  ninja_coop: MONCHO,
   esqueleto: {
     quieto:       { cuadros: '0-2', fps: 6, loop: true },
     risa:         { cuadros: '4-5', fps: 6, loop: true },  // Cuando mata a un ninja, si está en el piso

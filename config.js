@@ -166,7 +166,9 @@ export const CONFIG = {
     altura: 190,                // 2/3 de la pantalla (px)
     castigo: 400,               // Tiempo sin control al aterrizar pesado (ms)
     ventanaPerfecta: 100,       // Boulder: saltar en estos últimos ms antes de tocar el piso → rueda
-    ventanaCasi: 250            // Boulder: saltar en estos → aterriza sin castigo, sin rodar
+    ventanaCasi: 250,           // Boulder: saltar en estos → aterriza sin castigo, sin rodar
+    // Aviso al empezar la caída peligrosa (cuando empieza el pataleo): un tono que sube. desde/hasta en Hz, duracion en s
+    sonido: { activo: true, desde: 300, hasta: 900, duracion: 0.15, volumen: 0.1 }
   },
   // Rescate: un jugador sin vidas se puede rescatar en el nivel siguiente (ver mundo/Rescate.js)
   RESCATE: {

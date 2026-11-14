@@ -18,8 +18,8 @@ export default class TitleScene extends Phaser.Scene {
     this.add.text(372, 78, 'PLUS', estilo(12, '#EF4444')).setOrigin(0.5).setShadow(2, 2, '#000000', 0, false, true);
     this.tweens.add({ targets: titulo, y: 48, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
 
-    const moncho = this.add.sprite(88, 56, 'ninja').setScale(2).play('moncho-caminar');
-    const coop = this.add.sprite(424, 56, 'ninja_coop').setScale(2).setFlipX(true).play('coop-caminar');
+    const moncho = this.add.sprite(88, 56, 'ninja').setScale(2).play('ninja-caminar');
+    const coop = this.add.sprite(424, 56, 'ninja_coop').setScale(2).setFlipX(true).play('ninja_coop-caminar');
     this.tweens.add({ targets: [moncho, coop], y: 46, duration: 500, yoyo: true, repeat: -1, ease: 'Quad.Out' });
 
     this.opciones = [

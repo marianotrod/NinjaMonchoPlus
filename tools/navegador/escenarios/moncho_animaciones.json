@@ -1,0 +1,45 @@
+{
+  "descripcion": "Animaciones de Moncho (datos/Animaciones.js): quieto con poses, tirar el arma, caída alta, aterrizaje pesado y justo, rodar",
+  "query": "?debug&nivel=1",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 2000, "eval": "(prueba.sinEnemigos(), prueba.sinItems(), prueba.ponerTiempo(90), prueba.proteger(1), true)"},
+    {"eval": "(window.s = window.game.scene.getScene('NinjaMonchoScene'), window.j = s.jugador, window.saltarCuando = (y) => { const fn = () => { if (j.y > y) { j.ultimoSalto = s.time.now; s.events.off('update', fn); } }; s.events.on('update', fn); }, true)"},
+
+    {"eval": "(prueba.ponerJugador(1, 200, 240), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 2000, "nombre": "en el piso"},
+    {"wait": 300},
+    {"verificar": "recién quieto, el cuadro de siempre (9)", "eval": "({ animacion: prueba.jugador(1).animacion, cuadro: prueba.jugador(1).cuadro })", "espera": {"animacion": "idle", "cuadro": 9}},
+    {"hasta": "prueba.jugador(1).animacion === 'poses'", "timeout": 4000, "nombre": "quieto un rato empieza con las poses"},
+    {"verificar": "no antes de los 3 segundos, desde la primera pose (22)", "eval": "({ cuadro: prueba.jugador(1).cuadro })", "espera": {"cuadro": 22}},
+    {"wait": 2200},
+    {"verificar": "cada pose dura 2 segundos", "eval": "({ cuadro: prueba.jugador(1).cuadro })", "espera": {"cuadro": 23}},
+
+    {"eval": "(prueba.equipar(1, 'shuriken'), prueba.mirar(1, 1), prueba.disparar(1), true)"},
+    {"verificar": "al tirar el arma, la animación de lanzar", "eval": "({ animacion: prueba.jugador(1).animacion, cuadro: prueba.jugador(1).cuadro })", "espera": {"animacion": "lanzar", "cuadro": {"min": 15, "max": 17}}},
+    {"wait": 400},
+    {"verificar": "y vuelve a estar quieto, empezando de nuevo con el cuadro de siempre", "eval": "({ animacion: prueba.jugador(1).animacion })", "espera": {"animacion": "idle"}},
+
+    {"eval": "(prueba.ponerJugador(1, 200, 20), true)"},
+    {"hasta": "prueba.jugador(1).animacion === 'caidaAlta'", "timeout": 1500, "nombre": "cayendo de muy alto cambia de animación"},
+    {"verificar": "la caída peligrosa usa los cuadros 54 y 55, y se marca para el aviso con sonido", "eval": "({ cuadro: prueba.jugador(1).cuadro, aviso: prueba.jugador(1).caidaPeligrosa })", "espera": {"cuadro": {"min": 54, "max": 55}, "aviso": true}},
+    {"hasta": "prueba.jugador(1).estado === 'aterrizando'", "timeout": 2000, "nombre": "aterriza pesado"},
+    {"verificar": "primero el golpe contra el piso (37)", "eval": "({ animacion: prueba.jugador(1).animacion, cuadro: prueba.jugador(1).cuadro })", "espera": {"animacion": "golpePiso", "cuadro": 37}},
+    {"wait": 200},
+    {"verificar": "después queda aturdido en el piso (38 y 39)", "eval": "({ animacion: prueba.jugador(1).animacion, cuadro: prueba.jugador(1).cuadro })", "espera": {"animacion": "aturdidoPiso", "cuadro": {"min": 38, "max": 39}}},
+    {"hasta": "prueba.jugador(1).estado === 'libre'", "timeout": 800, "nombre": "recupera el control"},
+
+    {"eval": "(prueba.darHabilidades(1, ['boulder'], 1), prueba.ponerJugador(1, 200, 20), saltarCuando(160), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 2000, "nombre": "con el boulder, salta apenas a tiempo"},
+    {"wait": 30},
+    {"verificar": "aterrizaje justo: cuadros 29 y 30, sin perder el control", "eval": "({ estado: prueba.jugador(1).estado, animacion: prueba.jugador(1).animacion, cuadro: prueba.jugador(1).cuadro })", "espera": {"estado": "libre", "animacion": "aterrizajeJusto", "cuadro": {"min": 29, "max": 30}}},
+    {"wait": 400},
+    {"verificar": "y vuelve a estar quieto", "eval": "({ animacion: prueba.jugador(1).animacion })", "espera": {"animacion": "idle"}},
+
+    {"eval": "(prueba.mirar(1, -1), prueba.ponerJugador(1, 200, 20), saltarCuando(250), true)"},
+    {"hasta": "prueba.jugador(1).estado === 'rodando'", "timeout": 2000, "nombre": "salta justo: rueda"},
+    {"wait": 50},
+    {"verificar": "rodando usa los cuadros 32 a 35, sin girar el sprite, dado vuelta hacia donde va", "eval": "({ animacion: prueba.jugador(1).animacion, cuadro: prueba.jugador(1).cuadro, angulo: j.angle, flipX: prueba.jugador(1).flipX, vx: prueba.jugador(1).vx < 0 })", "espera": {"animacion": "rodar", "cuadro": {"min": 32, "max": 35}, "angulo": 0, "flipX": true, "vx": true}},
+    {"hasta": "prueba.jugador(1).estado === 'libre'", "timeout": 1000, "nombre": "termina de rodar"}
+  ]
+}

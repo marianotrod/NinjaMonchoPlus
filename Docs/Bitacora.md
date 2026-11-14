@@ -5,6 +5,23 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-13 - Claude: animaciones nuevas de Moncho
+
+- Hojas nuevas de Moncho (Mariano), las dos con los mismos números de cuadro. La tabla pasó a `datos/Animaciones.js`
+  (`MONCHO`, para `ninja` y `ninja_coop`); las claves ahora son `ninja-idle`, `ninja_coop-caminar`, etc.
+  - Quieto: el cuadro 9; después de 3 s quieto, las poses 22-27 (2 s cada una; `poses` en la tabla). Tirar el arma: 15-17.
+  - Caída peligrosa (cuando ya aterrizaría pesado): 54-55, con un tono que sube al empezar (`CONFIG.CAIDA_ALTA.sonido`).
+  - Pared: colgado y deslizando 50; trepar 50-52; dibujados con la pared a la derecha.
+  - Salto de pared: 19 al picar y 20 volando mirando la pared. Deja de mirarla al moverse de nuevo con control,
+    al atacar, disparar o hacer el dash (así van hacia adelante), y al tocar el piso o una pared.
+  - Aterrizaje pesado: 37, y después 38-39 hasta que termina el castigo (se sacó el aplastado por código).
+  - Con el boulder: casi a tiempo, 29-30 sin perder el control; rodar, 32-35 (ya no gira por código).
+  - Sin usar todavía: 41-48 (combo) y el 6 (dibujado, sin uso).
+  - La mecánica no cambió (decidió Mariano).
+- `arma_destruccion.png` (Mariano) ya está: 2 cuadros.
+- Escenarios nuevos `moncho_animaciones` y `moncho_paredes`. La puerta de pruebas da `animacion`, `cuadro`, `flipX` y
+  `miraPared` del jugador. Pasan `paredes`, `boulder`, `armas` y `coop`.
+
 ## 2026-11-13 - Claude: parry que desvía y tiros que buscan
 
 - 5.12: el parry que devuelve queda como pergamino. Ahora desvía con la misma lógica que el empuje de la katana: el

@@ -108,18 +108,6 @@ export default class BootScene extends Phaser.Scene {
   }
 
   crearAnimaciones() {
-    this.anims.create({ key: 'moncho-idle', frames: [{ key: 'ninja', frame: 9 }], frameRate: 10 });
-    this.anims.create({ key: 'moncho-caminar', frames: this.anims.generateFrameNumbers('ninja', { start: 0, end: 4 }), frameRate: 12, repeat: -1 });
-    this.anims.create({ key: 'moncho-saltar', frames: [{ key: 'ninja', frame: 5 }], frameRate: 10 });
-    this.anims.create({ key: 'moncho-caer', frames: [{ key: 'ninja', frame: 7 }], frameRate: 10 });
-    this.anims.create({ key: 'moncho-stun', frames: this.anims.generateFrameNumbers('ninja', { start: 10, end: 13 }), frameRate: 12, repeat: -1 });
-
-    this.anims.create({ key: 'coop-idle', frames: [{ key: 'ninja_coop', frame: 9 }], frameRate: 10 });
-    this.anims.create({ key: 'coop-caminar', frames: this.anims.generateFrameNumbers('ninja_coop', { start: 0, end: 4 }), frameRate: 12, repeat: -1 });
-    this.anims.create({ key: 'coop-saltar', frames: [{ key: 'ninja_coop', frame: 5 }], frameRate: 10 });
-    this.anims.create({ key: 'coop-caer', frames: [{ key: 'ninja_coop', frame: 7 }], frameRate: 10 });
-    this.anims.create({ key: 'coop-stun', frames: this.anims.generateFrameNumbers('ninja_coop', { start: 10, end: 13 }), frameRate: 12, repeat: -1 });
-
     [...GRAFICOS_ANIMADOS, ...GRAFICOS_ANIMADOS_24].forEach(clave => this.anims.create({
       key: clave, frames: this.anims.generateFrameNumbers(clave), frameRate: 10, repeat: -1
     }));
@@ -132,7 +120,7 @@ export default class BootScene extends Phaser.Scene {
       frames: this.anims.generateFrameNumbers('MapTileSet', { start: TILES.FUEGO, end: this.ultimoCuadroDelTile(TILES.FUEGO) })
     });
 
-    crearAnimaciones(this.anims);  // Las de los enemigos con hoja de cuadros (datos/Animaciones.js)
+    crearAnimaciones(this.anims);  // Las de Moncho y las de los enemigos con hoja de cuadros (datos/Animaciones.js)
     this.anims.create({ key: 'escudo-roto', frames: this.anims.generateFrameNumbers('escudo_roto', { start: 0, end: 3 }), frameRate: 8 });
   }
 }

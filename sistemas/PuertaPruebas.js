@@ -34,7 +34,8 @@ export function instalarPuertaPruebas(game) {
     muerto: j.muerto, eliminado: j.eliminado,
     estado: j.estado, brillo: !!j.conBrillo, alfa: Math.round(j.alpha * 10) / 10, aturdido: j.aturdido, invulnerable: j.proteccion !== PROTECCION.NORMAL, apareciendo: j.apareciendo,
     arma: j.arma, municion: j.municion, intensidadBrillo: Math.round((j.intensidadBrillo ?? 0) * 100) / 100,
-    katanaArriba: !!j.katanaArriba, pared: j.estadoPared,
+    katanaArriba: !!j.katanaArriba, pared: j.estadoPared, miraPared: j.miraPared, caidaPeligrosa: !!j.caidaPeligrosa, flipX: j.flipX, cuadro: j.frame ? j.frame.name : null,
+    animacion: j.anims && j.anims.currentAnim ? j.anims.currentAnim.key.replace(`${j.texture.key}-`, '') : null,
     katana: j.katana ? { ancho: Math.round(j.katana.getBounds().width), alto: Math.round(j.katana.getBounds().height), top: Math.round(j.katana.getBounds().top) } : null
   } : null;
 

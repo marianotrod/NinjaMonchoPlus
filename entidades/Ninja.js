@@ -10,6 +10,7 @@ import { ARMAS, dispararArma, equiparEnPartida } from './Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { EVENTOS } from '../datos/Eventos.js';
 import { arrojarLlave } from '../mundo/Rescate.js';
+import { ANIMACIONES, claveAnimacion, duracionAnimacion } from '../datos/Animaciones.js';
 
 export const ESTADO = {
   APARECIENDO: 'apareciendo',   // Cae hasta tocar el piso, sin control
@@ -62,6 +63,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.alturaCaida = 0;      // Lo que lleva cayendo desde que empezó a bajar (px)
     this.enAire = false;
     this.ultimoSalto = -9999;  // Cuándo apretó saltar por última vez: para el boulder
+    this.miraPared = false;    // Después del salto de pared vuela mirando la pared (está dado vuelta: flipX al revés)
+    this.finLanzar = 0;        // Hasta cuándo se ve que tira el arma
+    this.finAterrizajeJusto = 0;
+    this.quietoDesde = null;   // Desde cuándo está quieto en el piso: al rato hace las poses
 
     // El dash pide dos cosas: que haya pasado el cooldown y que se haya recargado tocando piso, pared o un enemigo
     this.dashDisponible = true;
@@ -104,6 +109,35 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   get apareciendo() { return this.estado === ESTADO.APARECIENDO; }
   get aturdido() { return this.estado === ESTADO.ATURDIDO; }
   get rodando() { return this.estado === ESTADO.RODANDO; }
+
+  // Animaciones de datos/Animaciones.js (las mismas para las dos hojas). reiniciar: la empieza aunque ya esté andando.
+  reproducir(nombre, reiniciar = false) {
+    this.anims.play(claveAnimacion(this.texture.key, nombre), !reiniciar);
+  }
+
+  // Quieto: primero el cuadro de siempre; si sigue quieto un rato, las poses
+  animacionQuieto() {
+    const ahora = this.sceneRef.time.now;
+    if (this.quietoDesde === null) this.quietoDesde = ahora;
+    return ahora - this.quietoDesde >= ANIMACIONES[this.texture.key].poses.espera ? 'poses' : 'idle';
+  }
+
+  duracionDe(nombre) {
+    return duracionAnimacion(ANIMACIONES[this.texture.key][nombre]);
+  }
+
+  // Después del salto de pared mira la pared de la que salió (el dibujo es así). Al volver a mirar adelante se da vuelta.
+  mirarPared() {
+    this.miraPared = true;
+    this.setFlipX(!this.flipX);
+    this.reproducir('saltoPared', true);
+  }
+
+  dejarDeMirarPared() {
+    if (!this.miraPared) return;
+    this.miraPared = false;
+    this.setFlipX(!this.flipX);
+  }
 
   get proteccion() {
     const sinControl = this.apareciendo || this.aturdido || this.muerto || this.rodando;
@@ -176,9 +210,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (this.eliminado) return;
     if (DEBUG) this.actualizarDebug();
     this.actualizarParpadeo();
+    if (this.miraPared && this.estado !== ESTADO.LIBRE && !this.enSaltoPared) this.dejarDeMirarPared();
 
     if (this.muerto) {
-      this.anims.play(`${this.animPrefix}-stun`, true);
+      this.reproducir('stun');
       if (!this.caidaAvisada && this.body.top > this.sceneRef.scale.height + 8) {
         this.caidaAvisada = true;
         this.sceneRef.jugadorCayoFuera(this);
@@ -209,7 +244,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     // Ya eligió su pergamino: espera quieto a que termine la sala
     if (this.congelado) {
       this.setVelocityX(0);
-      this.anims.play(`${this.animPrefix}-idle`, true);
+      this.reproducir(this.animacionQuieto());
       return;
     }
 
@@ -218,7 +253,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   terminoDeAparecer() {
     this.setVelocityX(0);
-    this.anims.play(`${this.animPrefix}-caer`, true);
+    this.reproducir('caer');
     if (!this.body.touching.down && !this.body.blocked.down) return false;
     this.estado = ESTADO.LIBRE;
     this.finProteccion = this.sceneRef.time.now + (this.reaparece ? CONFIG.INVUL_RESPAWN : CONFIG.INVUL_INICIO);
@@ -228,7 +263,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   terminoAturdimiento() {
     if (this.sceneRef.time.now < this.finAturdido) {
-      this.anims.play(`${this.animPrefix}-stun`, true);
+      this.reproducir('stun');
       return false;
     }
     this.estado = ESTADO.LIBRE;
@@ -246,6 +281,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   // Los controles en orden. Cada salto o dash que se usa corta lo que sigue, así que este orden no se puede cambiar sin probar.
   actuar(input) {
+    // Mirando la pared: atacar, disparar o el dash lo dan vuelta antes, así van hacia adelante
+    if (input.recienAtaque || input.recienEspecial || input.recienDash) this.dejarDeMirarPared();
     if (input.recienAtaque) this.atacar({ arriba: input.arriba });
     if (input.recienEspecial) this.usarEspecial();
 
@@ -310,6 +347,9 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (!enElPiso && !this.tieneControlAereo && !input.izquierda && !input.derecha) {
       this.tieneControlAereo = true;
     }
+    // Deja de mirar la pared al tocar el piso o una pared, o cuando vuelve a manejar el movimiento en el aire
+    const vuelveAMover = !this.enSaltoPared && this.tieneControlAereo && (input.izquierda || input.derecha);
+    if (enElPiso || agarrado || vuelveAMover) this.dejarDeMirarPared();
     // Agarrado no empuja contra la pared (alcanza con que esté al lado): empujar hace que la física tome la esquina del
     // bloque de abajo como piso o como techo y lo trabe
     if (!this.enSaltoPared && !this.agarre && (enElPiso || this.tieneControlAereo)) this.moverHorizontal(input, enElPiso);
@@ -428,6 +468,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.flotandoPared = true;   // Sube con menos gravedad hasta que empieza a bajar (aplicarGravedad)
     this.setVelocityX(paredIzquierda ? FISICA.empujePared : -FISICA.empujePared);
     this.setFlipX(!paredIzquierda);
+    this.mirarPared();
     Sonido.efecto(this.sceneRef, 'snd-salto', 1.2);
     return true;
   }
@@ -464,6 +505,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       this.saltoCortable = false;
       this.body.allowGravity = true;
       this.setVelocity(0, config.trepar);
+      this.reproducir('trepar', true);
       Sonido.efecto(this.sceneRef, 'snd-salto', 0.4, { rate: 1.4 });
       return true;
     }
@@ -550,6 +592,13 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.alturaAlAterrizar = enElPiso ? this.alturaCaida : 0;
     if (enElPiso || tocandoPared || this.body.velocity.y <= 0) this.alturaCaida = 0;
     else if (dy > 0 && dy < MUNDO.tile * 2) this.alturaCaida += dy;
+    // Aviso con sonido al pasar a ser una caída peligrosa
+    const peligrosa = this.cayendoAlto;
+    const { sonido } = CONFIG.CAIDA_ALTA;
+    if (peligrosa && !this.caidaPeligrosa && sonido.activo) {
+      Sonido.silbido(this.sceneRef, sonido.desde, sonido.hasta, sonido.duracion, sonido.volumen);
+    }
+    this.caidaPeligrosa = peligrosa;
   }
 
   get cayendoAlto() {
@@ -579,7 +628,10 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
         this.rodar();
         return true;
       }
-      if (antes <= ventanaCasi) return false;
+      if (antes <= ventanaCasi) {
+        this.finAterrizajeJusto = ahora + this.duracionDe('aterrizajeJusto');
+        return false;
+      }
     }
     this.aterrizarPesado(castigo);
     return true;
@@ -587,18 +639,20 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   aterrizarPesado(ms) {
     this.estado = ESTADO.ATERRIZANDO;
-    this.finAterrizaje = this.sceneRef.time.now + ms;
+    this.inicioAterrizaje = this.sceneRef.time.now;
+    this.finAterrizaje = this.inicioAterrizaje + ms;
     this.saltoCortable = false;
     this.setVelocityX(0);
     this.sceneRef.cameras.main.shake(120, 0.006);
     Sonido.ruido(this.sceneRef, 0.12, 0.15);
-    this.sceneRef.tweens.add({ targets: this, scaleY: 0.7, scaleX: 1.2, duration: 90, yoyo: true });
   }
 
   terminoAterrizaje() {
-    if (this.sceneRef.time.now < this.finAterrizaje) {
+    const ahora = this.sceneRef.time.now;
+    if (ahora < this.finAterrizaje) {
       this.setVelocityX(0);
-      this.anims.play(`${this.animPrefix}-idle`, true);
+      // El golpe contra el piso y después aturdido en el piso
+      this.reproducir(ahora - this.inicioAterrizaje < this.duracionDe('golpePiso') ? 'golpePiso' : 'aturdidoPiso');
       return false;
     }
     this.estado = ESTADO.LIBRE;
@@ -611,6 +665,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.rodarGolpeados = new Set();
     this.saltoCortable = false;
     this.setVelocityX(this.direccionRodar * CONFIG.BOULDER.velocidad * this.mods.velocidad);
+    this.reproducir('rodar', true);
     Sonido.ruido(this.sceneRef, 0.3, 0.2);
     this.sceneRef.cameras.main.shake(100, 0.005);
     // Con un temporizador, como el dash
@@ -623,8 +678,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       return;
     }
     this.setVelocityX(this.direccionRodar * CONFIG.BOULDER.velocidad * this.mods.velocidad);
-    this.setAngle(this.angle + this.direccionRodar * 24);
-    this.anims.play(`${this.animPrefix}-saltar`, true);
+    this.reproducir('rodar');  // El giro está en el dibujo
   }
 
   dejarDeRodar() {
@@ -636,11 +690,18 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
 
   animar(enElPiso) {
     const { velocity } = this.body;
+    const ahora = this.sceneRef.time.now;
     let animacion;
-    if (this.enSaltoPared) animacion = 'saltar';
-    else if (!enElPiso) animacion = velocity.y < 0 ? 'saltar' : 'caer';
-    else animacion = velocity.x !== 0 ? 'caminar' : 'idle';
-    this.anims.play(`${this.animPrefix}-${animacion}`, true);
+    if (this.agarre) {
+      this.setFlipX(this.agarre.lado < 0);  // Dibujado con la pared a la derecha
+      animacion = this.agarre.trepando ? 'trepar' : 'colgado';
+    } else if (ahora < this.finLanzar) animacion = 'lanzar';
+    else if (this.miraPared) animacion = 'saltoPared';
+    else if (!enElPiso) animacion = velocity.y < 0 ? 'saltar' : (this.cayendoAlto ? 'caidaAlta' : 'caer');
+    else if (ahora < this.finAterrizajeJusto) animacion = 'aterrizajeJusto';
+    else animacion = velocity.x !== 0 ? 'caminar' : this.animacionQuieto();
+    if (animacion !== 'idle' && animacion !== 'poses') this.quietoDesde = null;
+    this.reproducir(animacion);
   }
 
   ejecutarDash(direccion) {
@@ -651,6 +712,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     this.dashDisponible = false;
     this.ultimoDashTimer = this.sceneRef.time.now + FISICA.dashCooldown;
     this.saltoCortable = false;
+    this.miraPared = false;  // La dirección ya la da el dash
 
     this.body.allowGravity = false;
     this.setVelocityY(0);
@@ -723,6 +785,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
       return;
     }
     if (dispararArma(this.sceneRef, this)) {
+      this.finLanzar = this.sceneRef.time.now + this.duracionDe('lanzar');
+      this.reproducir('lanzar', true);
       this.sceneRef.events.emit(EVENTOS.ARMA, this.indice, this.arma, this.municion);
     }
   }

@@ -82,6 +82,24 @@ export const Sonido = {
     osc.stop(ctx.currentTime + duracion);
   },
 
+  // Un tono que va de una frecuencia a otra (sube o baja)
+  silbido(scene, desde = 300, hasta = 900, duracion = 0.15, volumen = 0.1, tipo = 'square') {
+    const ctx = scene.sound.context;
+    const vol = volumen * factor(scene, 'volSonido');
+    if (!ctx || vol <= 0) return;
+    const osc = ctx.createOscillator();
+    const ganancia = ctx.createGain();
+    osc.type = tipo;
+    osc.frequency.setValueAtTime(desde, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(hasta, ctx.currentTime + duracion);
+    ganancia.gain.setValueAtTime(vol, ctx.currentTime);
+    ganancia.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duracion);
+    osc.connect(ganancia);
+    ganancia.connect(scene.sound.masterVolumeNode || ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duracion);
+  },
+
   ruido(scene, duracion = 0.35, volumen = 0.35) {
     const ctx = scene.sound.context;
     const vol = volumen * factor(scene, 'volSonido');

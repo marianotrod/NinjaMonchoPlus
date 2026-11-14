@@ -1,0 +1,42 @@
+{
+  "descripcion": "Animaciones de Moncho en la pared (mapa n-paredes): colgado, trepar y salto de pared mirando la pared",
+  "query": "?debug&nivel=3&mapa=n-paredes&enemigos=ninguno",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
+    {"wait": 2500, "eval": "(prueba.sinItems(), prueba.proteger(1), prueba.ponerJugador(1, 104, 150, 0, 60), true)"},
+    {"down": "ArrowLeft"},
+    {"wait": 150},
+    {"verificar": "agarrado a la pared de la izquierda: cuadro 50, dado vuelta hacia la pared", "eval": "({ pared: prueba.jugador(1).pared, animacion: prueba.jugador(1).animacion, cuadro: prueba.jugador(1).cuadro, flipX: prueba.jugador(1).flipX })", "espera": {"pared": "agarrado", "animacion": "colgado", "cuadro": 50, "flipX": true}},
+    {"press": "KeyZ", "delay": 40},
+    {"verificar": "con el salto trepa: cuadros 50 a 52", "eval": "({ pared: prueba.jugador(1).pared, animacion: prueba.jugador(1).animacion })", "espera": {"pared": "trepando", "animacion": "trepar"}},
+    {"up": "ArrowLeft"},
+    {"wait": 500},
+
+    {"eval": "(prueba.darHabilidades(1, ['wallJump'], 1), prueba.ponerJugador(1, 106, 150, -140, 0), true)"},
+    {"down": "ArrowLeft"},
+    {"hasta": "prueba.jugador(1).pared !== null", "timeout": 500, "nombre": "llega a la pared", "up": "ArrowLeft"},
+    {"down": "ArrowRight"},
+    {"press": "KeyZ", "delay": 30},
+    {"wait": 30},
+    {"verificar": "salto de pared: pica en la pared (19) y va hacia la derecha mirando la pared (izquierda)", "eval": "({ estado: prueba.jugador(1).estado, animacion: prueba.jugador(1).animacion, cuadro: prueba.jugador(1).cuadro, flipX: prueba.jugador(1).flipX, afuera: prueba.jugador(1).vx > 0 })", "espera": {"estado": "saltoPared", "animacion": "saltoPared", "cuadro": 19, "flipX": true, "afuera": true}},
+    {"up": "ArrowRight"},
+    {"wait": 300},
+    {"verificar": "sin tocar nada sigue volando mirando la pared (20), ya con control", "eval": "({ estado: prueba.jugador(1).estado, miraPared: prueba.jugador(1).miraPared, cuadro: prueba.jugador(1).cuadro, flipX: prueba.jugador(1).flipX })", "espera": {"estado": "libre", "miraPared": true, "cuadro": 20, "flipX": true}},
+    {"down": "ArrowLeft"},
+    {"wait": 40},
+    {"verificar": "al volver a moverse deja de mirar la pared: mira hacia donde va, con la animación de salto o caída", "eval": "({ miraPared: prueba.jugador(1).miraPared, flipX: prueba.jugador(1).flipX, normal: ['saltar', 'caer'].includes(prueba.jugador(1).animacion) })", "espera": {"miraPared": false, "flipX": true, "normal": true}},
+    {"up": "ArrowLeft"},
+    {"wait": 500},
+
+    {"eval": "(prueba.ponerJugador(1, 106, 150, -140, 0), true)"},
+    {"down": "ArrowLeft"},
+    {"hasta": "prueba.jugador(1).pared !== null", "timeout": 500, "nombre": "llega a la pared otra vez", "up": "ArrowLeft"},
+    {"down": "ArrowRight"},
+    {"press": "KeyZ", "delay": 30},
+    {"wait": 30},
+    {"eval": "(window.game.scene.getScene('NinjaMonchoScene').jugador.ultimoAtaque = -9999, true)"},
+    {"press": "KeyX", "delay": 30},
+    {"verificar": "mirando la pared, atacar lo da vuelta: la katana sale hacia adelante (derecha)", "eval": "(() => { const j = window.game.scene.getScene('NinjaMonchoScene').jugador; return { miraPared: j.miraPared, flipX: j.flipX, katanaAdelante: !!j.katana && j.katana.x > j.x }; })()", "espera": {"miraPared": false, "flipX": false, "katanaAdelante": true}},
+    {"up": "ArrowRight"}
+  ]
+}
