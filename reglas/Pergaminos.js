@@ -10,6 +10,7 @@ export const MODS_JUGADOR_BASE = {
   escudos: 0,           // Veces que sobrevive a una muerte (no al fantasma)
   iman: false, municionGratis: false, trampaPiedra: false, bombaAlMorir: false,
   saltoPisoton: false, parryRecarga: false, katanaLarga: false, katanaAlta: false, parry360: false, parryDevuelve: false,
+  proyectilesBuscan: false,
   pisarEnfurece: false, fantasmaRapido: false
 };
 
@@ -22,7 +23,8 @@ export const MODS_GLOBAL_BASE = {
   rebotesEnemigos: 0, trampasAlAzar: 0,
   furiaTemporal: false, contagio: false, primerEnemigoEscudo: false, explotanAlMorir: false,
   ocultarNegativos: false, cadena: false, positivosIlegibles: false, minas: false, bombasEspeciales: false,
-  proyectilDejaBola: false, llamaBola: false, trampaSeExtiende: false, bolaExtra: false
+  proyectilDejaBola: false, llamaBola: false, trampaSeExtiende: false, bolaExtra: false,
+  explosionesLanzan: false  // Las explosiones de los demonios lanzan monedas y talismanes que dañan a los jugadores
 };
 
 export const modsIniciales = () => ({

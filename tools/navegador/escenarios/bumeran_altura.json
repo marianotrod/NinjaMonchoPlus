@@ -1,0 +1,63 @@
+{
+  "descripcion": "El bumerán busca la altura de Moncho con retraso (hace una curva), a la ida y a la vuelta",
+  "query": "?debug&nivel=3&mapa=b-09&fase=caceria&enemigos=ninguno&sinTiempo",
+  "pasos": [
+    {
+      "hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'caceria'",
+      "timeout": 8000,
+      "nombre": "arranca"
+    },
+    {
+      "eval": "(window.S = window.game.scene.getScene('NinjaMonchoScene'), prueba.proteger(1), prueba.ponerJugador(1, 40, 264), prueba.mirar(1, 1), prueba.equipar(1, 'bumeran'), true)"
+    },
+    {
+      "hasta": "prueba.listo(1)",
+      "timeout": 2000,
+      "nombre": "en el piso"
+    },
+    {
+      "eval": "(prueba.disparar(1), window.b = S.proyectilesDe('jugadores')[0], true)"
+    },
+    {
+      "wait": 200
+    },
+    {
+      "eval": "(S.jugador.body.setAllowGravity(false), S.jugador.body.reset(40, 200), true)"
+    },
+    {
+      "wait": 100
+    },
+    {
+      "verificar": "a la ida sube hacia Moncho, pero con retraso: todavía no llegó",
+      "eval": "({ sube: b.body.velocity.y < 0, atrasado: b.y > S.jugador.y + 10 })",
+      "espera": {
+        "sube": true,
+        "atrasado": true
+      }
+    },
+    {
+      "hasta": "b.vuelta",
+      "timeout": 2000,
+      "nombre": "empieza la vuelta"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "verificar": "a la vuelta ya alcanzó su altura y viaja hacia Moncho",
+      "eval": "({ igual: Math.abs(b.y - (S.jugador.y - 2)) <= 8, haciaMoncho: b.body.velocity.x < 0, by: Math.round(b.y), jy: Math.round(S.jugador.y), bx: Math.round(b.x), vy: Math.round(b.body.velocity.y) })",
+      "espera": {
+        "igual": true,
+        "haciaMoncho": true
+      }
+    },
+    {
+      "hasta": "!b.active",
+      "timeout": 3000,
+      "nombre": "vuelve a la mano"
+    },
+    {
+      "eval": "(S.jugador.body.setAllowGravity(true), true)"
+    }
+  ]
+}

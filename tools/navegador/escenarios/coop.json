@@ -18,7 +18,7 @@
     {"verificar": "la katana empuja al compañero sin dañarlo", "eval": "prueba.jugador(2)", "espera": {"vx": {"min": 50}, "aturdido": false, "muerto": false}},
     {"wait": 1000},
     {"eval": "(prueba.ponerJugador(1, 60, 264), prueba.ponerJugador(2, 90, 264), prueba.equipar(1, 'bomba'), prueba.mirar(1, 1), prueba.disparar(1))"},
-    {"hasta": "prueba.proyectiles().jugador.length === 0", "timeout": 2000, "nombre": "explota la bomba"},
+    {"hasta": "prueba.proyectiles().jugador.length === 0", "timeout": 3500, "nombre": "explota la bomba"},
     {"verificar": "la explosión no daña al compañero", "eval": "({ ...prueba.jugador(2), vidas: prueba.estado().vidas })", "espera": {"aturdido": false, "muerto": false, "vidas": [3, 3]}},
     {"wait": 1500},
     {"eval": "(prueba.conEnemigos(), prueba.completarRecoleccion())"},

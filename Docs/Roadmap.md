@@ -121,10 +121,11 @@ Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define
       agacharse, mirar arriba, festejo. Lo que falte en la guía sigue con el cuadro de ahora.
 - [x] **5.11 Sacar el demonio caminante (S).** Fuera del `Bestiario` y del editor. Los escenarios lo siguen usando como
       enemigo simple: lo agrega la puerta de pruebas (solo con `?debug`, nunca sale al azar).
-- [x] **5.12 Parry que devuelve (M).** Pergamino `parryDevuelve`: el proyectil enemigo no se rompe, vuelve por donde vino
-      (1,3 veces más rápido) y pasa a ser del ninja (aura azul, daña a los demonios, se rompe al pegar). Para probarlo como
-      habilidad de todos, sin pergamino: `CONFIG.PARRY_DEVUELVE.siempre`. *A decidir (Mariano): pergamino o habilidad base.*
-      Pendiente: nivel 2 (sale hacia donde apunta la katana).
+- [x] **5.12 Parry que devuelve (M).** Pergamino `parryDevuelve` (queda como pergamino, decidió Mariano): el proyectil
+      enemigo no se rompe, sale desviado como todo lo que empuja la katana (alejándose del centro del ninja), 1,3 veces
+      más rápido, y pasa a ser del ninja (aura azul, daña a los demonios, se rompe al pegar). Para probarlo en todos:
+      `CONFIG.PARRY_DEVUELVE.siempre`. Pergamino nuevo `proyectilesBuscan`: todo lo tuyo que vuela (tiros, devueltos,
+      ítems empujados, demonios lanzados) se tuerce de a poco hacia el demonio más cercano que tengan adelante (`CONFIG.PROYECTILES_BUSCAN`).
 - [x] **5.13 Cartas e íconos de pergaminos (L).** Hecho (íconos provisorios: `tools/generar_iconos_pergaminos.py`). Pedido:
       - Texto de las cartas más simple, y un ícono por pergamino (provisorios de 16x16, un PNG cada uno, reemplazables).
         La fuente Press Start 2P se ve nítida solo en múltiplos de 8 px (8 es lo más chico): más chico, otra fuente.

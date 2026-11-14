@@ -1,0 +1,18 @@
+{
+  "descripcion": "Con fuego amigo la katana para los tiros del otro jugador; tu bumerán nunca te daña al volver",
+  "query": "?debug&nivel=3&mapa=b-09&fase=caceria&enemigos=ninguno&sinTiempo&jugadores=2",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "arranca"},
+    {"eval": "(window.S = window.game.scene.getScene('NinjaMonchoScene'), prueba.ponerModGlobal('fuegoAmigo', true), prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), prueba.ponerJugador(2, 220, 264), prueba.mirar(2, -1), prueba.equipar(2, 'shuriken'), true)"},
+    {"hasta": "prueba.listo(1) && prueba.listo(2)", "timeout": 2000, "nombre": "los dos en el piso"},
+    {"eval": "(window.v0 = prueba.estado().vidas[0], prueba.disparar(2), window.t = S.proyectilesDe('jugadores')[0], true)"},
+    {"hasta": "t.x < 130", "timeout": 1000, "nombre": "el shuriken de J2 llega a J1"},
+    {"eval": "(prueba.atacar(1), true)"},
+    {"wait": 300},
+    {"verificar": "J1 lo para con la katana y no pierde vida", "eval": "({ roto: !t.active, vidas: prueba.estado().vidas[0] === v0 })", "espera": {"roto": true, "vidas": true}},
+    {"eval": "(prueba.ponerJugador(2, 400, 264), prueba.equipar(1, 'bumeran'), prueba.mirar(1, 1), window.v1 = prueba.estado().vidas[0], prueba.disparar(1), window.b = S.proyectilesDe('jugadores')[0], true)"},
+    {"hasta": "!b.active", "timeout": 3000, "nombre": "el bumerán vuelve a la mano"},
+    {"wait": 200},
+    {"verificar": "con fuego amigo, tu bumerán no te daña al volver", "eval": "({ vidas: prueba.estado().vidas[0] === v1 })", "espera": {"vidas": true}}
+  ]
+}

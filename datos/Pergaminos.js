@@ -85,6 +85,7 @@ export const EFECTOS = [
   marca('katanaAlta', POSITIVO, 'jugador', 'ambos'),
   marca('parry360', POSITIVO, 'jugador', 'ambos'),
   marca('parryDevuelve', POSITIVO, 'jugador', 'ambos'),
+  marca('proyectilesBuscan', POSITIVO, 'jugador', 'ambos'),
 
   // --- Negativos ---
   { id: 'rebotesEnemigos', tipo: NEGATIVO, aplicar: (partida) => { global(partida).rebotesEnemigos++; } },
@@ -97,6 +98,7 @@ export const EFECTOS = [
   marca('contagio', NEGATIVO, 'todos', 'alguno'),
   marca('primerEnemigoEscudo', NEGATIVO, 'todos', 'alguno'),
   marca('fuegoAmigo', NEGATIVO, 'todos', 'alguno'),
+  marca('explosionesLanzan', NEGATIVO, 'todos', 'alguno'),
   marca('explotanAlMorir', NEGATIVO, 'todos', 'alguno'),
   marca('minas', NEGATIVO, 'todos', 'alguno'),
   marca('bombasEspeciales', NEGATIVO, 'todos', 'alguno'),

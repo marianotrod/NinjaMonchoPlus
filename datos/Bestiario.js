@@ -47,7 +47,7 @@ export const Bestiario = {
                 // La cuchilla va como el shuriken de Moncho: derecho, girando y cayendo apenas. Con la animación
                 // 'lanzar' el aviso dura lo que tarda en llegar a su último cuadro; sin ella, 'aviso' (ms).
                 // apunta: antes de tirar se da vuelta hacia el ninja más cercano (false: tira hacia donde camina)
-                lanza: { aviso: 450, vx: 160, caida: 10, giro: 900, apunta: true },  // caida: px/s², más baja que la del shuriken porque va más lento
+                lanza: { aviso: 450, vx: 160, caida: 10, apunta: true },  // caida: px/s², más baja que la del shuriken porque va más lento
                 risa: 1500                     // Lo que se ríe cuando mata a un ninja (ms)
             },
             volador: { activo: false },

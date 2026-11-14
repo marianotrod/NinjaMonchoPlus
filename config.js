@@ -52,7 +52,7 @@ export const BANDO = { JUGADORES: 'jugadores', DEMONIOS: 'demonios' };
 // Color de lo que golpea: azul daña a los enemigos, rojo a los jugadores y negro a todos (con fuego amigo)
 export const COLORES = { JUGADORES: 0x60a5fa, DEMONIOS: 0xf87171, TODOS: 0x4b5563, INMORTAL: 0xfacc15 };
 // Aura y estela de todo lo que vuela y daña: del color de a quién daña (mundo/Peligros.js)
-export const COLORES_PELIGRO = { A_JUGADORES: 0xff3df0, A_DEMONIOS: 0x00b3ff, A_TODOS: 0x4c1d95 };
+export const COLORES_PELIGRO = { A_JUGADORES: 0xff3df0, A_DEMONIOS: 0x00b3ff, A_TODOS: 0xff3df0 };
 
 export const MUNDO = {
   columnas: 34, filas: 20, columnasOcultas: 1, filasOcultas: 2, tile: 16,
@@ -86,6 +86,10 @@ export const CONFIG = {
   PROB_MUNICION_GRATIS: 0.2,
   // Parry que devuelve (roadmap 5.12): con true lo tienen todos, sin pergamino. velocidad: cuánto más rápido vuelve
   PARRY_DEVUELVE: { siempre: false, velocidad: 1.3, minima: 160 },
+  // Pergamino proyectilesBuscan: todo lo tuyo que vuela (tiros, devueltos, ítems empujados, demonios lanzados) se
+  // tuerce de a poco hacia el demonio más cercano que tenga adelante
+  // (radio en px, giro: grados por segundo como máximo, cono: grados a cada lado de hacia donde va)
+  PROYECTILES_BUSCAN: { radio: 120, giro: 35, cono: 45 },
   PROB_PARRY_RECARGA: 0.2,
   PROB_LLAMA_BOLA: 0.3,         // Una llama que se apaga escupe otra bola
   PROB_BOLA_EXTRA: 0.2,
@@ -221,7 +225,10 @@ export const FISICA = {
   empujeItem: { fuerza: 300, subidaMinima: -120 },  // Katana a un talismán o una moneda: se aleja del centro del ninja
   velocidadItemLanzado: 120,           // Un ítem empujado golpea hasta que anda más lento que esto (px/s)
   estelaPeligro: { activa: true, cada: 35, dura: 220, alfa: 0.55 },  // La estela de lo que vuela y daña: cada cuántos ms deja una copia y lo que dura
-  auraPeligro: { activa: true, alfa: 0.9 },  // El aura de llama alrededor de lo que vuela y daña (graficos/aura.png)
+  auraPeligro: { activa: false, alfa: 0.9 },  // El aura de llama alrededor de lo que vuela y daña (graficos/aura.png)
+  // Brillo que sigue la forma del dibujo de lo que vuela y daña, del color de a quién daña (solo con WebGL).
+  // fuerza: intensidad hacia afuera; distancia: hasta dónde llega (px); calidad: más alto, más prolijo y más caro
+  brilloPeligro: { activo: true, fuerza: 1.6, distancia: 8, calidad: 0.2 },
   empujeNinja: { x: 220, y: -160 },    // Katana al compañero
   parpadeoGolpe: 1200,          // Protección que queda después del aturdimiento (ms)
   parpadeoPisoton: 600,         // Protección después de pisar a un enemigo (ms)
@@ -238,6 +245,7 @@ export const FISICA = {
 
   roceItem: 0.92,               // Frenado de talismanes y monedas apoyados en el piso
   caidaShuriken: 40,            // Gravedad propia del shuriken (px/s²): cae muy poco en su recorrido
+  anguloShuriken: 3,            // Sale apenas hacia arriba (grados), para no tocar enseguida el piso al tirarlo parado
 
   katanaDuracion: 230,
   katanaCooldown: 320,

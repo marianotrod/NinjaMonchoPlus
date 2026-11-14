@@ -18,7 +18,7 @@ import { marcarPeligros } from '../mundo/Peligros.js';
 import { actualizarPausaDeFase, cartelesDeFase, cortarPausaDeFase } from '../sistemas/PausaDeFase.js';
 import { crearFondo, cambiarFondo, actualizarFondo } from '../mundo/Fondo.js';
 import { actualizarCombos, anularCombo, cobroDeMonedas, prepararCombos, sumarMoneda } from '../reglas/Combo.js';
-import { ARMAS, actualizarProyectiles, arrastrarItem, chocarProyectil, soltarBomba } from '../entidades/Armas.js';
+import { ARMAS, actualizarProyectiles, chocarProyectil, empujarItem, romperProyectil, soltarBomba } from '../entidades/Armas.js';
 import { Sonido } from '../sistemas/Sonido.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { estilo } from '../sistemas/Estilo.js';
@@ -30,6 +30,9 @@ import { EVENTOS } from '../datos/Eventos.js';
 //   perdiendoVida (todos sin vidas, esperando el game over) y fin interrumpen cualquiera de las anteriores.
 // Perder una vida no reinicia el nivel: el ninja cae fuera de la pantalla y reaparece arriba (si le quedan vidas).
 const TIPOS_TALISMAN = ['cuadrado', 'triangulo', 'rombo'];
+
+// Quién lanzó un ítem que tiró una explosión de los demonios (pergamino explosionesLanzan): daña a los jugadores
+const LANZADOR_DEMONIOS = { bando: BANDO.DEMONIOS };
 
 export default class NinjaMonchoScene extends Phaser.Scene {
   constructor() {
@@ -141,14 +144,14 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     // Pergamino: la furia se contagia entre demonios
     this.physics.add.overlap(this.enemigos, this.enemigos, (a, b) => { a.enfurecer(); b.enfurecer(); },
       (a, b) => this.modsGlobal.contagio && a !== b && a.enfurecido !== b.enfurecido && !a.intocable && !b.intocable);
-    this.physics.add.overlap(this.items, this.enemigos, this.impactoItem, itemLanzado, this);
+    this.physics.add.overlap(this.items, this.enemigos, this.impactoItem, (item) => itemLanzado(item) && item.lanzador.bando !== BANDO.DEMONIOS, this);
     // Boulder nivel 2: un enemigo disparado golpea a los otros
     this.physics.add.overlap(this.enemigos, this.enemigos, this.choqueLanzado,
       (a, b) => a !== b && !!(a.lanzado || b.lanzado), this);
     this.physics.add.collider(this.peligros, this.bloquesFisicos);
     // Las minas y las bombas especiales se rompen con los proyectiles de los jugadores, y explotan
     this.physics.add.overlap(this.proyectiles, this.peligros, (proyectil, peligro) => {
-      if (proyectil.tipo === 'shuriken' || proyectil.tipo === 'bolaCeleste') proyectil.destroy();
+      if (proyectil.tipo === 'shuriken' || proyectil.tipo === 'bolaCeleste') romperProyectil(this, proyectil);
       this.detonarPeligro(peligro);
     }, (proyectil) => proyectil.bando === BANDO.JUGADORES, this);
     this.physics.add.collider(this.proyectiles, this.bloquesFisicos,
@@ -161,8 +164,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         : proyectil.tipo === 'bomba' || !bloque.esOneWay), this);
     this.physics.add.overlap(this.proyectiles, this.enemigos, this.impactoProyectil,
       (proyectil) => proyectil.bando === BANDO.JUGADORES, this);
-    this.physics.add.overlap(this.proyectiles, this.items, (proyectil, item) => arrastrarItem(proyectil, item),
-      (proyectil) => proyectil.tipo === 'bumeran', this);
+    // Las armas de los jugadores empujan monedas y talismanes (la bomba no: los empuja su explosión)
+    this.physics.add.overlap(this.proyectiles, this.items, (proyectil, item) => empujarItem(this, proyectil, item),
+      (proyectil) => proyectil.bando === BANDO.JUGADORES && proyectil.tipo !== 'bomba', this);
 
     const tiempoNivel = datosNivel.tiempo ?? (this.esNivelJefe ? CONFIG.TIEMPO_JEFE : CONFIG.TIEMPO_RECOLECCION);
     const tiempoBase = this.esNivelJefe ? tiempoNivel : tiempoNivel + this.modsGlobal.tiempoExtra;
@@ -347,7 +351,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.physics.add.overlap(this.jefe, this.proyectiles, (jefe, proyectil) => this.impactoProyectil(proyectil, jefe),
         (jefe, proyectil) => proyectil.bando === BANDO.JUGADORES, this),
       this.physics.add.overlap(this.jefe, this.items, (jefe, item) => this.impactoItem(item, jefe),
-        (jefe, item) => itemLanzado(item), this)
+        (jefe, item) => itemLanzado(item) && item.lanzador.bando !== BANDO.DEMONIOS, this)
     );
     this.jugadores.forEach(j => this.conectarJefe(j));
     this.events.emit(EVENTOS.JEFE_APARECE, i18n.t(`jefe_${this.partida.jefe}`), this.jefe.hp);
@@ -1513,7 +1517,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       const angulo = Math.atan2(objeto.y - ninja.y, objeto.x - ninja.x);
       objeto.setVelocity(Math.cos(angulo) * fuerza, Math.min(subidaMinima, Math.sin(angulo) * fuerza));
     }));
-    this.proyectilesDe(BANDO.DEMONIOS).forEach(p => {
+    // Se para todo lo que podría dañar a este ninja: lo de los demonios y, con fuego amigo o daño propio, también los
+    // tiros del otro jugador y los propios (la bomba no: explota por tiempo)
+    this.proyectiles.getChildren().filter(p => p.tipo !== 'bomba' && this.proyectilGolpea(p, ninja)).forEach(p => {
       // Pergamino: el parry alcanza a todo lo que esté alrededor del ninja, no solo delante
       const cerca = ninja.mods.parry360 && Phaser.Math.Distance.Between(ninja.x, ninja.y, p.x, p.y) <= FISICA.radioParry360;
       if (cerca && !ninja.katanaGolpeados.has(p)) {
@@ -1533,8 +1539,10 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   pararProyectil(ninja, p) {
     Sonido.efecto(this, 'snd-parry', 0.5);
     this.efectoChispas(p.x, p.y, 0xffffff);
-    if (ninja.mods.parryDevuelve || CONFIG.PARRY_DEVUELVE.siempre) this.devolverProyectil(ninja, p);
-    else p.destroy();
+    const bumeranAjeno = p.tipo === 'bumeran';  // El bumerán de otro jugador se rompe siempre: no cambia de dueño
+    if (bumeranAjeno && p.duenio) p.duenio.bumeranActivo = null;
+    if (!bumeranAjeno && (ninja.mods.parryDevuelve || CONFIG.PARRY_DEVUELVE.siempre)) this.devolverProyectil(ninja, p);
+    else romperProyectil(this, p);
     // Pergamino: el parry a veces da un tiro más por este nivel
     if (ninja.mods.parryRecarga && ninja.arma && Math.random() < CONFIG.PROB_PARRY_RECARGA) {
       ninja.municion++;
@@ -1542,16 +1550,14 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
   }
 
-  // Parry que devuelve (roadmap 5.12): el proyectil vuelve por donde vino, más rápido, y pasa a ser del ninja (aura azul,
-  // daña a los demonios). Se rompe al pegarle a uno.
+  // Parry que devuelve (roadmap 5.12): el proyectil sale desviado como cualquier cosa que empuja la katana, alejándose
+  // del centro del ninja, más rápido, y pasa a ser del ninja (aura azul, daña a los demonios). Se rompe al pegarle a uno.
   devolverProyectil(ninja, p) {
     const { velocidad, minima } = CONFIG.PARRY_DEVUELVE;
-    let vx = -p.body.velocity.x * velocidad;
-    let vy = -p.body.velocity.y * velocidad;
-    if (Math.hypot(vx, vy) < minima) {  // Uno lento o quieto sale hacia donde mira el ninja
-      vx = (ninja.flipX ? -1 : 1) * minima;
-      vy = 0;
-    }
+    const rapidez = Math.max(minima, Math.hypot(p.body.velocity.x, p.body.velocity.y) * velocidad);
+    const angulo = Math.atan2(p.y - ninja.y, p.x - ninja.x);
+    const vx = Math.cos(angulo) * rapidez;
+    const vy = Math.sin(angulo) * rapidez;
     p.bando = BANDO.JUGADORES;
     p.duenio = ninja;
     p.devuelto = true;
@@ -1575,7 +1581,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
     const direccion = Math.sign(proyectil.body.velocity.x) || 1;
     resolverGolpe(this, objetivo, crearGolpe('proyectil', { duenio: proyectil.duenio, direccion }));
-    if (proyectil.tipo === 'shuriken' || proyectil.devuelto) proyectil.destroy();
+    if (proyectil.tipo === 'shuriken' || proyectil.devuelto) romperProyectil(this, proyectil);
   }
 
   explotarBomba(bomba) {
@@ -1604,7 +1610,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       if (empuje) resolverGolpe(this, objeto, crearGolpe('explosion', { duenio, bando, empuje, fuenteX: x }));
     };
     this.enemigos.getChildren().slice().forEach(enemigo => golpeA(enemigo, impulso(enemigo)));
-    this.items.getChildren().forEach(item => golpeA(item, impulso(item)));
+    // Pergamino negativo: la explosión de los demonios lanza monedas y talismanes como proyectiles suyos (rosas)
+    const lanzaItems = bando === BANDO.DEMONIOS && this.modsGlobal.explosionesLanzan;
+    this.items.getChildren().forEach(item => {
+      const empuje = impulso(item);
+      if (!empuje) return;
+      resolverGolpe(this, item, crearGolpe('explosion', { duenio: lanzaItems ? LANZADOR_DEMONIOS : duenio, bando, empuje, fuenteX: x }));
+    });
     objetosSueltos(this).forEach(objeto => {
       const empuje = impulso(objeto);
       if (empuje) objeto.setVelocity(empuje.vx, empuje.vy);
@@ -1669,6 +1681,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // Los de los demonios siempre. Los de un jugador, si un modificador lo permite y ya se alejaron de quien los tiró.
   proyectilGolpea(proyectil, jugador) {
     if (proyectil.bando === BANDO.DEMONIOS) return true;
+    if (proyectil.tipo === 'bumeran' && proyectil.duenio === jugador) return false;  // Tu bumerán nunca te daña al volver
     const reciente = this.time.now - proyectil.nacimiento < 150;
     return !reciente && golpeaAliado(this, this.golpeDeProyectil(proyectil), jugador);
   }
@@ -1682,7 +1695,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
     if (this.pisarProyectil(jugador, proyectil)) return;
     if (jugador.proteccion === PROTECCION.INTOCABLE) return;
-    if (!proyectil.atraviesaBloques) proyectil.destroy();
+    if (!proyectil.atraviesaBloques) romperProyectil(this, proyectil);
     resolverGolpe(this, jugador, this.golpeDeProyectil(proyectil));
   }
 
@@ -1698,7 +1711,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.efectoChispas(proyectil.x, proyectil.y, 0xffffff);
     Sonido.efecto(this, 'snd-parry', 0.4, { rate: 1.3 });
     if (proyectil.esTalisman !== undefined) proyectil.lanzador = null;  // Un ítem pisado deja de ser proyectil
-    else if (!proyectil.atraviesaBloques) proyectil.destroy();
+    else if (!proyectil.atraviesaBloques) romperProyectil(this, proyectil);
     return true;
   }
 
@@ -1707,7 +1720,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (objetivo.muerto || objetivo.intocable || item.golpeados.has(objetivo)) return;
     item.golpeados.add(objetivo);
     const golpe = crearGolpe('proyectil', {
-      duenio: item.lanzador, direccion: Math.sign(item.body.velocity.x) || 1, fuenteX: item.x
+      duenio: item.lanzador, bando: item.lanzador.bando ?? BANDO.JUGADORES, direccion: Math.sign(item.body.velocity.x) || 1, fuenteX: item.x
     });
     resolverGolpe(this, objetivo, golpe);
   }
@@ -1715,8 +1728,8 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // Normalmente se junta. Lanzado por el otro con fuego amigo, o por uno mismo con daño propio, primero golpea.
   tocarItem(jugador, item) {
     if (itemLanzado(item)) {
-      const golpe = crearGolpe('proyectil', { duenio: item.lanzador, fuenteX: item.x });
-      if (golpeaAliado(this, golpe, jugador)) {
+      const golpe = crearGolpe('proyectil', { duenio: item.lanzador, bando: item.lanzador.bando ?? BANDO.JUGADORES, fuenteX: item.x });
+      if (golpe.bando === BANDO.DEMONIOS || golpeaAliado(this, golpe, jugador)) {
         if (this.pisarProyectil(jugador, item)) return;
         this.impactoItem(item, jugador);
         return;

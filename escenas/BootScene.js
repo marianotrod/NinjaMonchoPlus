@@ -1,6 +1,6 @@
 import { i18n } from '../i18n.js';
 import { ARRANQUE_DEBUG, CONFIG, TILES } from '../config.js';
-import { GRAFICOS, GRAFICOS_ANIMADOS, GRAFICOS_ANIMADOS_24, GRAFICOS_CUADROS } from '../datos/Graficos.js';
+import { GRAFICOS, GRAFICOS_ANIMADOS, GRAFICOS_ANIMADOS_24, GRAFICOS_CUADROS, GRAFICOS_UNA_VEZ } from '../datos/Graficos.js';
 import { crearAnimaciones } from '../datos/Animaciones.js';
 import { armarCartas } from '../reglas/Pergaminos.js';
 import { EFECTOS } from '../datos/Pergaminos.js';
@@ -43,7 +43,7 @@ export default class BootScene extends Phaser.Scene {
       this.load.image(`icono-perg-${id}`, `${A}pergaminos/cartas/${id}.png`);
       this.load.image(`grabado-perg-${id}`, `${A}pergaminos/grabados/${id}.png`);
     });
-    [...GRAFICOS_ANIMADOS, ...GRAFICOS_CUADROS].forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 16, frameHeight: 16 }));
+    [...GRAFICOS_ANIMADOS, ...GRAFICOS_CUADROS, ...GRAFICOS_UNA_VEZ].forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 16, frameHeight: 16 }));
     GRAFICOS_ANIMADOS_24.forEach(clave => this.load.spritesheet(clave, `${A}graficos/${clave}.png`, { frameWidth: 24, frameHeight: 24 }));
 
     this.load.audio('musica-fondo', [`${A}GameMusic.ogg`, `${A}GameMusic.mp3`]);
@@ -122,6 +122,10 @@ export default class BootScene extends Phaser.Scene {
 
     [...GRAFICOS_ANIMADOS, ...GRAFICOS_ANIMADOS_24].forEach(clave => this.anims.create({
       key: clave, frames: this.anims.generateFrameNumbers(clave), frameRate: 10, repeat: -1
+    }));
+    // Si falta el PNG, no se crea: el juego sigue sin ese efecto
+    GRAFICOS_UNA_VEZ.filter(clave => this.textures.exists(clave)).forEach(clave => this.anims.create({
+      key: clave, frames: this.anims.generateFrameNumbers(clave), frameRate: 14, repeat: 0
     }));
     this.anims.create({
       key: 'tile-fuego', frameRate: 8, repeat: -1,

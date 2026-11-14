@@ -2,10 +2,11 @@
 // Todo lo que vuela y daña lleva un aura de llama y deja una estela, las dos del color de a quién daña:
 //   rosa neón: a los jugadores (proyectiles de enemigos, bolas de fuego)
 //   azul eléctrico: a los demonios (lo que tira o empuja un jugador)
-//   negro-violeta: a todos (lo de un jugador con fuego amigo o daño propio)
+//   a todos (lo de un jugador con fuego amigo o daño propio): rosa como lo que daña a los jugadores, porque también te daña
 // Vale para los proyectiles, los ítems lanzados y los enemigos lanzados por el boulder. Cuando deja de ser peligroso
 // (un ítem que frena o se pisa), pierde las dos y vuelve a su capa.
 // El aura es graficos/aura.png (blanca: se tiñe acá). Colores en COLORES_PELIGRO; se apagan en FISICA.auraPeligro y estelaPeligro.
+// El brillo (FISICA.brilloPeligro) es un contorno que sigue la forma del dibujo, cuadro a cuadro: no hay que dibujarlo.
 import { BANDO, COLORES_PELIGRO, FISICA } from '../config.js';
 import { itemLanzado } from '../reglas/Resolvedor.js';
 
@@ -47,10 +48,22 @@ function seguirAura(escena, objeto, color) {
     objeto.aura = null;
     objeto.once('destroy', () => apagar(objeto));
   }
+  ponerBrillo(objeto, color);
   const { activa, alfa } = FISICA.auraPeligro;
   if (!activa) return;
   if (!objeto.aura) objeto.aura = escena.add.sprite(objeto.x, objeto.y, 'aura').play('aura').setAlpha(alfa).setDepth(CAPA_RASTRO);
   objeto.aura.setPosition(objeto.x, objeto.y).setTint(color);
+}
+
+// Solo con WebGL (preFX); con Canvas no se ve
+function ponerBrillo(objeto, color) {
+  const { activo, fuerza, distancia, calidad } = FISICA.brilloPeligro;
+  if (!activo || !objeto.preFX) return;
+  if (!objeto.brillo) {
+    objeto.preFX.setPadding(distancia + 2);  // Lugar alrededor del dibujo para que el brillo no se corte
+    objeto.brillo = objeto.preFX.addGlow(color, fuerza, 0, false, calidad, distancia);
+  }
+  objeto.brillo.color = color;
 }
 
 function dejarEstela(escena, objeto, color) {
@@ -64,6 +77,13 @@ function dejarEstela(escena, objeto, color) {
 
 function apagar(objeto) {
   if (objeto.aura) objeto.aura.destroy();
+  if (objeto.brillo) {
+    if (objeto.preFX) {
+      objeto.preFX.remove(objeto.brillo);
+      objeto.preFX.setPadding(0);
+    }
+    delete objeto.brillo;
+  }
   if (objeto.active && objeto.capaOriginal !== undefined) objeto.setDepth(objeto.capaOriginal);
   delete objeto.aura;
   delete objeto.capaOriginal;

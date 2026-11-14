@@ -1,0 +1,15 @@
+{
+  "descripcion": "Pergamino negativo explosionesLanzan: la explosión de los demonios lanza monedas que dañan a los jugadores",
+  "query": "?debug&nivel=3&mapa=b-09&fase=caceria&enemigos=ninguno&sinTiempo&pergaminos=explosionesLanzan",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "arranca"},
+    {"eval": "(window.S = window.game.scene.getScene('NinjaMonchoScene'), S.modsGlobal.explosionesLanzan)"},
+    {"verificar": "el pergamino está activo", "eval": "({ activo: S.modsGlobal.explosionesLanzan })", "espera": {"activo": true}},
+    {"eval": "(prueba.ponerJugador(1, 165, 264), window.v0 = prueba.estado().vidas[0], window.c = S.items.getChildren()[prueba.crearItem('coin', 140, 262)], true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 2000, "nombre": "J1 en el piso"},
+    {"eval": "(S.explotar(120, 266, { bando: 'demonios' }), true)"},
+    {"verificar": "la moneda sale como proyectil de los demonios", "eval": "({ bando: c.lanzador && c.lanzador.bando })", "espera": {"bando": "demonios"}},
+    {"hasta": "prueba.estado().vidas[0] < v0 || S.jugador.muerto || !c.active || !c.lanzador", "timeout": 2000, "nombre": "la moneda llega a J1"},
+    {"verificar": "y lo daña en lugar de juntarse", "eval": "({ dañado: prueba.estado().vidas[0] < v0 || !!S.jugador.muerto, cx: Math.round(c.x), cy: Math.round(c.y), jx: Math.round(S.jugador.x), prot: S.jugador.proteccion, golpe: S.reglas.golpeAlNinja })", "espera": {"dañado": true}}
+  ]
+}

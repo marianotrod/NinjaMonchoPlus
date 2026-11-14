@@ -1,5 +1,5 @@
 {
-  "descripcion": "Un ítem lanzado lleva aura y estela del color de a quién daña, sin teñirse; al frenar vuelve a ser inofensivo y pierde las dos",
+  "descripcion": "Un ítem lanzado deja una estela del color de a quién daña, sin teñirse y sin aura (apagada); al frenar vuelve a ser inofensivo y la pierde",
   "query": "?debug&nivel=1",
   "pasos": [
     {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'recoleccion'", "timeout": 8000, "nombre": "arranca la Recolección"},
@@ -7,15 +7,15 @@
     {"eval": "(window.s = window.game.scene.getScene('NinjaMonchoScene'), window.copias = () => s.children.list.filter(o => o.type === 'Image' && o.texture.key === 'coin' && !s.items.contains(o)), window.auras = () => s.children.list.filter(o => o.texture && o.texture.key === 'aura'), prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), prueba.crearItem('coin', 114, 262), prueba.atacar(1), true)"},
     {"wait": 120},
     {"verificar": "la moneda lanzada deja una estela azul eléctrico (daña a los demonios)", "eval": "({ hay: copias().length > 0, azul: copias().every(c => c.tintTopLeft === 0x00b3ff) })", "espera": {"hay": true, "azul": true}},
-    {"verificar": "y lleva un aura del mismo color, sin teñirse ella, y las dos por encima del fondo", "eval": "({ auras: auras().length, azul: auras()[0]?.tintTopLeft === 0x00b3ff, tinte: s.items.getChildren()[0].isTinted, encima: auras()[0]?.depth > 0 && copias().every(c => c.depth > 0) })", "espera": {"auras": 1, "azul": true, "tinte": false, "encima": true}},
+    {"verificar": "sin aura (está apagada), sin teñirse ella, y la estela por encima del fondo", "eval": "({ auras: auras().length, tinte: s.items.getChildren()[0].isTinted, encima: copias().every(c => c.depth > 0) })", "espera": {"auras": 0, "tinte": false, "encima": true}},
     {"hasta": "!s.items.getChildren()[0].lanzador", "timeout": 4000, "nombre": "la moneda frena"},
     {"wait": 300},
     {"verificar": "al frenar deja de ser proyectil: sin estela, sin aura y con su color", "eval": "({ estela: copias().length, auras: auras().length, tinte: s.items.getChildren()[0].isTinted })", "espera": {"estela": 0, "auras": 0, "tinte": false}},
     {"eval": "(prueba.ponerModGlobal('fuegoAmigo', true), prueba.sinItems(), prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), prueba.crearItem('coin', 114, 262), prueba.atacar(1), true)"},
     {"wait": 120},
-    {"verificar": "con fuego amigo estela y aura son negro-violeta: daña a todos", "eval": "({ hay: copias().length > 0, estela: copias().every(c => c.tintTopLeft === 0x4c1d95), aura: auras()[0]?.tintTopLeft === 0x4c1d95 })", "espera": {"hay": true, "estela": true, "aura": true}},
+    {"verificar": "con fuego amigo la estela es rosa: también daña a los jugadores", "eval": "({ hay: copias().length > 0, estela: copias().every(c => c.tintTopLeft === 0xff3df0) })", "espera": {"hay": true, "estela": true}},
     {"eval": "(prueba.sinItems(), true)"},
     {"wait": 50},
-    {"verificar": "si el ítem desaparece, su aura también", "eval": "({ v: auras().length })", "espera": {"v": 0}}
+    {"verificar": "si el ítem desaparece, no queda ninguna aura", "eval": "({ v: auras().length })", "espera": {"v": 0}}
   ]
 }

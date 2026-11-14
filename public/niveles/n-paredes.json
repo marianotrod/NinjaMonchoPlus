@@ -77,7 +77,7 @@
     ]
   },
   "objetos": [
-    {"tipo":"spawnJugador","jugador":1,"col":8,"fila":0},
-    {"tipo":"spawnJugador","jugador":2,"col":19,"fila":0}
+    {"tipo":"spawnJugador","jugador":1,"col":12,"fila":0},
+    {"tipo":"spawnJugador","jugador":2,"col":20,"fila":0}
   ]
 }

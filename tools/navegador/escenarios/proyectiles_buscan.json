@@ -1,0 +1,62 @@
+{
+  "descripcion": "Pergamino proyectilesBuscan: el shuriken se tuerce hacia el demonio que tiene adelante; un ítem empujado también busca",
+  "query": "?debug&nivel=3&mapa=b-09&fase=caceria&enemigos=ninguno&sinTiempo&pergaminos=proyectilesBuscan,shuriken",
+  "pasos": [
+    {
+      "hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'caceria'",
+      "timeout": 8000,
+      "nombre": "arranca en la Cacería"
+    },
+    {
+      "eval": "(window.S = () => window.game.scene.getScene('NinjaMonchoScene'), true)"
+    },
+    {
+      "verificar": "J1 arranca con el pergamino",
+      "eval": "({ busca: S().partida.mods.jugadores[0].proyectilesBuscan })",
+      "espera": {
+        "busca": true
+      }
+    },
+    {
+      "eval": "(prueba.proteger(1), prueba.ponerJugador(1, 100, 264), prueba.mirar(1, 1), prueba.crearEnemigo('demonio_caminante', 190, 220), S().enemigos.getChildren()[0].setVelocity(0, 0), S().enemigos.getChildren()[0].body.setAllowGravity(false), prueba.sinDecisiones(0), true)"
+    },
+    {
+      "hasta": "prueba.listo(1) && !S().enemigos.getChildren()[0].intocable",
+      "timeout": 3000,
+      "nombre": "J1 en el piso y el demonio ya entró"
+    },
+    {
+      "eval": "(prueba.disparar(1), window.t = S().proyectilesDe('jugadores')[0], window.vy0 = t.body.velocity.y, true)"
+    },
+    {
+      "wait": 150
+    },
+    {
+      "verificar": "el shuriken se tuerce hacia arriba, hacia el demonio",
+      "eval": "({ hay: !!t, sube: !!t && (!t.active || t.body.velocity.y < vy0 - 5) })",
+      "espera": {
+        "hay": true,
+        "sube": true
+      }
+    },
+    {
+      "eval": "(S().proyectiles.clear(true, true), window.it = S().items.getChildren()[prueba.crearItem('coin', S().jugador.x + 20, S().jugador.y - 4)], prueba.atacar(1), true)"
+    },
+    {
+      "hasta": "!!it.lanzador",
+      "timeout": 1000,
+      "nombre": "la katana empuja la moneda"
+    },
+    {
+      "wait": 150
+    },
+    {
+      "verificar": "la moneda empujada vuela hacia el demonio sin romper nada",
+      "eval": "({ enJuego: prueba.enJuego(), haciaElDemonio: it.body.velocity.x > 0 })",
+      "espera": {
+        "enJuego": true,
+        "haciaElDemonio": true
+      }
+    }
+  ]
+}

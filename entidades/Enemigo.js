@@ -354,6 +354,7 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
             { gravedad: true, textura: 'flechasamurai', gravedadY: arco.gravedad });
         if (!flecha) return;
         flecha.play('flechasamurai');
+        flecha.body.setSize(16, 16);  // Todas las armas chocan con un cuadrado de 16x16
         flecha.orientar = true;   // Apunta hacia donde va (Armas.actualizarProyectiles)
         flecha.setRotation(Math.atan2(arco.vy, direccion * arco.vx));
         flecha.autor = this;
@@ -412,8 +413,9 @@ export default class Enemigo extends Phaser.Physics.Arcade.Sprite {
         const cuchilla = this.scene.dispararProyectilEnemigo(this.x + direccion * 6, this.y - 4, direccion * lanza.vx, 0, { textura: 'cuchilla' });
         if (!cuchilla) return;
         cuchilla.body.setAccelerationY(lanza.caida);
-        cuchilla.setAngularVelocity(direccion * lanza.giro);
-        cuchilla.setFlipX(direccion < 0);
+        cuchilla.body.setSize(16, 16);  // Todas las armas chocan con un cuadrado de 16x16
+        cuchilla.mira = 'izquierda';    // Va derecha, sin girar: el dibujo mira a la izquierda y se da vuelta
+        cuchilla.setFlipX(direccion > 0);
         cuchilla.autor = this;  // Si mata a un ninja, el esqueleto se ríe
     }
 

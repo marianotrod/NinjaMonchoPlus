@@ -5,6 +5,49 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-13 - Claude: parry que desvía y tiros que buscan
+
+- 5.12: el parry que devuelve queda como pergamino. Ahora desvía con la misma lógica que el empuje de la katana: el
+  proyectil sale en la dirección que va del centro del ninja al proyectil (con el tajo hacia arriba, sale para arriba).
+- Pergamino nuevo `proyectilesBuscan` ("TUS TIROS BUSCAN DEMONIOS"): todo lo tuyo que vuela (armas, bolas celestes,
+  devueltos, ítems empujados con la katana, demonios lanzados por el boulder; el bumerán solo a la ida) se tuerce de a
+  poco hacia el demonio más cercano que tenga adelante. Calibrar en `CONFIG.PROYECTILES_BUSCAN` (radio,
+  grados por segundo, cono). Ícono provisorio "TB". Escenario nuevo `proyectiles_buscan`; `parry_devuelve` actualizado.
+- Gráficos de armas (Mariano): el shuriken, el bumerán y la bomba son hojas animadas (`GRAFICOS_ANIMADOS`); shuriken,
+  bumerán y cuchilla ya no giran por código, se dan vuelta según hacia dónde van (`mira`). Todas las armas chocan con 16x16. Al romperse
+  shuriken, bumerán, cuchilla o flecha se ve `arma_destruccion.png` (`GRAFICOS_UNA_VEZ`; si falta el PNG, no se ve nada).
+  Pendiente (Mariano): dibujar `public/assets/graficos/arma_destruccion.png`.
+- Aura apagada en todo lo que vuela (`FISICA.auraPeligro.activa: false`); queda la estela. La estela negro-violeta (fuego
+  amigo) ahora es rosa como la de lo que daña a los jugadores (`COLORES_PELIGRO.A_TODOS`). Escenarios `estela` y `visual` adaptados.
+- Brillo (glow de Phaser, solo WebGL) que sigue la forma del dibujo de todo lo que vuela y daña, en lugar del aura
+  (`FISICA.brilloPeligro`); se bajó a fuerza 1,6 (20%) porque distraía. La estela queda igual.
+- Armas: bumerán con el doble de alcance (`duracionIda` 760), bomba que rebota sin límite y explota a los 2,4 s.
+  El shuriken sale 3 grados hacia arriba (`FISICA.anguloShuriken`): tirado desde el piso llega unos 260 px (antes 90).
+- Bumerán: busca la altura de Moncho con retraso, a la ida y a la vuelta, y así hace una curva (`ARMAS.bumeran.sigue` y `subida`). Escenario `bumeran_altura`.
+  Sin vencimiento: dura hasta que lo agarrás (tocándolo: si lo esquivás, te pasa de largo y vuelve) o hasta que choca sin
+  rebotes (1 de base, más los del pergamino); cada rebote arranca una ida nueva. Al volver frena y acelera hacia Moncho
+  (`aceleracionVuelta`). Ida más larga (`duracionIda` 900). Ya no arrastra ítems: todas las armas (menos la bomba) empujan monedas y talismanes, que salen como proyectiles tuyos. Escenario `bumeran_rebotes`.
+- Pergamino negativo `explosionesLanzan` ("EXPLOSIONES: ÍTEMS QUE DAÑAN", ícono provisorio "XI"): las explosiones de los demonios
+  lanzan monedas y talismanes como proyectiles suyos (rosas) que dañan a los jugadores; la katana los devuelve. Escenario `explosiones_lanzan`.
+- Batería completa: 481/483; las 2 que fallaron esperaban la bomba de 1,2 s y 32 gráficos sueltos (ahora 28); corregidas y pasan.
+- Parry con fuego amigo (o daño propio): la katana también para los tiros del otro jugador y los propios que podrían
+  dañarte (no la bomba). El bumerán ajeno se rompe siempre. Tu bumerán nunca te daña al volver. Escenario `parry_fuego_amigo`.
+- Agarre y salto de pared: Mariano los ve bien por ahora; se retocan cuando lleguen las animaciones nuevas (5.10).
+
+---
+
+## 2026-11-11 - Claude: v2 publicada aparte para los profes (pendiente)
+
+- Repo aparte `marianotrod/NinjaMonchoPlus-v2` con una copia de `v2` como `main`, para mostrar la evolución sin tocar la
+  entrega (https://marianotrod.github.io/NinjaMonchoPlus/, rama `main`, sin cambios). Para actualizarlo:
+  `git push https://github.com/marianotrod/NinjaMonchoPlus-v2.git v2:main`.
+- GitHub Pages del repo aparte falla al arrancar (error inesperado de GitHub, 4 intentos). Pendiente: reintentar con
+  "Re-run all jobs"; si sigue, Netlify o Cloudflare Pages. Link previsto: https://marianotrod.github.io/NinjaMonchoPlus-v2/
+- Vercel: `ninjamonchoplus.vercel.app` no existe (el "Website" del repo apunta ahí) y los deploys del equipo triple-combo
+  piden login (Deployment Protection).
+
+---
+
 ## 2026-11-10 — Claude: esqueleto que apunta, sin caminante, parry que devuelve, ayuda del salto de pared y cartas
 
 - Regla nueva: la batería completa de pruebas solo con permiso de Mariano (`CLAUDE.md`).

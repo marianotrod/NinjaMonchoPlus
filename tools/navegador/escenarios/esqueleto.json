@@ -16,7 +16,7 @@
     {"hasta": "prueba.proyectiles().enemigos === 1", "timeout": 1500, "nombre": "tira la cuchilla"},
     {"verificar": "la cuchilla sale en el último cuadro de lanzar, y se queda un momento ahí", "eval": "({ cuadro: prueba.enemigo(0).cuadro, accion: prueba.enemigo(0).accion })", "espera": {"cuadro": 16, "accion": "tiro"}},
     {"wait": 300},
-    {"verificar": "la cuchilla va como el shuriken: casi derecho y girando", "eval": "(() => { const c = window.game.scene.getScene('NinjaMonchoScene').proyectilesDe('demonios')[0]; return { vx: Math.round(c.body.velocity.x), cae: c.body.velocity.y, gira: c.body.angularVelocity !== 0, ancho: c.width }; })()", "espera": {"vx": -160, "cae": {"min": 0, "max": 30}, "gira": true, "ancho": 16}},
+    {"verificar": "la cuchilla va como el shuriken: casi derecho, sin girar, y mira hacia donde va", "eval": "(() => { const c = window.game.scene.getScene('NinjaMonchoScene').proyectilesDe('demonios')[0]; return { vx: Math.round(c.body.velocity.x), cae: c.body.velocity.y, gira: c.body.angularVelocity !== 0, mira: c.flipX === (c.body.velocity.x > 0), ancho: c.width }; })()", "espera": {"vx": -160, "cae": {"min": 0, "max": 30}, "gira": false, "mira": true, "ancho": 16}},
     {"eval": "(window.game.scene.getScene('NinjaMonchoScene').proyectiles.clear(true, true), true)"},
 
     {"eval": "(window.E().aturdir(1000), true)"},

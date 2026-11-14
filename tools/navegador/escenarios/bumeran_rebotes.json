@@ -1,0 +1,16 @@
+{
+  "descripcion": "El bumerán no se vence: un rebote en la pared arranca una ida nueva y, sin rebotes, el choque siguiente lo rompe",
+  "query": "?debug&nivel=3&mapa=b-09&fase=caceria&enemigos=ninguno&sinTiempo",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'caceria'", "timeout": 8000, "nombre": "arranca"},
+    {"eval": "(window.S = window.game.scene.getScene('NinjaMonchoScene'), prueba.proteger(1), prueba.ponerJugador(1, 60, 264), prueba.mirar(1, -1), prueba.equipar(1, 'bumeran'), true)"},
+    {"hasta": "prueba.listo(1)", "timeout": 2000, "nombre": "en el piso, mirando a la pared"},
+    {"eval": "(prueba.disparar(1), window.b = S.proyectilesDe('jugadores')[0], window.r0 = b.rebotesRestantes, true)"},
+    {"hasta": "b.rebotesRestantes < r0", "timeout": 2000, "nombre": "rebota en la pared"},
+    {"wait": 50},
+    {"verificar": "el rebote arranca una ida nueva, alejándose de la pared", "eval": "({ base: r0, ida: !b.vuelta, aDerecha: b.body.velocity.x > 0, activo: b.active })", "espera": {"base": 1, "ida": true, "aDerecha": true, "activo": true}},
+    {"eval": "(prueba.ponerJugador(1, 300, 264), b.vuelta = true, b.setVelocityX(-280), true)"},
+    {"hasta": "!b.active", "timeout": 3000, "nombre": "vuelve contra la pared y se rompe"},
+    {"verificar": "sin rebotes, Moncho puede tirar otro", "eval": "({ libre: !S.jugador.bumeranActivo || !S.jugador.bumeranActivo.active })", "espera": {"libre": true}}
+  ]
+}
