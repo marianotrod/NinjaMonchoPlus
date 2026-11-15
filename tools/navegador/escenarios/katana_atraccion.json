@@ -1,0 +1,33 @@
+{
+  "descripcion": "Katana: atracción hacia un enemigo apenas fuera de alcance, y retroceso con inmunidad al pegarle a algo que aguanta",
+  "query": "?debug&gimnasio",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'gimnasio'", "timeout": 8000, "nombre": "arranca el gimnasio"},
+    {"eval": "(window.S = window.game.scene.getScene('NinjaMonchoScene'), prueba.gimnasio.todoAlDefault(), S.enemigosCongelados = true, prueba.proteger(1), prueba.ponerJugador(1, 120, 240), prueba.mirar(1, 1), true)"},
+    {"hasta": "prueba.jugador(1).enPiso", "timeout": 2000, "nombre": "Moncho en el piso"},
+    {"wait": 300},
+    {"eval": "(prueba.atacar(1), window.alcance = S.jugador.katana.getBounds().right - S.jugador.x, alcance)"},
+    {"wait": 450},
+    {"eval": "(window.poner = (clave, hueco) => { const e = S.enemigos.getChildren()[prueba.crearEnemigo(clave, 0, 0)]; e.body.moves = false; const j = S.jugador; e.body.reset(j.x + alcance + hueco + e.getBounds().width / 2, j.y); return e; }, true)"},
+
+    {"eval": "(window.e1 = poner('esqueleto', 6), window.x0 = S.jugador.x, prueba.atacar(1), true)"},
+    {"wait": 200},
+    {"verificar": "a 6 px fuera de alcance, la atracción lo acerca y el golpe pega", "eval": "({ pego: !e1.active || e1.muerto, seAcerco: S.jugador.x > x0 + 3 })", "espera": {"pego": true, "seAcerco": true}},
+    {"wait": 400},
+
+    {"eval": "(async () => { (await import('./config.js')).FISICA.atraccionKatana.activa = false; window.e2 = poner('esqueleto', 6); prueba.atacar(1); return true; })()"},
+    {"wait": 200},
+    {"verificar": "sin la atracción, el mismo golpe sale al aire", "eval": "({ vivo: e2.active && !e2.muerto })", "espera": {"vivo": true}},
+    {"eval": "(async () => { (await import('./config.js')).FISICA.atraccionKatana.activa = true; e2.destroy(); return true; })()"},
+    {"wait": 400},
+
+    {"eval": "(prueba.ponerJugador(1, 120, 240), prueba.mirar(1, 1), true)"},
+    {"hasta": "prueba.jugador(1).enPiso", "timeout": 2000, "nombre": "Moncho en el piso otra vez"},
+    {"wait": 300},
+    {"eval": "(window.sam = poner('samurai', -4), prueba.atacar(1), true)"},
+    {"wait": 40},
+    {"verificar": "el samurái sin aturdir aguanta: Moncho retrocede y su contacto no lo daña un momento", "eval": "({ vivo: sam.active && !sam.aturdido, atras: S.jugador.body.velocity.x < -100, impulso: S.jugador.impulso && S.jugador.impulso.tipo, inmune: S.jugador.inmuneA(sam) })", "espera": {"vivo": true, "atras": true, "impulso": "retroceso", "inmune": true}},
+    {"wait": 300},
+    {"verificar": "después vuelve el control y se termina la inmunidad", "eval": "({ impulso: S.jugador.impulsoActivo, inmune: S.jugador.inmuneA(sam) })", "espera": {"impulso": null, "inmune": false}}
+  ]
+}

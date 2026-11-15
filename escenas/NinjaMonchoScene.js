@@ -1452,6 +1452,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     }
 
     if (demonio.aturdido) return; // Un demonio aturdido no hace daño
+    if (jugador.inmuneA(demonio)) return; // Recién le pegó y aguantó: el retroceso lo aleja
     resolverGolpe(this, jugador, crearGolpe('contacto', { bando: BANDO.DEMONIOS, fuenteX: demonio.x, autor: demonio }));
   }
 
@@ -1512,7 +1513,13 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       accion();
     };
 
-    this.enemigos.getChildren().slice().forEach(enemigo => alcanzar(enemigo));
+    // A un demonio: si aguanta el golpe (no muere ni queda aturdido), Moncho retrocede
+    const golpearDemonio = (objetivo) => alcanzar(objetivo, () => {
+      resolverGolpe(this, objetivo, golpe);
+      if (ninja.impulso && ninja.impulso.tipo === 'atraccion') ninja.impulso = null;  // Ya llegó
+      if (objetivo.active && !objetivo.muerto && !objetivo.aturdido) ninja.retroceder(direccion, objetivo);
+    });
+    this.enemigos.getChildren().slice().forEach(enemigo => golpearDemonio(enemigo));
     this.items.getChildren().forEach(item => alcanzar(item));
     // Rescate: la llave suelta y la jaula se alejan del centro del ninja, como los ítems
     objetosSueltos(this).forEach(objeto => alcanzar(objeto, () => {
@@ -1535,7 +1542,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     this.jugadores.forEach(otro => {
       if (otro !== ninja && !otro.eliminado) alcanzar(otro);
     });
-    if (this.jefe && this.jefe.active) alcanzar(this.jefe);
+    if (this.jefe && this.jefe.active) golpearDemonio(this.jefe);
   }
 
   // Parry: el proyectil enemigo se rompe
@@ -1754,6 +1761,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
       this.hitStop(60);
       return;
     }
+    if (jugador.inmuneA(jefe)) return; // Recién le pegó: el retroceso lo aleja
     resolverGolpe(this, jugador, crearGolpe('contacto', { bando: BANDO.DEMONIOS, fuenteX: jefe.x }));
   }
 

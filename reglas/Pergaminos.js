@@ -23,7 +23,7 @@ export const MODS_GLOBAL_BASE = {
   rebotesEnemigos: 0, trampasAlAzar: 0,
   furiaTemporal: false, contagio: false, primerEnemigoEscudo: false, explotanAlMorir: false,
   ocultarNegativos: false, cadena: false, positivosIlegibles: false, minas: false, bombasEspeciales: false,
-  proyectilDejaBola: false, llamaBola: false, trampaSeExtiende: false, bolaExtra: false,
+  proyectilDejaBola: false, llamaBola: false, trampaSeExtiende: false, bolaExtra: false, fuegoPropaga: false,
   explosionesLanzan: false  // Las explosiones de los demonios lanzan monedas y talismanes que dañan a los jugadores
 };
 

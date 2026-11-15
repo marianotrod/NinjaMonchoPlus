@@ -4,7 +4,8 @@
 // juego: spawnear enemigos y jefes, dar habilidades y armas, y cambiar los números de lo que hay en pantalla.
 // Los números son los de config.js, Bestiario.js, Jefe.js y Armas.js: el default es el valor de hoy. Los cambios se
 // guardan en el navegador y se descargan como ajustes_gimnasio.json, para pasarlos al código como nuevos defaults.
-import { CONFIG, FISICA, MUNDO } from '../config.js';
+import { CONFIG, FISICA, LOGICA, MUNDO } from '../config.js';
+import { pintarCelda } from '../mundo/CargadorNivel.js';
 import { Bestiario } from '../datos/Bestiario.js';
 import { EVENTOS } from '../datos/Eventos.js';
 import { JEFES } from '../entidades/Jefe.js';
@@ -167,7 +168,8 @@ const sesion = {
   municionInfinita: true,
   golpesQuitanVida: false,
   abiertas: new Set(['Moncho', 'Pergaminos']),  // Secciones desplegadas
-  filtro: ''
+  filtro: '',
+  pincel: null             // Tipo de tile que pone el clic sobre el mapa (null: el clic no hace nada)
 };
 let escenaActual = null;
 let panel = null;
@@ -211,6 +213,17 @@ function instalar(game) {
     requestAnimationFrame(mirarPads);
   };
   requestAnimationFrame(mirarPads);
+  // Pincel: clic (o arrastrar) sobre el mapa pone el tile elegido, con el menú abierto o jugando
+  const pintarEn = (e) => {
+    if (sesion.pincel === null || !escenaActual || !escenaActual.esGimnasio) return;
+    const r = game.canvas.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (game.scale.width / r.width);
+    const y = (e.clientY - r.top) * (game.scale.height / r.height);
+    if (x < 0 || y < 0 || x >= game.scale.width || y >= game.scale.height) return;
+    pintar_(Math.floor(x / MUNDO.tile) + MUNDO.columnasOcultas, Math.floor(y / MUNDO.tile) + MUNDO.filasOcultas);
+  };
+  game.canvas.addEventListener('pointerdown', pintarEn);
+  game.canvas.addEventListener('pointermove', (e) => { if (e.buttons & 1) pintarEn(e); });
   game.events.once('destroy', () => { instalado = false; });
 }
 
@@ -260,6 +273,12 @@ function reiniciar({ jugadores, mapa } = {}) {
   escena.scene.resume();
   escena.scene.stop('UIScene');
   escena.scene.restart();
+}
+
+// ---------- Pincel de tiles ----------
+const PINCELES = [['trampa', LOGICA.TRAMPA], ['fuego', LOGICA.FUEGO], ['sólido', LOGICA.SOLIDO], ['pasarela', LOGICA.PASARELA], ['borrar', LOGICA.VACIO]];
+function pintar_(col, fila) {
+  return pintarCelda(escenaActual, col, fila, sesion.pincel);
 }
 
 // ---------- Spawns, habilidades y armas ----------
@@ -421,6 +440,14 @@ function pintar() {
   cong.querySelector('input').onchange = (e) => { sesion.congelados = e.target.checked; };
   const vivos = escena.enemigos.countActive(true) + (escena.jefe && escena.jefe.active ? 1 : 0);
   panel.append(fila(boton('Borrar todos', () => { borrarEnemigos(); pintar(); }), cong, texto(`en pantalla: ${vivos}`)));
+
+  // Pincel de tiles
+  panel.append(titulo('Tiles'));
+  panel.append(fila(
+    boton('ninguno', () => { sesion.pincel = null; pintar(); }, sesion.pincel === null ? 'activo' : ''),
+    ...PINCELES.map(([nombre, tipo]) => boton(nombre, () => { sesion.pincel = tipo; pintar(); }, sesion.pincel === tipo ? 'activo' : ''))
+  ));
+  panel.append(texto('Con un tipo elegido, clic o arrastrar sobre el mapa lo pone (también jugando). Reiniciar vuelve al mapa original.'));
 
   // Habilidades y armas (para los dos jugadores)
   panel.append(titulo('Habilidades y armas'));
@@ -589,6 +616,7 @@ const AYUDA_MODS = {
   llamaBola: 'Las llamas que se apagan a veces escupen otra bola de fuego (CONFIG.PROB_LLAMA_BOLA).',
   trampaSeExtiende: 'Tocar una trampa (un jugador o un enemigo) la extiende a un bloque vecino (CONFIG.ESPERA_EXTENSION_TRAMPA).',
   bolaExtra: 'Los tiles de fuego a veces escupen dos bolas en vez de una (CONFIG.PROB_BOLA_EXTRA).',
+  fuegoPropaga: 'Los tiles de fuego escupen el doble de seguido (y pueden tener dos bolas a la vez), las llamas duran el doble y se duplican las chances de más bolas y de llamas que escupen (CONFIG.FUEGO_PROPAGA).',
   explosionesLanzan: 'Las explosiones de los demonios lanzan monedas y talismanes que dañan a los jugadores.',
   velocidad: 'Multiplica la velocidad de carrera, del dash y del boulder (1 = normal).',
   salto: 'Multiplica la altura de los saltos (1,25 = 25 % más alto). Se ve al Reiniciar.',
@@ -648,5 +676,8 @@ export const puertaGimnasio = {
   secciones: () => secciones().map(([n, r]) => [n, r.length]),
   comentario: async (ruta) => { await leerComentarios(); return comentario(ruta); },
   congelar: (si) => { sesion.congelados = si; return true; },
+  pincel: (tipo) => { sesion.pincel = tipo; return true; },
+  pintarCelda: (col, fila, tipo) => pintarCelda(escenaActual, col, fila, tipo),
+  tilesFuego: () => escenaActual.tilesFuego.length,
   pergaminos: () => escenaActual.partida.mods
 };

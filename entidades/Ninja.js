@@ -355,7 +355,9 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (enElPiso || agarrado || !this.enSaltoPared) this.dejarDeMirarPared();
     // Agarrado no empuja contra la pared (alcanza con que esté al lado): empujar hace que la física tome la esquina del
     // bloque de abajo como piso o como techo y lo trabe
-    if (!this.enSaltoPared && !this.agarre && (enElPiso || this.tieneControlAereo)) this.moverHorizontal(input, enElPiso);
+    const impulso = this.impulsoActivo;  // La atracción del golpe o el retroceso mandan sobre el control un instante
+    if (impulso) this.setVelocityX(impulso.vx);
+    else if (!this.enSaltoPared && !this.agarre && (enElPiso || this.tieneControlAereo)) this.moverHorizontal(input, enElPiso);
 
     if (!enElPiso && !this.enSaltoPared && !agarrado) this.intentarDobleSalto();
 
@@ -752,6 +754,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (this.mods.katanaLarga) this.katana.scaleX = (this.katana.width + katanaExtra) / this.katana.width;
     if (this.mods.katanaAlta) this.katana.scaleY = (this.katana.height + katanaExtra) / this.katana.height;
     this.posicionarKatana();
+    if (!forzar && !arriba) this.atraerHaciaObjetivo();
     Sonido.ruido(this.sceneRef, 0.06, 0.12);
     // Pergamino: el parry alcanza alrededor del ninja. Se ve un aro.
     if (this.mods.parry360) {
@@ -877,6 +880,56 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   // Empujón sin daño (explosiones y katanazos del compañero: "fuego amigo cinético")
+  // Un impulso horizontal por un rato, sin control: la atracción del golpe y el retroceso
+  impulsar(tipo, vx, duracion) {
+    this.impulso = { tipo, vx, fin: this.sceneRef.time.now + duracion };
+  }
+
+  get impulsoActivo() {
+    const impulso = this.impulso;
+    if (impulso && this.sceneRef.time.now < impulso.fin) return impulso;
+    this.impulso = null;
+    return null;
+  }
+
+  // Atracción del golpe (FISICA.atraccionKatana): el demonio más cercano que esté adelante, a su altura, y apenas
+  // fuera del alcance de la katana
+  atraerHaciaObjetivo() {
+    const { activa, distancia, duracion } = FISICA.atraccionKatana;
+    if (!activa || !this.katana) return;
+    const escena = this.sceneRef;
+    const zona = this.katana.getBounds();
+    const direccion = this.flipX ? -1 : 1;
+    const objetivos = escena.enemigos.getChildren().filter(e => e.active && !e.muerto && !e.intocable);
+    if (escena.jefe && escena.jefe.active && !escena.jefe.muerto) objetivos.push(escena.jefe);
+    let hueco = null;
+    objetivos.forEach(objetivo => {
+      const b = objetivo.getBounds();
+      if (b.bottom <= zona.top || b.top >= zona.bottom) return;
+      const h = direccion > 0 ? b.left - zona.right : zona.left - b.right;
+      if (h > 0 && h <= distancia && (hueco === null || h < hueco)) hueco = h;
+    });
+    if (hueco === null) return;
+    const yendo = Math.sign(this.body.velocity.x) === direccion ? Math.abs(this.body.velocity.x) : 0;
+    this.impulsar('atraccion', direccion * Math.max(hueco / (duracion / 1000), yendo), duracion);
+  }
+
+  // Retroceso (FISICA.retrocesoGolpe) al pegarle a algo que aguantó el golpe. direccion: hacia donde fue el golpe
+  retroceder(direccion, objetivo) {
+    const { activo, velocidad, duracion, inmunidadContacto, msInmunidad } = FISICA.retrocesoGolpe;
+    if (!activo) return;
+    const atras = -direccion;
+    const yendo = Math.sign(this.body.velocity.x) === atras ? Math.abs(this.body.velocity.x) : 0;  // Si ya iba para atrás (samurái)
+    this.impulsar('retroceso', atras * Math.max(velocidad, yendo), duracion);
+    if (inmunidadContacto) this.inmuneContacto = { objetivo, hasta: this.sceneRef.time.now + msInmunidad };
+  }
+
+  // Después del retroceso, el objetivo que aguantó el golpe no lo daña al tocarlo por un momento
+  inmuneA(objetivo) {
+    const inmune = this.inmuneContacto;
+    return !!inmune && inmune.objetivo === objetivo && this.sceneRef.time.now < inmune.hasta;
+  }
+
   empujar(vx, vy) {
     if (this.apareciendo || this.muerto || this.eliminado) return;
     this.setVelocity(vx, vy);

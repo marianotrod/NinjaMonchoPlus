@@ -17,7 +17,13 @@ export const CARAS = [
   { col: 0, fila: 1, vx: [-40, 40], vy: 60 }
 ];
 
-const proximaBola = (ahora) => ahora + Phaser.Math.Between(CONFIG.FUEGO_ESPERA_MIN, CONFIG.FUEGO_ESPERA_MAX);
+// Pergamino "el fuego se propaga mejor": multiplica lo que genera fuego (CONFIG.FUEGO_PROPAGA)
+const propaga = (escena) => !!escena.modsGlobal.fuegoPropaga;
+const frecuenciaFuego = (escena) => (propaga(escena) ? CONFIG.FUEGO_PROPAGA.frecuencia : 1);
+export const duracionLlama = (escena) => CONFIG.DURACION_LLAMA * (propaga(escena) ? CONFIG.FUEGO_PROPAGA.vida : 1);
+const probabilidad = (escena, p) => Math.min(1, p * frecuenciaFuego(escena));
+
+const proximaBola = (escena, ahora) => ahora + Phaser.Math.Between(CONFIG.FUEGO_ESPERA_MIN, CONFIG.FUEGO_ESPERA_MAX) / frecuenciaFuego(escena);
 
 export function crearBola(escena, x, y, vx, vy) {
   const bola = escena.dispararProyectilEnemigo(x, y, vx, vy, { gravedad: true });
@@ -36,9 +42,10 @@ export function escupirFuego(escena, tile) {
   const x = tile.x + cara.col * SALIDA;
   const y = tile.y + cara.fila * SALIDA;
   tile.bola = crearBola(escena, x, y, vx, cara.vy);
+  if (tile.bola) (tile.bolas ??= []).push(tile.bola);
   escena.efectoChispas(x, y, 0xf97316);
   // Pergamino: a veces sale una más
-  if (escena.modsGlobal.bolaExtra && Math.random() < CONFIG.PROB_BOLA_EXTRA) crearBola(escena, x, y, -vx, cara.vy);
+  if (escena.modsGlobal.bolaExtra && Math.random() < probabilidad(escena, CONFIG.PROB_BOLA_EXTRA)) crearBola(escena, x, y, -vx, cara.vy);
 }
 
 // Caída pesada nivel 2: una bola como las del tile de fuego, pero del jugador: celeste y solo daña a los enemigos.
@@ -65,11 +72,11 @@ function encenderLlama(escena, x, piso) {
   llama.body.setSize(12, 12);
   llama.body.setOffset(2, 4);
   llama.play('llama');
-  escena.time.delayedCall(CONFIG.DURACION_LLAMA, () => {
+  escena.time.delayedCall(duracionLlama(escena), () => {
     if (!llama.active) return;
     if (llama.body) llama.body.enable = false;
     // Pergamino: al apagarse puede escupir otra bola
-    if (escena.modsGlobal.llamaBola && Math.random() < CONFIG.PROB_LLAMA_BOLA) {
+    if (escena.modsGlobal.llamaBola && Math.random() < probabilidad(escena, CONFIG.PROB_LLAMA_BOLA)) {
       crearBola(escena, llama.x, llama.y - 4, Phaser.Math.Between(-80, 80), -220);
     }
     escena.tweens.add({ targets: llama, alpha: 0, duration: 300, onComplete: () => llama.destroy() });
@@ -90,9 +97,11 @@ export function actualizarFuego(escena, ahora) {
   apagarBolasQuietas(escena);
   if (!escena.reglas.escupeFuego) return;
   escena.tilesFuego.forEach(tile => {
-    tile.proxima ??= proximaBola(ahora);
+    tile.proxima ??= proximaBola(escena, ahora);
     if (ahora < tile.proxima) return;
-    tile.proxima = proximaBola(ahora);
-    if (!tile.bola || !tile.bola.active) escupirFuego(escena, tile);
+    tile.proxima = proximaBola(escena, ahora);
+    // Normalmente una bola por tile a la vez; con el fuego que se propaga, más
+    tile.bolas = (tile.bolas ?? []).filter(bola => bola.active);
+    if (tile.bolas.length < frecuenciaFuego(escena)) escupirFuego(escena, tile);
   });
 }

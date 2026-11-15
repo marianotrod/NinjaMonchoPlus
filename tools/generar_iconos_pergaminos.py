@@ -24,7 +24,7 @@ PERGAMINOS = {
     'explotanAlMorir': ('XB', False), 'minas': ('MI', False), 'bombasEspeciales': ('BE', False),
     'ocultarNegativos': ('ON', False), 'cadena': ('CA', False), 'positivosIlegibles': ('PI', False),
     'proyectilDejaBola': ('DB', False), 'trampasAlAzar': ('TA', False), 'llamaBola': ('LB', False),
-    'trampaSeExtiende': ('TE', False), 'bolaExtra': ('B+', False), 'fantasmaRapido': ('FR', False),
+    'trampaSeExtiende': ('TE', False), 'bolaExtra': ('B+', False), 'fuegoPropaga': ('FP', False), 'fantasmaRapido': ('FR', False),
     'monedasRojas': ('MR', False),
 }
 

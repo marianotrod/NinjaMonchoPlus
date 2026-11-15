@@ -110,6 +110,27 @@ function registrarFuego(scene, grilla, c, f) {
   if (caras.length > 0) scene.tilesFuego.push({ x: aX(c), y: aY(f), caras });
 }
 
+// Gimnasio: pone (o saca, con VACIO) un tile de cualquier tipo durante el nivel, con su bloque y su dibujo.
+// Las caras del fuego dependen de las celdas vecinas: se vuelven a calcular todas.
+const DIBUJO_DE = { [LOGICA.SOLIDO]: 74, [LOGICA.PASARELA]: 41, [LOGICA.TRAMPA]: TILES.TRAMPA, [LOGICA.FUEGO]: TILES.FUEGO };
+export function pintarCelda(scene, c, f, tipo) {
+  if (!scene.logica[f] || scene.logica[f][c] === undefined || scene.logica[f][c] === tipo) return false;
+  const clave = `${c},${f}`;
+  if (scene.bloquesPorCelda.has(clave)) { scene.bloquesPorCelda.get(clave).destroy(); scene.bloquesPorCelda.delete(clave); }
+  if (scene.dibujos.has(clave)) { scene.dibujos.get(clave).destroy(); scene.dibujos.delete(clave); }
+  scene.logica[f][c] = tipo;
+  if (tipo !== LOGICA.VACIO) {
+    scene.bloquesPorCelda.set(clave, crearBloque(scene, c, f, tipo));
+    const dibujo = tipo === LOGICA.FUEGO
+      ? scene.add.sprite(aX(c), aY(f), 'MapTileSet', TILES.FUEGO).play('tile-fuego')
+      : scene.add.image(aX(c), aY(f), 'MapTileSet', DIBUJO_DE[tipo]);
+    scene.dibujos.set(clave, dibujo);
+  }
+  scene.tilesFuego = [];
+  scene.logica.forEach((fila, ff) => fila.forEach((t, cc) => { if (t === LOGICA.FUEGO) registrarFuego(scene, scene.logica, cc, ff); }));
+  return true;
+}
+
 export function construirNivel(scene, nivel) {
   const { clave } = nivel.tileset;
   dibujarCapa(scene, nivel.capas.fondo, clave);

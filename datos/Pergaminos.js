@@ -113,6 +113,7 @@ export const EFECTOS = [
   marca('llamaBola', NEGATIVO, 'todos', 'alguno'),
   marca('trampaSeExtiende', NEGATIVO, 'todos', 'alguno'),
   marca('bolaExtra', NEGATIVO, 'todos', 'alguno'),
+  marca('fuegoPropaga', NEGATIVO, 'todos', 'alguno'),
   marca('fantasmaRapido', NEGATIVO, 'jugador', 'ambos'),
   marca('monedasRojas', NEGATIVO, 'todos', 'alguno')
 ];

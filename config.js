@@ -75,6 +75,10 @@ export const CONFIG = {
   FUEGO_ESPERA_MIN: 3000,       // Tiempo entre bolas de un tile de fuego: al azar entre estos dos valores (ms)
   FUEGO_ESPERA_MAX: 7000,
   DURACION_LLAMA: 5000,         // Lo que dura encendida la llama que deja una bola al quedar quieta (ms)
+  // Pergamino negativo "el fuego se propaga mejor": los tiles de fuego escupen 'frecuencia' veces más seguido (y pueden
+  // tener esa cantidad de bolas a la vez), las llamas duran 'vida' veces más y se multiplican las chances de los otros
+  // pergaminos de fuego (más bolas, las llamas escupen fuego)
+  FUEGO_PROPAGA: { frecuencia: 2, vida: 2 },
   FANTASMA_PISADO: 800,         // Pisado, el fantasma se frena y no daña durante esto (ms); después se enoja
   FANTASMA_ENOJO: 1.3,          // Enojado va esto más rápido y acelera esto más; ya no se lo puede pisar
   ENTRADA_ENEMIGO: 1200,        // Un enemigo es intocable mientras entra a la pantalla y esto más (ms)
@@ -253,6 +257,13 @@ export const FISICA = {
   katanaDuracion: 230,
   katanaCooldown: 320,
   katanaExtra: 16,              // Pergaminos: lo que suma la katana hacia adelante o hacia arriba (px)
+  // Atracción del golpe: al atacar de costado, si un enemigo o jefe queda adelante a no más de 'distancia' px del alcance
+  // de la katana, Moncho se acerca solo en 'duracion' ms (en el piso y en el aire), para no fallar por poco
+  atraccionKatana: { activa: true, distancia: 8, duracion: 60 },
+  // Retroceso al pegarle a algo que aguanta el golpe (jefe, escudo, samurái sin aturdir, inmune al aturdimiento):
+  // Moncho sale hacia atrás a 'velocidad' px/s durante 'duracion' ms. inmunidadContacto: además, durante 'msInmunidad'
+  // ms ese objetivo no lo daña al tocarlo (false para probar solo con el retroceso)
+  retrocesoGolpe: { activo: true, velocidad: 120, duracion: 100, inmunidadContacto: true, msInmunidad: 150 },
   // Katana hacia arriba (arriba + katana): lo que toca sale para arriba. lado: fracción del empuje de costado que conserva
   katanaArriba: { subida: 260, lado: 0.25 },
   radioParry360: 22             // Pergamino: el parry alcanza esto alrededor del centro del ninja (px)

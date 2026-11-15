@@ -5,6 +5,21 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-15 - Claude: atracción y retroceso de la katana
+
+- Atracción (`FISICA.atraccionKatana`): al atacar de costado, en el piso o en el aire, si un enemigo o jefe queda adelante
+  a su altura y a no más de 8 px del alcance de la katana, Moncho se acerca solo en 60 ms. Se corta al pegar.
+- Retroceso (`FISICA.retrocesoGolpe`): al pegarle a algo que aguanta (jefe, escudo, samurái sin aturdir, inmune al
+  aturdimiento) sale hacia atrás (120 px/s, 100 ms). Con `inmunidadContacto` (bandera, prendida) ese objetivo no lo daña
+  al tocarlo por 150 ms. Todo se calibra en el gimnasio.
+- Escenario `katana_atraccion` (4/4).
+- Gimnasio: pincel de tiles (trampa, fuego, sólido, pasarela, borrar). Clic o arrastrar sobre el mapa, con el menú
+  abierto o jugando; el fuego recalcula por dónde escupe. `pintarCelda` en `mundo/CargadorNivel.js`. Reiniciar vuelve al mapa.
+- Pergamino negativo nuevo "el fuego se propaga mejor" (`fuegoPropaga`, para todos; `CONFIG.FUEGO_PROPAGA`): los tiles de
+  fuego escupen el doble de seguido y pueden tener dos bolas a la vez, las llamas duran el doble y se duplican las chances
+  de "más bolas de fuego" y "las llamas escupen fuego". Ícono provisorio FP (`tools/generar_iconos_pergaminos.py`).
+- Batería completa: 519 de 520; solo falla `parry_fuego_amigo`, el intermitente que ya estaba.
+
 ## 2026-11-15 - Claude: gimnasio para calibrar
 
 - `?debug&gimnasio`: mapa propio (`public/niveles/gimnasio.json`, tipo prueba; se puede cargar otro desde el menú), sin reloj
