@@ -1,0 +1,19 @@
+Sonidos de Ninja-Kid II sacados de SONIDOS_RAW.m4a (prueba de sonidos de MAME), en el orden de la grabación.
+WAV mono, 44100 Hz, normalizados, sin silencio al principio ni al final.
+
+Identificados comparando con el video (primeros 10 minutos):
+  Bastante seguros:
+    16_moneda_credito          al poner una moneda aparece CREDIT 1
+    18_disparo_bola_de_fuego   cada vez que Moncho tira la bola de fuego
+    03_conteo_bonus_de_tiempo  pantalla de TIME BONUS, mientras cuenta
+    21_bonus_fin_de_nivel      pantalla de CONGRATULATIONS / BONUS POINTS
+    46_explosion_contra_el_jefe  explosión sobre el esqueleto gigante
+  Probables:
+    01_lanzar_arma             baja la munición del arma
+    05_salto                   Moncho sube después de la explosión (barrido que sube)
+    10_agarrar_arma            cambia el ícono del arma y sube la munición
+  Dudosos:
+    27_choque_con_proyectil    una sola vez, con un proyectil y destellos cerca
+    32_caida_por_un_borde      Moncho se deja caer de una plataforma
+
+El resto tiene nombres por cómo suena (no se pudo saber para qué es).

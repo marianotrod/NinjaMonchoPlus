@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Asignar sonidos</title>
+<style>
+  :root { --fondo: #14161c; --panel: #1e2129; --borde: #333845; --texto: #e5e7eb; --suave: #9ca3af; --acento: #fbbf24; --ok: #4ade80; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.4 system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--panel); border-bottom: 1px solid var(--borde); padding: 10px 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0 12px 0 0; }
+  main { padding: 12px 16px 60px; max-width: 1200px; }
+  h2 { font-size: 15px; color: var(--acento); margin: 22px 0 6px; }
+  p.ayuda { color: var(--suave); margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { border-bottom: 1px solid var(--borde); padding: 5px 6px; vertical-align: middle; text-align: left; }
+  th { color: var(--suave); font-weight: normal; font-size: 12px; }
+  tr.cambiada { background: #1f2a1f; }
+  .nombre { font-weight: 600; }
+  .donde { color: var(--suave); font-size: 12px; }
+  button { background: #2b303b; color: var(--texto); border: 1px solid var(--borde); border-radius: 4px; padding: 3px 9px; cursor: pointer; font: inherit; }
+  button:hover { border-color: var(--acento); }
+  button.play { width: 30px; padding: 3px 0; }
+  select, input[type=text] { background: #111318; color: var(--texto); border: 1px solid var(--borde); border-radius: 4px; padding: 3px 5px; font: inherit; }
+  select { max-width: 290px; }
+  input[type=text] { width: 100%; box-sizing: border-box; }
+  input[type=range] { width: 80px; vertical-align: middle; }
+  .vol { white-space: nowrap; font-size: 12px; color: var(--suave); }
+  select.velocidad { margin-left: 4px; }
+  td.efectos { white-space: nowrap; font-size: 12px; }
+  td.efectos label { margin-right: 6px; cursor: pointer; }
+  td.efectos input { vertical-align: middle; margin: 0 2px 0 0; }
+  .biblio { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 4px 12px; }
+  .biblio div { display: flex; gap: 6px; align-items: center; }
+  .biblio .usos { color: var(--ok); font-size: 12px; }
+  #estado { color: var(--ok); font-size: 12px; }
+  .cuerpo { display: grid; grid-template-columns: 1fr 330px; gap: 0; }
+  main { min-width: 0; }
+  aside { position: sticky; top: 46px; height: calc(100vh - 46px); overflow: auto; box-sizing: border-box; padding: 10px; background: var(--panel); border-left: 1px solid var(--borde); }
+  aside h3 { font-size: 13px; color: var(--acento); margin: 10px 0 4px; }
+  aside .marcada { font-size: 12px; color: var(--suave); margin-bottom: 6px; }
+  aside .marcada b { color: var(--texto); }
+  .botonera { display: flex; flex-wrap: wrap; gap: 3px; }
+  .botonera button { font-size: 11px; padding: 2px 5px; }
+  td.pasos .paso { white-space: nowrap; }
+  td.pasos .paso select { max-width: 170px; }
+  input.pausa { width: 52px; background: #111318; color: var(--texto); border: 1px solid var(--borde); border-radius: 4px; padding: 2px 3px; font: inherit; font-size: 12px; }
+  button.quitar { padding: 1px 5px; margin-left: 2px; }
+  #agregarUltimo { margin-top: 4px; }
+  .botonera button.ultimo { border-color: var(--acento); color: var(--acento); }
+  .botonera button.usado { background: #1f3324; }
+  tr.marcada td { background: #2a2614; }
+  td.nombre-celda { cursor: pointer; }
+  @media (max-width: 900px) { .cuerpo { grid-template-columns: 1fr; } aside { position: static; height: auto; border-left: 0; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Asignar sonidos</h1>
+  <button id="descargar">Descargar asignacion_sonidos.json</button>
+  <button id="copiar">Copiar al portapapeles</button>
+  <button id="cargar">Cargar JSON</button><input type="file" id="archivo" accept=".json" hidden>
+  <button id="nueva">+ Acción nueva</button>
+  <button id="borrar">Empezar de cero</button>
+  <span id="estado"></span>
+</header>
+<div class="cuerpo">
+<main>
+  <p class="ayuda">Para cada acción, ▶ en "Ahora" toca lo que suena hoy en el juego (archivo o sintetizado). Elegí otro en la lista y ▶ lo toca. A la derecha, un botón por sonido: marcá una acción (clic en su nombre), probá sonidos y asignale el último que tocaste, o sumalo a la frase (› encadena sonidos: suenan uno detrás del otro, con la pausa en ms que pongas antes de cada uno).
+  Se guarda solo en este navegador; cuando termines, descargá el JSON (o copialo) y avisame.</p>
+
+  <h2>Ya tienen sonido</h2>
+  <table id="asignadas"></table>
+
+  <h2>Podríamos asignar (hoy no suenan)</h2>
+  <table id="posibles"></table>
+
+  <h2>Todos los sonidos</h2>
+  <p class="ayuda">Los del juego (public/assets/sonidos) y los ripeados (SonidosRipeados). En verde, a qué acciones los asignaste.</p>
+  <div class="biblio" id="biblio"></div>
+</main>
+<aside>
+  <div class="marcada">Acción marcada: <b id="marcada">ninguna</b> <span class="donde">(clic en el nombre de una acción)</span></div>
+  <button id="asignarUltimo" disabled>Asignar el último que toqué</button>
+  <button id="agregarUltimo" disabled title="Lo suma al final de la frase de la acción marcada">Agregar a la frase ›</button>
+  <div id="botoneras"></div>
+</aside>
+</div>
+<script>
+// ---------- Sonidos disponibles ----------
+const JUEGO = { 'snd-salto': 'Jump', 'snd-caida': 'Fall', 'snd-parry': 'Parry', 'snd-grito': 'Shout', 'snd-grito-final': 'FinalShout', 'snd-shuriken': 'Shuriken', 'snd-stun': 'Stun' };
+const RIPEADOS = ['01_lanzar_arma', '02_beep_agudo_golpe', '03_conteo_bonus_de_tiempo', '04_trino_agudo', '05_salto', '06_silbido_que_baja',
+  '07_barrido_grave_a_agudo', '08_ruido_corto_a', '09_ruido_entrecortado_corto', '10_agarrar_arma', '11_explosion_mediana', '12_ruido_con_pitido_al_final',
+  '13_ruido_sostenido_a', '14_ruido_corto_b', '15_ruido_corto_c', '16_moneda_credito', '17_ruido_que_crece', '18_disparo_bola_de_fuego',
+  '19_chasquido_con_pitido', '20_ruido_sostenido_b', '21_bonus_fin_de_nivel', '27_choque_con_proyectil', '28_toque_corto_grave_agudo', '29_ruido_medio',
+  '30_zumbido_grave_ondulante', '31_ruido_y_pitido_corto', '32_caida_por_un_borde', '33_tic', '34_blip_que_sube', '35_notas_sueltas_medias',
+  '36_ruido_largo_con_pitidos', '37_ruido_largo_que_baja', '38_ruido_largo_con_pitido_final', '39_sirena_que_sube_y_se_queda', '40_chasquido_con_pitido_b',
+  '41_ruido_corto_d', '42_explosion_grande', '43_ruido_corto_e', '44_ruido_corto_con_tono_grave', '45_ruido_corto_con_pitido', '46_explosion_contra_el_jefe',
+  '47_alarma_grave_dos_tonos', '48_zumbido_grave_que_baja', '49_zumbido_grave_con_pitido', '50_ruido_largo_que_se_corta', '51_mezcla_pitidos_y_grave', '52_golpecito_agudo'];
+
+const SONIDOS = {};  // id → { etiqueta, url }
+Object.entries(JUEGO).forEach(([k, f]) => SONIDOS['juego:' + f] = { etiqueta: 'Juego: ' + f, url: `../../public/assets/sonidos/${f}.mp3`, clave: k });
+// Lee la carpeta SonidosRipeados (Live Server y python -m http.server muestran la lista de archivos).
+// De los pcm_ se usa la versión a 44100 Hz, no la original.
+async function leerRipeados() {
+  let nombres = RIPEADOS.map(f => f + '.wav');
+  try {
+    const html = await fetch('../../SonidosRipeados/').then(r => r.text());
+    const hallados = [...html.matchAll(/href="([^"?#]+\.wav)"/gi)].map(m => decodeURIComponent(m[1].split('/').pop()));
+    if (hallados.length) nombres = [...new Set(hallados)];
+  } catch (e) {}
+  nombres.filter(n => !/_original_/i.test(n)).sort().forEach(n => {
+    const f = n.replace(/\.wav$/i, '');
+    SONIDOS['ripeado:' + f] = { etiqueta: 'Ripeado: ' + f, url: `../../SonidosRipeados/${encodeURIComponent(n)}` };
+  });
+}
+const archivoDeClave = (k) => 'juego:' + JUEGO[k];
+
+// ---------- Lo que suena hoy ----------
+// a: archivo (clave, volumen, rate) · b: beep (frecuencia, duración, volumen, tipo, demora ms) · r: ruido (duración, volumen) · s: silbido
+const a = (clave, vol, rate = 1) => ({ t: 'a', clave, vol, rate });
+const b = (f, d, v, tipo = 'square', demora = 0) => ({ t: 'b', f, d, v, tipo, demora });
+const r = (d, v) => ({ t: 'r', d, v });
+const s = (desde, hasta, d, v) => ({ t: 's', desde, hasta, d, v });
+
+const ASIGNADAS = [
+  ['salto', 'Salto', 'Ninja.js', [a('snd-salto', 1)]],
+  ['doble_salto', 'Doble salto', 'Ninja.js', [a('snd-salto', 1.2)]],
+  ['salto_pared', 'Salto de pared', 'Ninja.js', [a('snd-salto', 1.2)]],
+  ['trepar', 'Trepar (cada impulso en la pared)', 'Ninja.js', [a('snd-salto', 0.4, 1.4)]],
+  ['pisoton', 'Rebote al pisar algo (pisotón)', 'Ninja.js hacerPisoton', [a('snd-salto', 1)]],
+  ['pisar_demonio', 'Pisar un demonio (se suma al rebote)', 'NinjaMonchoScene', [a('snd-grito', 0.25)]],
+  ['trampolin', 'Trampolín humano (caer sobre el compañero)', 'NinjaMonchoScene', [a('snd-salto', 1.2, 1.3)]],
+  ['entra_jugador2', 'Entra el jugador 2 a mitad de partida', 'NinjaMonchoScene', [a('snd-salto', 1)]],
+  ['katana', 'Golpe de katana', 'Ninja.js atacar', [r(0.06, 0.12)]],
+  ['sin_municion', 'Intentar tirar sin arma o sin munición', 'Ninja.js', [b(140, 0.08, 0.08)]],
+  ['lanzar_shuriken', 'Lanzar shuriken', 'Armas.js', [a('snd-shuriken', 0.4)]],
+  ['lanzar_bumeran', 'Lanzar bumerán', 'Armas.js', [a('snd-shuriken', 0.3, 0.7)]],
+  ['lanzar_bomba', 'Lanzar bomba', 'Armas.js', [b(330, 0.1, 0.08, 'triangle')]],
+  ['explosion', 'Explosión (bomba)', 'NinjaMonchoScene explotar', [r(0.4, 0.4)]],
+  ['golpe_recibido', 'Moncho recibe un golpe (aturdido)', 'Ninja.js aplicarDaño', [a('snd-stun', 0.5)]],
+  ['muerte', 'Moncho muere', 'Ninja.js morir', [a('snd-stun', 0.5)]],
+  ['caida_vacio', 'Cae fuera de la pantalla', 'NinjaMonchoScene', [a('snd-caida', 0.7)]],
+  ['aterrizaje_pesado', 'Aterrizaje fuerte (caída alta)', 'Ninja.js aterrizarPesado', [r(0.12, 0.15)]],
+  ['rodar', 'Rodar (boulder)', 'Ninja.js rodar', [r(0.3, 0.2)]],
+  ['aviso_caida_alta', 'Aviso: la caída se vuelve peligrosa', 'Ninja.js medirCaida', [s(300, 900, 0.15, 0.1)]],
+  ['aturdir_katana', 'Katana contra demonio que hay que aturdir primero', 'Resolvedor.js', [a('snd-parry', 0.5, 0.7)]],
+  ['aturdir_demonio', 'Demonio aturdido', 'Resolvedor.js', [a('snd-parry', 0.35)]],
+  ['matar_demonio', 'Demonio muere', 'NinjaMonchoScene matarEnemigo', [a('snd-grito', 0.3, 1.4)]],
+  ['parry', 'Parry (rompe un proyectil)', 'NinjaMonchoScene', [a('snd-parry', 0.5)]],
+  ['pisar_proyectil', 'Pisar un proyectil', 'NinjaMonchoScene', [a('snd-parry', 0.4, 1.3)]],
+  ['pisar_fantasma', 'Pisar al fantasma', 'NinjaMonchoScene', [b(220, 0.25, 0.12, 'sawtooth')]],
+  ['moneda', 'Agarrar moneda (sube de tono con el combo)', 'NinjaMonchoScene', [b(988, 0.06, 0.08), b(1319, 0.1, 0.08, 'square', 60)]],
+  ['talisman', 'Agarrar talismán (1/3, 2/3, 3/3)', 'NinjaMonchoScene', [b(654, 0.1, 0.1, 'triangle')]],
+  ['fin_recoleccion', 'Termina la recolección (desaparecen talismanes)', 'NinjaMonchoScene', [a('snd-parry', 0.6)]],
+  ['alarma_reloj', 'Reloj por terminar (cada segundo)', 'NinjaMonchoScene', [b(784, 0.07, 0.1)]],
+  ['alarma_urgente', 'Reloj casi en cero', 'NinjaMonchoScene', [b(1046, 0.07, 0.1)]],
+  ['tiempo_agotado', 'Se acabó el tiempo (persecución)', 'NinjaMonchoScene', [b(110, 0.6, 0.15, 'sawtooth')]],
+  ['golpe_final', 'Golpe final (zoom a la última baja)', 'NinjaMonchoScene', [b(196, 0.35, 0.12)]],
+  ['tomar_carta', 'Tomar una carta en la sala de pergaminos', 'NinjaMonchoScene', [b(784, 0.1, 0.1)]],
+  ['cuenta_sala', 'Cuenta 3, 2, 1 de la sala', 'NinjaMonchoScene', [b(523, 0.06, 0.08)]],
+  ['bonus_conteo', 'Panel de bonos: cuenta de puntos', 'UIScene', [b(500, 0.03, 0.05), b(560, 0.03, 0.05, 'square', 50), b(620, 0.03, 0.05, 'square', 100)]],
+  ['bonus_combo', 'Panel de bonos: salta el combo', 'UIScene', [b(784, 0.08, 0.08)]],
+  ['bonus_monedas', 'Panel de bonos: tintineo de monedas', 'UIScene', [b(880, 0.025, 0.05), b(906, 0.025, 0.05, 'square', 40), b(932, 0.025, 0.05, 'square', 80)]],
+  ['bonus_final', 'Panel de bonos: acorde final', 'UIScene', [b(1047, 0.12, 0.08, 'triangle'), b(1568, 0.18, 0.08, 'triangle', 70)]],
+  ['llave_suelta', 'Rescate: aparece la llave', 'Rescate.js', [b(660, 0.1, 0.1, 'triangle')]],
+  ['agarrar_llave', 'Rescate: agarrar la llave', 'Rescate.js', [b(880, 0.08, 0.1)]],
+  ['rescate', 'Rescate: se abre la jaula', 'Rescate.js', [b(784, 0.1, 0.1, 'triangle')]],
+  ['jefe_embestida', 'Jefe: embiste', 'Jefe.js', [a('snd-grito', 0.4)]],
+  ['jefe_pared', 'Jefe: choca contra la pared', 'Jefe.js', [r(0.3, 0.3)]],
+  ['jefe_aterriza', 'Jefe: aterriza', 'Jefe.js', [r(0.25, 0.3)]],
+  ['jefe_dispara', 'Jefe: dispara', 'Jefe.js', [b(220, 0.15, 0.1, 'sawtooth')]],
+  ['jefe_golpeado', 'Jefe: recibe un golpe', 'Jefe.js', [a('snd-parry', 0.4)]],
+  ['jefe_muere', 'Jefe: muere', 'Jefe.js', [a('snd-grito-final', 0.6)]],
+  ['ganar', 'Ganar la partida', 'NinjaMonchoScene finalizarPartida', [a('snd-grito-final', 0.5)]],
+  ['menu_mover', 'Menú: mover el cursor', 'TitleScene / HowToPlay', [b(440, 0.04, 0.06)]],
+  ['menu_elegir', 'Menú: elegir', 'TitleScene', [b(880, 0.06, 0.08)]],
+  ['menu_volumen', 'Opciones: probar volumen de sonido', 'OptionsScene', [b(660, 0.08, 0.12)]],
+];
+
+const POSIBLES = [
+  ['dash', 'Dash'],
+  ['agarrarse_pared', 'Agarrarse a la pared'],
+  ['aterrizaje', 'Aterrizaje normal'],
+  ['aterrizaje_justo', 'Aterrizaje "apenas bien" (casi boulder)'],
+  ['agarrar_arma', 'Agarrar un arma'],
+  ['lanzar_bola_fuego', 'Lanzar bola de fuego'],
+  ['katana_choca', 'Katana contra pared o escudo'],
+  ['perder_vida', 'Perder una vida'],
+  ['reaparecer', 'Reaparecer después de morir'],
+  ['vida_extra', 'Vida extra'],
+  ['game_over', 'Game over'],
+  ['inicio_nivel', 'Empieza el nivel'],
+  ['inicio_caceria', 'Empieza la cacería (transición)'],
+  ['nivel_completado', 'Nivel completado'],
+  ['bonus_tiempo', 'Bonus de tiempo restante'],
+  ['demonio_aparece', 'Aparece un demonio'],
+  ['volador_explota', 'Volador explota al morir'],
+  ['esqueleto_lanza', 'Esqueleto lanza un hueso'],
+  ['samurai_ataca', 'Samurái ataca'],
+  ['fantasma_aparece', 'Aparece el fantasma'],
+  ['fantasma_enojado', 'El fantasma se enoja'],
+  ['jefe_aparece', 'Aparece el jefe'],
+  ['quemarse', 'Tocar fuego o una llama'],
+  ['proyectil_enemigo', 'Proyectil enemigo choca'],
+  ['tomar_pergamino', 'Activar un pergamino'],
+  ['credito', 'Insertar crédito / empezar (título)'],
+  ['menu_volver', 'Menú: volver / cancelar'],
+  ['menu_cambiar', 'Menú: cambiar un valor (izquierda/derecha en opciones)'],
+  ['menu_empezar', 'Menú: empezar partida (1 o 2 jugadores)'],
+  ['menu_bloqueado', 'Menú: opción no disponible'],
+  ['pausa', 'Pausa: abrir'],
+  ['despausar', 'Pausa: volver al juego'],
+  ['pausa_salir', 'Pausa: salir al título'],
+  ['cartel', 'Aparece un cartel (banner) en pantalla'],
+  ['panel_bonos', 'Aparece el panel de bonos'],
+  ['sala_cursor', 'Sala de pergaminos: pasar por una carta'],
+  ['records', 'Nuevo récord'],
+];
+
+// ---------- Reproducción ----------
+let ctx = null;
+const audio = () => (ctx = ctx || new AudioContext());
+let ultimo = null, marcada = null;
+function tocarArchivo(url, vol = 1, rate = 1, recordar = true) {
+  const id = Object.keys(SONIDOS).find(k => SONIDOS[k].url === url);
+  if (id && recordar) { ultimo = id; pintarBotoneras(); }
+  const el = new Audio(url);
+  el.volume = Math.min(1, vol);
+  el.preservesPitch = false;  // Como Phaser: el rate cambia también el tono
+  el.playbackRate = rate;
+  el.play().catch(e => estado('No se pudo tocar ' + url));
+  return el;
+}
+// Una frase: cada sonido empieza cuando termina el anterior
+// Una frase: cada sonido empieza cuando termina el anterior (más la pausa). Suena con WebAudio,
+// que permite darlo vuelta, panearlo y medir los tiempos justos.
+const buffers = {};
+async function buffer(k, alReves) {
+  const clave = k + (alReves ? '|reves' : '');
+  if (buffers[clave]) return buffers[clave];
+  let b = buffers[k] || (buffers[k] = await fetch(SONIDOS[k].url).then(r => r.arrayBuffer()).then(d => audio().decodeAudioData(d)));
+  if (alReves) {
+    const r = audio().createBuffer(b.numberOfChannels, b.length, b.sampleRate);
+    for (let c = 0; c < b.numberOfChannels; c++) r.getChannelData(c).set(Float32Array.from(b.getChannelData(c)).reverse());
+    b = buffers[clave] = r;
+  }
+  return b;
+}
+let fuentesFrase = [], ladoPaneo = 1, turnoFrase = 0;
+async function tocarFrase(pasos, vol = 1, rate = 1, efectos = {}) {
+  const c = audio(), turno = ++turnoFrase; await c.resume();
+  // Variación al azar: como hará el juego, cada vez un poco distinto (velocidad ±6 %, volumen ±12 %)
+  if (efectos.azar) { rate *= 1 + (Math.random() * 2 - 1) * 0.06; vol *= 1 + (Math.random() * 2 - 1) * 0.12; }
+  // Paneo: en el formulario no hay emisor, así que alterna izquierda y derecha para escucharlo
+  const salida = c.createGain(); salida.gain.value = Math.min(1, vol);
+  if (efectos.paneo && c.createStereoPanner) {
+    const pan = c.createStereoPanner(); pan.pan.value = 0.8 * (ladoPaneo = -ladoPaneo);
+    salida.connect(pan); pan.connect(c.destination);
+  } else salida.connect(c.destination);
+  const bufs = await Promise.all(pasos.map(p => buffer(p.k, efectos.alReves)));
+  if (turno !== turnoFrase) return;  // Mientras cargaba, se pidió otra: suena solo la última
+  fuentesFrase.forEach(f => { try { f.stop(); } catch (e) {} }); fuentesFrase = [];
+  let t = c.currentTime + 0.02;
+  pasos.forEach((p, i) => {
+    if (i > 0) t += (p.pausa || 0) / 1000;
+    const f = c.createBufferSource(); f.buffer = bufs[i]; f.playbackRate.value = rate;  // Como Phaser: cambia también el tono
+    f.connect(salida); f.start(t); fuentesFrase.push(f);
+    t += bufs[i].duration / rate;
+  });
+}
+function tocarSintetizado(p) {
+  const c = audio(), t0 = c.currentTime + p.demora / 1000 || c.currentTime;
+  const g = c.createGain(); g.connect(c.destination);
+  if (p.t === 'r') {
+    const n = Math.floor(c.sampleRate * p.d), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const f = c.createBufferSource(); f.buffer = buf; g.gain.value = p.v; f.connect(g); f.start(t0);
+    return;
+  }
+  const o = c.createOscillator(); o.type = p.tipo || 'square';
+  if (p.t === 's') { o.frequency.setValueAtTime(p.desde, t0); o.frequency.exponentialRampToValueAtTime(p.hasta, t0 + p.d); }
+  else o.frequency.value = p.f;
+  g.gain.setValueAtTime(p.v, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + p.d);
+  o.connect(g); o.start(t0); o.stop(t0 + p.d);
+}
+function tocarActual(partes) {
+  audio().resume();
+  partes.forEach(p => {
+    if (p.t === 'a') tocarArchivo(SONIDOS[archivoDeClave(p.clave)].url, p.vol, p.rate);
+    else tocarSintetizado({ demora: 0, ...p });
+  });
+}
+const describir = (partes) => partes.map(p => p.t === 'a' ? `${JUEGO[p.clave]}${p.rate !== 1 ? ' ×' + p.rate : ''}` : p.t === 'r' ? 'ruido' : p.t === 's' ? 'silbido' : 'beep').join(' + ');
+
+// ---------- Estado (en este navegador) ----------
+const CLAVE = 'ninja-asignacion-sonidos';
+let datos = { elecciones: {}, nuevas: [] };
+try { datos = Object.assign(datos, JSON.parse(localStorage.getItem(CLAVE)) || {}); } catch (e) {}
+const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(datos)); } catch (e) {} pintarBiblio(); pintarBotoneras(); };
+const eleccion = (id) => {
+  const e = datos.elecciones[id] || (datos.elecciones[id] = { sonido: '', volumen: 1, nota: '' });
+  if (!e.siguientes) e.siguientes = [];  // Más sonidos después del primero: arman una frase
+  if (!e.pausas) e.pausas = [];  // Pausa (ms) antes de cada uno de los siguientes
+  return e;
+};
+const velocidadHoy = (actual) => (actual || []).find(p => p.t === 'a')?.rate || 1;
+const EFECTOS = [
+  ['azar', 'azar', 'Variación al azar: cada vez suena un poco distinto (velocidad y volumen)'],
+  ['paneo', 'paneo', 'Suena más del lado de la pantalla donde está el que lo emite (acá alterna izquierda y derecha)'],
+  ['alReves', 'al revés', 'El sonido dado vuelta'],
+];
+const VELOCIDADES = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2];
+const pasosFrase = (e) => [{ k: e.sonido, pausa: 0 }, ...(e.siguientes || []).map((k, i) => ({ k, pausa: (e.pausas || [])[i] || 0 }))].filter(p => SONIDOS[p.k]);
+const frase = (e) => pasosFrase(e).map(p => p.k);
+function estado(t) { const e = document.getElementById('estado'); e.textContent = t; clearTimeout(estado.id); estado.id = setTimeout(() => e.textContent = '', 3000); }
+
+function opciones(sel, hayActual) {
+  const o = [`<option value="">${hayActual ? '(dejar como está)' : '(sin sonido)'}</option>`, '<option value="ninguno">— sacarle el sonido —</option>'];
+  o.push('<optgroup label="Del juego">', ...Object.keys(SONIDOS).filter(k => k.startsWith('juego:')).map(k => `<option value="${k}">${SONIDOS[k].etiqueta.slice(7)}</option>`), '</optgroup>');
+  o.push('<optgroup label="Ripeados">', ...Object.keys(SONIDOS).filter(k => k.startsWith('ripeado:')).map(k => `<option value="${k}">${k.slice(8)}</option>`), '</optgroup>');
+  return o.join('').replace(`value="${sel}"`, `value="${sel}" selected`);
+}
+
+function fila(id, nombre, donde, actual) {
+  const e = eleccion(id);
+  const tr = document.createElement('tr');
+  tr.dataset.id = id;
+  if (e.sonido) tr.className = 'cambiada';
+  tr.innerHTML = `
+    <td class="nombre-celda" title="Marcar esta acción"><div class="nombre">${nombre}</div><div class="donde">${donde || ''}</div></td>
+    <td>${actual ? `<button class="play" title="Lo que suena hoy">▶</button> <span class="donde">${describir(actual)}</span>` : '<span class="donde">—</span>'}</td>
+    <td class="pasos"><select class="paso0">${opciones(e.sonido, !!actual)}</select>${e.siguientes.map((k, i) =>
+      ` <span class="paso">› <input type="number" class="pausa" data-i="${i}" min="0" max="3000" step="50" value="${e.pausas[i] || 0}" title="Pausa antes de este sonido, en milisegundos">ms <select data-i="${i}">${opciones(k, false).replace('(sin sonido)', '(elegí uno)').replace(/<option value="ninguno">[^<]*<\/option>/, '')}</select><button class="quitar" data-i="${i}" title="Sacar este paso">✕</button></span>`).join('')}
+      <button class="agregar" title="Agregar otro sonido a continuación (frase)">+ ›</button> <button class="play" title="Tocar el elegido">▶</button></td>
+    <td class="vol">vol <input type="range" min="0.1" max="1" step="0.05" value="${e.volumen}">
+      <select class="velocidad" title="Velocidad (también cambia el tono, como en el juego)">${VELOCIDADES.map(v =>
+        `<option value="${v}"${v === (e.velocidad ?? velocidadHoy(actual)) ? ' selected' : ''}>${String(v).replace('.', ',')}x</option>`).join('')}</select></td>
+    <td class="efectos">${EFECTOS.map(([clave, txt, ayuda]) => `<label title="${ayuda}"><input type="checkbox" class="efecto" data-efecto="${clave}"${e[clave] ? ' checked' : ''}>${txt}</label>`).join('')}</td>
+    <td><input type="text" placeholder="nota (opcional)" value="${(e.nota || '').replace(/"/g, '&quot;')}"></td>`;
+  if (marcada && marcada.id === id) tr.classList.add('marcada');
+  tr.querySelector('td.nombre-celda').onclick = () => {
+    document.querySelectorAll('tr.marcada').forEach(x => x.classList.remove('marcada'));
+    tr.classList.add('marcada');
+    marcada = { id, nombre, actual, donde };
+    pintarBotoneras();
+  };
+  const [playActual, playNuevo] = actual ? tr.querySelectorAll('button.play') : [null, tr.querySelector('button.play')];
+  if (playActual) playActual.onclick = () => tocarActual(actual);
+  const sel = tr.querySelector('select.paso0'), vol = tr.querySelector('input[type=range]'), nota = tr.querySelector('input[type=text]');
+  const vel = tr.querySelector('select.velocidad');
+  playNuevo.onclick = () => tocarFrase(pasosFrase(e), Number(vol.value), Number(vel.value), e);
+  tr.querySelectorAll('input.efecto').forEach(cb => cb.onchange = () => { e[cb.dataset.efecto] = cb.checked; guardar(); playNuevo.onclick(); });
+  vel.onchange = () => { e.velocidad = Number(vel.value); guardar(); playNuevo.onclick(); };
+  sel.onchange = () => { e.sonido = sel.value; tr.classList.toggle('cambiada', !!e.sonido); guardar(); playNuevo.onclick(); };
+  tr.querySelectorAll('.paso select').forEach(s => s.onchange = () => { e.siguientes[s.dataset.i] = s.value; guardar(); playNuevo.onclick(); });
+  tr.querySelectorAll('button.quitar').forEach(bt => bt.onclick = () => { e.siguientes.splice(bt.dataset.i, 1); e.pausas.splice(bt.dataset.i, 1); guardar(); repintarFila(tr, id); });
+  tr.querySelectorAll('input.pausa').forEach(inp => inp.onchange = () => { e.pausas[inp.dataset.i] = Math.max(0, Number(inp.value) || 0); guardar(); playNuevo.onclick(); });
+  tr.querySelector('button.agregar').onclick = () => { e.siguientes.push(''); e.pausas[e.siguientes.length - 1] = 0; guardar(); repintarFila(tr, id); };
+  vol.onchange = () => { e.volumen = Number(vol.value); guardar(); };
+  nota.oninput = () => { e.nota = nota.value; guardar(); };
+  return tr;
+}
+// Vuelve a armar una fila (al agregar o sacar pasos de la frase)
+function repintarFila(tr, id) {
+  const [, nombre, donde, actual] = [...ASIGNADAS, ...POSIBLES.map(([i, n]) => [i, n, '', null]), ...datos.nuevas.map(([i, n]) => [i, n, '', null])].find(f => f[0] === id);
+  tr.replaceWith(fila(id, nombre, donde, actual));
+}
+const ENCABEZADO = '<tr><th>Acción</th><th>Ahora</th><th>Nuevo sonido (+ › arma una frase)</th><th>Volumen y velocidad</th><th>Efectos</th><th>Nota</th></tr>';
+function pintarTablas() {
+  const t1 = document.getElementById('asignadas'), t2 = document.getElementById('posibles');
+  t1.innerHTML = t2.innerHTML = ENCABEZADO;
+  ASIGNADAS.forEach(([id, n, d, act]) => t1.appendChild(fila(id, n, d, act)));
+  [...POSIBLES, ...datos.nuevas].forEach(([id, n]) => t2.appendChild(fila(id, n, '', null)));
+}
+function pintarBiblio() {
+  const nombres = Object.fromEntries([...ASIGNADAS, ...POSIBLES, ...datos.nuevas].map(([id, n]) => [id, n]));
+  const usos = {};
+  Object.entries(datos.elecciones).forEach(([id, e]) => new Set(frase(e)).forEach(k => (usos[k] = usos[k] || []).push(nombres[id] || id)));
+  const caja = document.getElementById('biblio'); caja.innerHTML = '';
+  Object.entries(SONIDOS).forEach(([k, snd]) => {
+    const d = document.createElement('div');
+    d.innerHTML = `<button class="play">▶</button><span>${snd.etiqueta}</span><span class="usos">${(usos[k] || []).join(', ')}</span>`;
+    d.querySelector('button').onclick = () => tocarArchivo(snd.url);
+    caja.appendChild(d);
+  });
+}
+
+function pintarBotoneras() {
+  const usados = new Set(Object.values(datos.elecciones).flatMap(frase));
+  const caja = document.getElementById('botoneras'); caja.innerHTML = '';
+  const grupos = [['Del juego', 'juego:'], ['Sampleados (pcm)', 'ripeado:pcm_'], ['Ripeados', 'ripeado:']];
+  const ya = new Set();
+  grupos.forEach(([titulo, prefijo]) => {
+    const ids = Object.keys(SONIDOS).filter(k => k.startsWith(prefijo) && !ya.has(k));
+    if (!ids.length) return;
+    ids.forEach(k => ya.add(k));
+    const h = document.createElement('h3'); h.textContent = titulo; caja.appendChild(h);
+    const fila = document.createElement('div'); fila.className = 'botonera';
+    ids.forEach(k => {
+      const bt = document.createElement('button');
+      bt.textContent = k.replace(/^(juego|ripeado):/, '').replace(/_44100hz$/i, '').replace(/_/g, ' ');
+      bt.title = SONIDOS[k].etiqueta;
+      if (k === ultimo) bt.classList.add('ultimo');
+      if (usados.has(k)) bt.classList.add('usado');
+      bt.onclick = () => tocarArchivo(SONIDOS[k].url);
+      fila.appendChild(bt);
+    });
+    caja.appendChild(fila);
+  });
+  document.getElementById('marcada').textContent = marcada ? marcada.nombre : 'ninguna';
+  const asignar = document.getElementById('asignarUltimo');
+  asignar.disabled = document.getElementById('agregarUltimo').disabled = !(marcada && ultimo);
+  asignar.textContent = ultimo ? `Asignar "${ultimo.replace(/^(juego|ripeado):/, '')}"` : 'Asignar el último que toqué';
+}
+function cambiarMarcada(cambio) {
+  if (!marcada || !ultimo) return;
+  cambio(eleccion(marcada.id));
+  guardar();
+  const tr = document.querySelector(`tr[data-id="${marcada.id}"]`);
+  if (tr) repintarFila(tr, marcada.id);
+}
+document.getElementById('asignarUltimo').onclick = () => cambiarMarcada(e => { e.sonido = ultimo; });
+// Si todavía no tiene primer sonido, lo pone primero; si no, lo suma al final
+document.getElementById('agregarUltimo').onclick = () => cambiarMarcada(e => { if (!SONIDOS[e.sonido]) e.sonido = ultimo; else { e.siguientes.push(ultimo); e.pausas[e.siguientes.length - 1] = 0; } });
+
+// ---------- Exportar ----------
+function resultado() {
+  const filas = [];
+  const agregar = (id, nombre, actual) => {
+    const e = datos.elecciones[id];
+    if (!e || (!e.sonido && !e.nota && !frase(e).length)) return;
+    const pasos = pasosFrase(e), rutas = pasos.map(p => decodeURIComponent(SONIDOS[p.k].url.replace('../../', '')));
+    filas.push({ accion: id, nombre, ahora: actual ? describir(actual) : null,
+      nuevo: e.sonido === 'ninguno' ? 'ninguno' : rutas.length > 1 ? rutas : rutas[0] || null,
+      pausas: rutas.length > 1 && pasos.some(p => p.pausa) ? pasos.slice(1).map(p => p.pausa) : undefined,
+      volumen: e.volumen, velocidad: e.velocidad ?? velocidadHoy(actual),
+      azar: e.azar || undefined, paneo: e.paneo || undefined, alReves: e.alReves || undefined, nota: e.nota || undefined });
+  };
+  ASIGNADAS.forEach(([id, n, , act]) => agregar(id, n, act));
+  [...POSIBLES, ...datos.nuevas].forEach(([id, n]) => agregar(id, n, null));
+  return JSON.stringify({ fecha: new Date().toISOString().slice(0, 10), asignaciones: filas }, null, 2);
+}
+document.getElementById('descargar').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([resultado()], { type: 'application/json' }));
+  a.download = 'asignacion_sonidos.json'; a.click();
+};
+document.getElementById('copiar').onclick = () => navigator.clipboard.writeText(resultado()).then(() => estado('Copiado'));
+document.getElementById('cargar').onclick = () => document.getElementById('archivo').click();
+document.getElementById('archivo').onchange = async (ev) => {
+  const f = ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  try {
+    const json = JSON.parse(await f.text());
+    const porRuta = Object.fromEntries(Object.keys(SONIDOS).map(k => [decodeURIComponent(SONIDOS[k].url.replace('../../', '')), k]));
+    const conocidas = new Set([...ASIGNADAS, ...POSIBLES].map(([id]) => id));
+    const nuevo = { elecciones: {}, nuevas: [] };
+    let faltan = 0;
+    (json.asignaciones || []).forEach(a => {
+      const lista = a.nuevo === 'ninguno' ? ['ninguno'] : [].concat(a.nuevo || []).map(r => porRuta[r] || (faltan++, ''));
+      nuevo.elecciones[a.accion] = { sonido: lista[0] || '', siguientes: lista.slice(1), pausas: a.pausas || [], volumen: a.volumen ?? 1, velocidad: a.velocidad, azar: !!a.azar, paneo: !!a.paneo, alReves: !!a.alReves, nota: a.nota || '' };
+      if (!conocidas.has(a.accion)) nuevo.nuevas.push([a.accion, a.nombre || a.accion]);
+    });
+    if (!confirm(`Cargar ${Object.keys(nuevo.elecciones).length} acciones del archivo? Reemplaza lo que hay ahora.`)) return;
+    datos = nuevo; guardar(); pintarTablas();
+    estado(faltan ? `Cargado; ${faltan} sonidos ya no están en la carpeta` : 'Cargado');
+  } catch (e) { alert('No se pudo leer el archivo: ' + e.message); }
+};
+document.getElementById('nueva').onclick = () => {
+  const n = prompt('Nombre de la acción nueva'); if (!n) return;
+  datos.nuevas.push(['nueva_' + Date.now().toString(36), n]); guardar(); pintarTablas();
+};
+document.getElementById('borrar').onclick = () => {
+  if (!confirm('¿Borrar todas las elecciones?')) return;
+  datos = { elecciones: {}, nuevas: [] }; guardar(); pintarTablas();
+};
+leerRipeados().then(() => { pintarTablas(); pintarBiblio(); pintarBotoneras(); });
+</script>
+</body>
+</html>

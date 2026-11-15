@@ -5,13 +5,25 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-14 - Claude: formulario para asignar sonidos
+
+- `tools/sonidos/` (http://localhost:5501/tools/sonidos/): las acciones que ya suenan (con ▶ de lo que suena hoy, también
+  los sintetizados) y las que podrían sonar; para cada una se elige un sonido o una frase (encadenados, con pausa en ms),
+  volumen, velocidad (0,5x a 2x; arranca con la de hoy) y casilleros de azar, paneo y al revés. Panel con un botón por
+  sonido para probar rápido y asignar a la acción marcada. Se guarda en el navegador; descarga y carga `asignacion_sonidos.json`.
+- `SonidosRipeados/` entra a git (sin el video del walkthrough, que pesa 190 MB). Lee la carpeta sola: lo nuevo aparece al recargar.
+  Mariano sumó `pcm_01`-`pcm_08` (se usa la versión de 44100 Hz). A `05_salto` se le cortó una cola metálica
+  (original en `respaldo/`).
+- Roadmap 5.14 con lo pendiente y las ideas de efectos para más adelante.
+- Pendiente: Mariano elige los sonidos y pasa el JSON; después se conectan en el juego.
+
 ## 2026-11-14 - Claude: public/assets ordenado
 
 - `public/assets/` pasó a carpetas por tipo: `musica/`, `sonidos/`, `sprites/` (hojas de cuadros: Moncho, ítems, demonio,
   escudo roto), `tiles/` (`MapTileSet.png`), `fondos/` (ahora también `Cielo.webp`), y siguen `graficos/` y `pergaminos/`.
   `favicon.ico` queda en la raíz. Las claves de las texturas y sonidos no cambiaron: solo las rutas (`BootScene`, editor).
 - `piso.png` no lo carga nadie: quedó en `sin_usar/` (Mariano: borrarlo o usarlo).
-- Sonidos de Ninja-Kid II separados en `SonidosRipeados/` (fuera de git), con un `LEEME.txt` de cuáles se identificaron.
+- Sonidos de Ninja-Kid II separados en `SonidosRipeados/` con un `LEEME.txt` de cuáles se identificaron.
 - Pasan `editor_prueba`, `niveles` y `moncho_animaciones`, y una prueba temporal de que carga todo (borrada).
 
 ## 2026-11-13 - Claude: animaciones nuevas de Moncho

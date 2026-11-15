@@ -133,6 +133,18 @@ Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define
         oscurece (las cartas no) y quedan a la vista un rato para leerlas, con un brillo en el ícono.
       - Cada pergamino tomado (positivo y negativo) queda grabado como ícono en la pared de la sala: J1 a la izquierda,
         J2 a la derecha. Los grabados usan otro archivo que los de las cartas (otra estética, "de piedra").
+- [~] **5.14 Sonidos nuevos (M).** *Elige Mariano.* Sonidos ripeados en `SonidosRipeados/` y formulario para asignarlos en
+      `tools/sonidos/` (http://localhost:5501/tools/sonidos/). Por acción: un sonido o una frase (varios encadenados, con
+      pausa entre ellos), volumen, velocidad y casilleros de variación al azar, paneo según el emisor y al revés. Sale un
+      `asignacion_sonidos.json` con el que se conectan en el juego. Falta: que Mariano elija y conectarlos.
+      Loop: lo decide el código según el sonido (los sostenidos: fuego, rodar, sirena), o se ve más adelante.
+      Ideas para después (2026-11-14):
+      - Recorte por código: tocar un tramo del archivo (desde/hasta ms) sin editarlo.
+      - Fundidos de entrada y salida; bajar la música mientras suena algo importante (muerte, jefe).
+      - Efectos generados al cargar (no cuestan nada en el juego): filtro pasa bajos o pasa altos, eco o retardo,
+        bitcrush, distorsión, trémolo o vibrato, otra envolvente (más seco).
+      - Superponer sonidos a la vez (uno grave y uno agudo) para golpes más gordos.
+      - Según el juego: tono que sube con el combo o la racha, volumen o filtro según la distancia o el jugador.
 
 ---
 

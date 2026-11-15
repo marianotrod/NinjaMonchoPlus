@@ -12,3 +12,6 @@ tools/navegador/capturas/
 
 # Respaldos de gráficos que se borran a mano
 *_backup_borrar.*
+
+# Video de referencia de los sonidos (190 MB, no entra en GitHub)
+SonidosRipeados/*.mp4
