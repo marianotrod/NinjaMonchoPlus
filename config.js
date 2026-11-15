@@ -79,6 +79,9 @@ export const CONFIG = {
   // tener esa cantidad de bolas a la vez), las llamas duran 'vida' veces más y se multiplican las chances de los otros
   // pergaminos de fuego (más bolas, las llamas escupen fuego)
   FUEGO_PROPAGA: { frecuencia: 2, vida: 2 },
+  // Variedad de las bolas de los tiles de fuego (las que salen hacia arriba o de costado). Algunas salen más altas
+  // (la subida por un valor al azar entre los de 'alta') y algunas más abiertas (lo de costado por uno de 'abierta')
+  VARIEDAD_BOLAS: { probAlta: 0.25, alta: [1.15, 1.45], probAbierta: 0.25, abierta: [1.3, 1.8] },
   FANTASMA_PISADO: 800,         // Pisado, el fantasma se frena y no daña durante esto (ms); después se enoja
   FANTASMA_ENOJO: 1.3,          // Enojado va esto más rápido y acelera esto más; ya no se lo puede pisar
   ENTRADA_ENEMIGO: 1200,        // Un enemigo es intocable mientras entra a la pantalla y esto más (ms)
@@ -245,7 +248,10 @@ export const FISICA = {
   ayudaSaltoPared: true,        // Una rayita celeste en la pared mientras se puede hacer el salto de pared (se apaga con el tiempo)             // ...o hasta esto después de despegarse, si se despegó dentro de la ventana (ms)
   // Agarre de pared (todos, sin pergamino): en el aire, empujando contra una pared, se queda colgado 'duracion' ms y después
   // se desliza a 'deslizar' px/s. Con salto trepa un poquito ('trepar', una vez cada 'esperaTrepar' ms) y el agarre empieza de nuevo.
-  agarrePared: { duracion: 700, deslizar: 50, trepar: -150, esperaTrepar: 300 },
+  // salida: al trepar más allá del borde de arriba, va hacia arriba de la pared a 'velocidad' px/s sin que mande el control,
+  // al menos 'minimo' ms (para quedar bien parado y no en el borde) y hasta apoyar los pies, o 'duracion' ms como mucho.
+  // Así no se pasa de una pared de un tile.
+  agarrePared: { duracion: 700, deslizar: 50, trepar: -150, esperaTrepar: 300, salida: { activa: true, velocidad: 60, minimo: 150, duracion: 400 } },
   knockbackX: 180,
   knockbackY: -220,
   duracionStun: 500,

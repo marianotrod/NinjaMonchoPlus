@@ -19,6 +19,11 @@ El detalle fino de cada cambio está en `git log`.
   fuego escupen el doble de seguido y pueden tener dos bolas a la vez, las llamas duran el doble y se duplican las chances
   de "más bolas de fuego" y "las llamas escupen fuego". Ícono provisorio FP (`tools/generar_iconos_pergaminos.py`).
 - Batería completa: 519 de 520; solo falla `parry_fuego_amigo`, el intermitente que ya estaba.
+- Salida de la trepada (`FISICA.agarrePared.salida`): al trepar más allá del borde de arriba, Moncho va hacia arriba de
+  la pared a 60 px/s sin que mande el control, al menos 150 ms y hasta apoyar los pies. Ya no se pasa de una pared de un tile.
+- Fuego: con "el fuego se propaga mejor", la llama que escupe al apagarse escupe dos bolas (la segunda hacia el otro lado).
+  Variedad en las bolas de los tiles (`CONFIG.VARIEDAD_BOLAS`): 1 de cada 4 sale más alta (×1,15 a ×1,45) y 1 de cada 4
+  más abierta (×1,3 a ×1,8 de costado). Escenario `trepar_y_fuego` (3/3).
 
 ## 2026-11-15 - Claude: gimnasio para calibrar
 

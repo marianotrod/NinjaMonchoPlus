@@ -1,0 +1,24 @@
+{
+  "descripcion": "Salida de la trepada sobre una pared de un tile, variedad de las bolas de fuego y llamas que escupen dos con el fuego que se propaga",
+  "query": "?debug&gimnasio",
+  "pasos": [
+    {"hasta": "window.prueba && prueba.enJuego() && prueba.estado().fase === 'gimnasio'", "timeout": 8000, "nombre": "arranca el gimnasio"},
+    {"eval": "(window.S = window.game.scene.getScene('NinjaMonchoScene'), prueba.gimnasio.todoAlDefault(), true)"},
+    {"hasta": "prueba.jugador(1).enPiso && !prueba.jugador(1).apareciendo", "timeout": 4000, "nombre": "Moncho aterrizó"},
+    {"eval": "(prueba.proteger(1), prueba.ponerJugador(1, 86, 150, 0, 40), true)"},
+    {"down": "ArrowRight"},
+    {"hasta": "prueba.jugador(1).pared !== null", "timeout": 1000, "nombre": "se agarra a la columna de un tile"},
+    {"press": "KeyZ", "delay": 40}, {"wait": 330},
+    {"press": "KeyZ", "delay": 40}, {"wait": 330},
+    {"press": "KeyZ", "delay": 40}, {"wait": 330},
+    {"press": "KeyZ", "delay": 40},
+    {"hasta": "window.game.scene.getScene('NinjaMonchoScene').jugador.impulso", "timeout": 600, "nombre": "pasa el borde: empieza la salida"},
+    {"hasta": "!window.game.scene.getScene('NinjaMonchoScene').jugador.impulso", "timeout": 800, "nombre": "termina la salida", "up": "ArrowRight"},
+    {"wait": 300},
+    {"verificar": "trepando una columna de un tile, la salida lo deja parado arriba (no se pasa al otro lado)", "eval": "(() => { const j = prueba.jugador(1); return { arriba: j.y < 112, enPiso: j.enPiso, sobreLaColumna: j.x > 94 && j.x < 114 }; })()", "espera": {"arriba": true, "enPiso": true, "sobreLaColumna": true}},
+
+    {"verificar": "las bolas de fuego varían: algunas más altas y algunas más abiertas", "eval": "(async () => { const F = await import('./mundo/Fuego.js'); prueba.gimnasio.pintarCelda(20, 17, 4); const tile = S.tilesFuego.find(t => Math.abs(t.x - 312) < 2 && Math.abs(t.y - 248) < 2); const arriba = tile.caras.find(c => c.fila === -1); tile.caras = [arriba]; const vs = []; for (let i = 0; i < 120; i++) { F.escupirFuego(S, tile); vs.push({ vx: tile.bola.body.velocity.x, vy: tile.bola.body.velocity.y }); tile.bola.destroy(); } prueba.gimnasio.pintarCelda(20, 17, 0); return { normales: vs.some(v => v.vy === -260), altas: vs.some(v => v.vy < -300), abiertas: vs.some(v => Math.abs(v.vx) > 100), topeAlto: vs.every(v => v.vy >= -260 * 1.46) }; })()", "espera": {"normales": true, "altas": true, "abiertas": true, "topeAlto": true}},
+
+    {"verificar": "con el fuego que se propaga, la llama que escupe al apagarse escupe dos bolas", "eval": "(async () => { const F = await import('./mundo/Fuego.js'); const { CONFIG } = await import('./config.js'); const dur = CONFIG.DURACION_LLAMA; CONFIG.DURACION_LLAMA = 50; prueba.ponerModGlobal('llamaBola', true); const random = Math.random; Math.random = () => 0.01; const cuenta = () => S.proyectilesDe('demonios').length; const r = {}; let antes = cuenta(); F.encenderLlama(S, 200, 272); await new Promise(ok => setTimeout(ok, 250)); r.sin = cuenta() - antes; prueba.ponerModGlobal('fuegoPropaga', true); antes = cuenta(); F.encenderLlama(S, 300, 272); await new Promise(ok => setTimeout(ok, 350)); r.con = cuenta() - antes; Math.random = random; CONFIG.DURACION_LLAMA = dur; prueba.ponerModGlobal('llamaBola', false); prueba.ponerModGlobal('fuegoPropaga', false); S.proyectilesDe('demonios').forEach(p => p.destroy()); return r; })()", "espera": {"sin": 1, "con": 2}}
+  ]
+}

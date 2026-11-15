@@ -616,7 +616,7 @@ const AYUDA_MODS = {
   llamaBola: 'Las llamas que se apagan a veces escupen otra bola de fuego (CONFIG.PROB_LLAMA_BOLA).',
   trampaSeExtiende: 'Tocar una trampa (un jugador o un enemigo) la extiende a un bloque vecino (CONFIG.ESPERA_EXTENSION_TRAMPA).',
   bolaExtra: 'Los tiles de fuego a veces escupen dos bolas en vez de una (CONFIG.PROB_BOLA_EXTRA).',
-  fuegoPropaga: 'Los tiles de fuego escupen el doble de seguido (y pueden tener dos bolas a la vez), las llamas duran el doble y se duplican las chances de más bolas y de llamas que escupen (CONFIG.FUEGO_PROPAGA).',
+  fuegoPropaga: 'Los tiles de fuego escupen el doble de seguido (y pueden tener dos bolas a la vez), las llamas duran el doble, se duplican las chances de más bolas y de llamas que escupen, y las llamas escupen dos bolas (CONFIG.FUEGO_PROPAGA).',
   explosionesLanzan: 'Las explosiones de los demonios lanzan monedas y talismanes que dañan a los jugadores.',
   velocidad: 'Multiplica la velocidad de carrera, del dash y del boulder (1 = normal).',
   salto: 'Multiplica la altura de los saltos (1,25 = 25 % más alto). Se ve al Reiniciar.',

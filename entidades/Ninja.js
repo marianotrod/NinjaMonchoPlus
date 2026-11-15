@@ -355,7 +355,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (enElPiso || agarrado || !this.enSaltoPared) this.dejarDeMirarPared();
     // Agarrado no empuja contra la pared (alcanza con que esté al lado): empujar hace que la física tome la esquina del
     // bloque de abajo como piso o como techo y lo trabe
-    const impulso = this.impulsoActivo;  // La atracción del golpe o el retroceso mandan sobre el control un instante
+    if (this.impulso && this.impulso.hastaPiso !== null && enElPiso && this.sceneRef.time.now >= this.impulso.hastaPiso) this.impulso = null;
+    const impulso = this.impulsoActivo;  // La atracción del golpe, el retroceso o la salida de la trepada mandan un instante
     if (impulso) this.setVelocityX(impulso.vx);
     else if (!this.enSaltoPared && !this.agarre && (enElPiso || this.tieneControlAereo)) this.moverHorizontal(input, enElPiso);
 
@@ -488,7 +489,11 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     const hacia = lado < 0 ? input.izquierda : (lado > 0 ? input.derecha : false);
     const empujando = hacia && (this.agarre ? this.hayParedAl(lado) : true);
     if (!empujando || this.enSaltoPared) {
+      // Trepando pasó el borde de arriba: la salida lo lleva hacia arriba de la pared, suave
+      const salida = FISICA.agarrePared.salida;
+      const coronando = this.agarre && this.agarre.trepando && hacia && !this.enSaltoPared;
       this.soltarPared();
+      if (coronando && salida.activa) this.impulsar('salida', lado * salida.velocidad, salida.duracion, { hastaPiso: salida.minimo });
       return false;
     }
     const config = FISICA.agarrePared;
@@ -880,9 +885,11 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   // Empujón sin daño (explosiones y katanazos del compañero: "fuego amigo cinético")
-  // Un impulso horizontal por un rato, sin control: la atracción del golpe y el retroceso
-  impulsar(tipo, vx, duracion) {
-    this.impulso = { tipo, vx, fin: this.sceneRef.time.now + duracion };
+  // Un impulso horizontal por un rato, sin control: la atracción del golpe, el retroceso y la salida de la trepada
+  // hastaPiso: ms después de los cuales termina al apoyar los pies (la salida de la trepada); null: no mira el piso
+  impulsar(tipo, vx, duracion, { hastaPiso = null } = {}) {
+    const ahora = this.sceneRef.time.now;
+    this.impulso = { tipo, vx, fin: ahora + duracion, hastaPiso: hastaPiso === null ? null : ahora + hastaPiso };
   }
 
   get impulsoActivo() {

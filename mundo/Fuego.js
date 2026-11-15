@@ -36,16 +36,27 @@ export function crearBola(escena, x, y, vx, vy) {
   return bola;
 }
 
+// Algunas bolas salen más altas o más abiertas (CONFIG.VARIEDAD_BOLAS). La de abajo cae: no cambia.
+function variar(cara, vx) {
+  const { probAlta, alta, probAbierta, abierta } = CONFIG.VARIEDAD_BOLAS;
+  let vy = cara.vy;
+  if (vy >= 0) return { vx, vy };
+  if (Math.random() < probAlta) vy *= Phaser.Math.FloatBetween(alta[0], alta[1]);
+  if (Math.random() < probAbierta) vx *= Phaser.Math.FloatBetween(abierta[0], abierta[1]);
+  return { vx: Math.round(vx), vy: Math.round(vy) };
+}
+
 export function escupirFuego(escena, tile) {
   const cara = Phaser.Math.RND.pick(tile.caras);
-  const vx = Phaser.Math.Between(cara.vx[0], cara.vx[1]);
+  const variada = variar(cara, Phaser.Math.Between(cara.vx[0], cara.vx[1]));
+  const { vx } = variada;
   const x = tile.x + cara.col * SALIDA;
   const y = tile.y + cara.fila * SALIDA;
-  tile.bola = crearBola(escena, x, y, vx, cara.vy);
+  tile.bola = crearBola(escena, x, y, vx, variada.vy);
   if (tile.bola) (tile.bolas ??= []).push(tile.bola);
   escena.efectoChispas(x, y, 0xf97316);
   // Pergamino: a veces sale una más
-  if (escena.modsGlobal.bolaExtra && Math.random() < probabilidad(escena, CONFIG.PROB_BOLA_EXTRA)) crearBola(escena, x, y, -vx, cara.vy);
+  if (escena.modsGlobal.bolaExtra && Math.random() < probabilidad(escena, CONFIG.PROB_BOLA_EXTRA)) crearBola(escena, x, y, -vx, variada.vy);
 }
 
 // Caída pesada nivel 2: una bola como las del tile de fuego, pero del jugador: celeste y solo daña a los enemigos.
@@ -67,7 +78,7 @@ export function crearBolaCeleste(escena, duenio, x, y, vx, vy) {
   return bola;
 }
 
-function encenderLlama(escena, x, piso) {
+export function encenderLlama(escena, x, piso) {
   const llama = escena.llamas.create(x, piso - 8, 'llama');
   llama.body.setSize(12, 12);
   llama.body.setOffset(2, 4);
@@ -76,8 +87,14 @@ function encenderLlama(escena, x, piso) {
     if (!llama.active) return;
     if (llama.body) llama.body.enable = false;
     // Pergamino: al apagarse puede escupir otra bola
+    // Con el fuego que se propaga, escupe varias (hacia los dos lados)
     if (escena.modsGlobal.llamaBola && Math.random() < probabilidad(escena, CONFIG.PROB_LLAMA_BOLA)) {
-      crearBola(escena, llama.x, llama.y - 4, Phaser.Math.Between(-80, 80), -220);
+      const primera = Phaser.Math.Between(-80, 80);
+      crearBola(escena, llama.x, llama.y - 4, primera, -220);
+      // Las demás, hacia el otro lado que la primera
+      for (let i = 1; i < frecuenciaFuego(escena); i++) {
+        crearBola(escena, llama.x, llama.y - 4, -Math.sign(primera || 1) * Phaser.Math.Between(20, 80), -220);
+      }
     }
     escena.tweens.add({ targets: llama, alpha: 0, duration: 300, onComplete: () => llama.destroy() });
   });
