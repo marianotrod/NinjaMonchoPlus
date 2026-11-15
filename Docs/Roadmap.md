@@ -133,6 +133,8 @@ Donde dice *diseño: Mariano*, el código prepara el lugar y él dibuja o define
         oscurece (las cartas no) y quedan a la vista un rato para leerlas, con un brillo en el ícono.
       - Cada pergamino tomado (positivo y negativo) queda grabado como ícono en la pared de la sala: J1 a la izquierda,
         J2 a la derecha. Los grabados usan otro archivo que los de las cartas (otra estética, "de piedra").
+- [x] **5.15 Gimnasio para calibrar (M).** `?debug&gimnasio` con menú (Tab o Select) que pausa: spawns, habilidades, armas
+      y todos los números con su default; descarga `ajustes_gimnasio.json` para pasar los nuevos defaults al código.
 - [~] **5.14 Sonidos nuevos (M).** *Elige Mariano.* Sonidos ripeados en `SonidosRipeados/` y formulario para asignarlos en
       `tools/sonidos/` (http://localhost:5501/tools/sonidos/). Por acción: un sonido o una frase (varios encadenados, con
       pausa entre ellos), volumen, velocidad y casilleros de variación al azar, paneo según el emisor y al revés. Sale un

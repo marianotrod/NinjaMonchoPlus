@@ -5,6 +5,26 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-15 - Claude: gimnasio para calibrar
+
+- `?debug&gimnasio`: mapa propio (`public/niveles/gimnasio.json`, tipo prueba; se puede cargar otro desde el menú), sin reloj
+  ni fin de nivel, 9 vidas que se rellenan. Fases `gimnasio` (los golpes aturden) y `gimnasioVida` (matan) en `reglas/Fases.js`.
+- Tab o Select: menú que pausa el juego (`sistemas/Gimnasio.js`). 1 o 2 jugadores, mapa, reiniciar; spawnear cada enemigo
+  y jefe, borrarlos o congelarlos; habilidades (nivel 1 o 2), armas y munición infinita.
+- Números: Moncho (`FISICA` y lo suyo de `CONFIG`), armas, cada enemigo o jefe spawneado, y "Otros" con el resto de `config.js`.
+  Cada uno con su default (el valor de hoy), ↺, buscador y el comentario del código. Se guardan en el navegador;
+  "Descargar ajustes" da `ajustes_gimnasio.json` para pasarlos al código.
+- Pergaminos: los modificadores que dejan (para todos y por jugador), editables en el menú; no se muestran los que en el
+  gimnasio no hacen nada (sala, reloj, fantasma, monedas, puntaje). Se conservan al reiniciar.
+- Pergaminos del menú con un ? que explica qué hace cada uno.
+- Arreglo: las animaciones sin loop de Moncho (salto de pared, aterrizaje justo) se repetían en loop: `reproducir`
+  las volvía a arrancar al terminar. Ahora quedan en su último cuadro. Salto de pared: 19 un instante, 20 hasta
+  recuperar el control (ya no espera a que se apriete una dirección) y ahí el salto normal.
+- Escenario `gimnasio` (13/13). Pasan `niveles` (ahora 78 niveles), `fases` y `enemigos`.
+- Batería completa: 509 de 513. Tres eran la cantidad de niveles en `editor` y `editor_borrador` (ahora 78, corregido).
+  `parry_fuego_amigo` (el bumerán al volver) falla una vez cada dos también con el código anterior: es intermitente, no es de esto.
+- Pendiente: Mariano calibra y pasa el archivo. Revisar por qué `parry_fuego_amigo` es intermitente.
+
 ## 2026-11-14 - Claude: formulario para asignar sonidos
 
 - `tools/sonidos/` (http://localhost:5501/tools/sonidos/): las acciones que ya suenan (con ▶ de lo que suena hoy, también

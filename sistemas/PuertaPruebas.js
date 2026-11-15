@@ -12,6 +12,7 @@ import { crearBola, escupirFuego } from '../mundo/Fuego.js';
 import { tomarEfecto } from '../reglas/Pergaminos.js';
 import { EVENTOS } from '../datos/Eventos.js';
 import { Sonido } from './Sonido.js';
+import { puertaGimnasio } from './Gimnasio.js';
 
 // Enemigo solo para las pruebas: camina y da la vuelta en paredes y bordes, sin nada al azar. Salió del juego (roadmap 5.11),
 // pero los escenarios lo usan como enemigo simple. Se agrega al Bestiario solo con ?debug y nunca sale al azar (peso 0).
@@ -46,6 +47,7 @@ export function instalarPuertaPruebas(game) {
   });
 
   window.prueba = {
+    gimnasio: puertaGimnasio,  // Solo sirve con ?debug&gimnasio
     // --- Lectura ---
     escenas: () => game.scene.getScenes(true).map(s => s.scene.key),
     enJuego: () => game.scene.isActive('NinjaMonchoScene') && !!juego().jugadores,

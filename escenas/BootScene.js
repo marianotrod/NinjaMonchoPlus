@@ -6,6 +6,7 @@ import { armarCartas } from '../reglas/Pergaminos.js';
 import { EFECTOS } from '../datos/Pergaminos.js';
 import { Guardado } from '../sistemas/Guardado.js';
 import { nuevaPartida } from '../reglas/Partida.js';
+import { aplicarAjustesGuardados, partidaDeGimnasio } from '../sistemas/Gimnasio.js';
 import { cargarNiveles, registrarNiveles } from '../mundo/Niveles.js';
 
 // Carga todos los recursos una sola vez, genera las texturas provisorias, crea las animaciones
@@ -71,7 +72,11 @@ export default class BootScene extends Phaser.Scene {
     this.registry.set('volSonido', Guardado.leer('volSonido', 5));
     this.registry.set('record', Guardado.leer('record', 0));
 
-    if (ARRANQUE_DEBUG.nivel) {
+    if (ARRANQUE_DEBUG.gimnasio) {
+      aplicarAjustesGuardados();
+      this.registry.set('partida', partidaDeGimnasio(ARRANQUE_DEBUG.jugadores, ARRANQUE_DEBUG.mapa));
+      this.scene.start('NinjaMonchoScene');
+    } else if (ARRANQUE_DEBUG.nivel) {
       const partida = nuevaPartida(ARRANQUE_DEBUG.jugadores, ARRANQUE_DEBUG.nivel);
       partida.jefeForzado = ARRANQUE_DEBUG.jefe;
       if (ARRANQUE_DEBUG.sala) {

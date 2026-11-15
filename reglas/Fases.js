@@ -31,6 +31,9 @@ const REGLAS = {
   transicion: { ...BASE, jugable: true, enemigosVulnerables: true },
   sala: { ...BASE, jugable: true, soloBasico: true, terminaConElTiempo: true },
   caceria: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: VIDA, cuentaBajas: true, escupeFuego: true, recomienzoPorFantasma: FASE },
+  // Gimnasio (?debug&gimnasio): se juega sin reloj ni fin; los golpes aturden y los enemigos se pueden matar
+  gimnasio: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: ATURDE, escupeFuego: true },
+  gimnasioVida: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: VIDA, escupeFuego: true },
   jefe: { ...BASE, jugable: true, enemigosVulnerables: true, golpeAlNinja: VIDA, invocaAyudantes: true, escupeFuego: true, recomienzoPorFantasma: NIVEL }
 };
 

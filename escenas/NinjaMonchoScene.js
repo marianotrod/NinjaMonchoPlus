@@ -13,6 +13,7 @@ import { nuevaPartida, prepararNivel, esNivelJefe, esNivelFinal, musicaDelNivel 
 import { armarCartas, textoEfecto, tomarCarta, tomarEfecto } from '../reglas/Pergaminos.js';
 import { efectoPorId } from '../datos/Pergaminos.js';
 import { RECOMIENZO, reglasDe } from '../reglas/Fases.js';
+import { iniciarGimnasio } from '../sistemas/Gimnasio.js';
 import { PROTECCION, crearGolpe, golpeaAliado, itemLanzado, resolverGolpe } from '../reglas/Resolvedor.js';
 import { marcarPeligros } from '../mundo/Peligros.js';
 import { actualizarPausaDeFase, cartelesDeFase, cortarPausaDeFase } from '../sistemas/PausaDeFase.js';
@@ -197,7 +198,9 @@ export default class NinjaMonchoScene extends Phaser.Scene {
   // FASES DEL NIVEL
   // ==========================================
   mostrarIntro() {
-    if (this.esSala) {
+    if (ARRANQUE_DEBUG.gimnasio && this.partida.gimnasio) {
+      iniciarGimnasio(this);
+    } else if (this.esSala) {
       this.events.emit(EVENTOS.BANNER, { titulo: i18n.t('sala_titulo'), subtitulo: i18n.t('sala_sub'), color: '#4ADE80', duracion: CONFIG.CUENTA_SALA * 3 });
       [3, 2, 1].forEach((numero, i) => this.time.delayedCall(CONFIG.CUENTA_SALA * (i + 1), () => {
         this.events.emit(EVENTOS.BANNER, { titulo: `${numero}`, color: '#FBBF24', duracion: CONFIG.CUENTA_SALA - 50, chico: true });
@@ -1055,7 +1058,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
         demonio.textoDebug.setPosition(demonio.x, demonio.y - 18);
         demonio.textoDebug.setText(`Y: ${demonio.ultimoReboteY || 0}\nC: ${demonio.contadorRebotes || 0}`);
       }
-      demonio.actualizarComportamiento();
+      if (!this.enemigosCongelados) demonio.actualizarComportamiento();  // Gimnasio: congelados
     });
 
     actualizarProyectiles(this);
@@ -1065,7 +1068,7 @@ export default class NinjaMonchoScene extends Phaser.Scene {
     if (this.conWrap) this.aplicarWrap();
 
     this.fantasmas.forEach(fantasma => fantasma.actualizar(this.objetivoDeFantasma(fantasma), delta));
-    if (this.jefe && this.jefe.active) this.jefe.actualizar();
+    if (this.jefe && this.jefe.active && !this.enemigosCongelados) this.jefe.actualizar();
   }
 
   // El ninja muerto no cruza: sigue cayendo hasta salir de la pantalla y recién ahí pierde la vida

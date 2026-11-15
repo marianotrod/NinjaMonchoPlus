@@ -9,6 +9,9 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
 - `python -m http.server 5501` desde la raíz del repo, y abrir http://localhost:5501
 - Modo desarrollo: `?debug` (teclas de prueba) y `?debug&nivel=5&jugadores=2&jefe=oni` para arrancar en un nivel (`&mapa=n-valle` elige el mapa).
   `?debug&nivel=2&sala&mapa=sala-pergaminos` arranca en una sala de pergaminos.
+  `?debug&gimnasio` (con `&jugadores=2` o `&mapa=`): gimnasio para calibrar (`sistemas/Gimnasio.js`). Tab o Select abre un menú
+  que pausa: spawns, habilidades, armas y todos los números (default = el de hoy). Descarga `ajustes_gimnasio.json`:
+  lista de `archivo`, `objeto`, `ruta`, `default` y `valor` para pasar al código como nuevos defaults.
 
 ## Estructura
 - `main.js`: configuración de Phaser (512x288, arcade physics, gamepad), lista de escenas y escalado entero del canvas.

@@ -111,8 +111,12 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   get rodando() { return this.estado === ESTADO.RODANDO; }
 
   // Animaciones de datos/Animaciones.js (las mismas para las dos hojas). reiniciar: la empieza aunque ya esté andando.
+  // Sin reiniciar, si ya es la animación de ahora no la toca: una sin loop que terminó queda en su último cuadro
+  // (play con ignoreIfPlaying la volvería a arrancar, porque terminada ya no cuenta como "sonando")
   reproducir(nombre, reiniciar = false) {
-    this.anims.play(claveAnimacion(this.texture.key, nombre), !reiniciar);
+    const clave = claveAnimacion(this.texture.key, nombre);
+    if (!reiniciar && this.anims.currentAnim && this.anims.currentAnim.key === clave) return;
+    this.anims.play(clave);
   }
 
   // Quieto: primero el cuadro de siempre; si sigue quieto un rato, las poses
@@ -347,9 +351,8 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
     if (!enElPiso && !this.tieneControlAereo && !input.izquierda && !input.derecha) {
       this.tieneControlAereo = true;
     }
-    // Deja de mirar la pared al tocar el piso o una pared, o cuando vuelve a manejar el movimiento en el aire
-    const vuelveAMover = !this.enSaltoPared && this.tieneControlAereo && (input.izquierda || input.derecha);
-    if (enElPiso || agarrado || vuelveAMover) this.dejarDeMirarPared();
+    // Deja de mirar la pared al tocar el piso o una pared, o apenas recupera el control del salto (termina el bloqueo)
+    if (enElPiso || agarrado || !this.enSaltoPared) this.dejarDeMirarPared();
     // Agarrado no empuja contra la pared (alcanza con que esté al lado): empujar hace que la física tome la esquina del
     // bloque de abajo como piso o como techo y lo trabe
     if (!this.enSaltoPared && !this.agarre && (enElPiso || this.tieneControlAereo)) this.moverHorizontal(input, enElPiso);
@@ -800,7 +803,7 @@ export default class Ninja extends Phaser.Physics.Arcade.Sprite {
   }
 
   municionInfinita() {
-    return this.sceneRef.fase === 'caceria' && this.mods.municionInfinitaCaceria;
+    return (this.sceneRef.fase === 'caceria' && this.mods.municionInfinitaCaceria) || !!this.sceneRef.municionInfinitaGimnasio;
   }
 
   aplicarDaño(demonioX) {

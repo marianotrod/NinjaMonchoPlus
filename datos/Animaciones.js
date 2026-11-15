@@ -24,7 +24,7 @@ const MONCHO = {
   lanzar:          { cuadros: '15-17', fps: 15 },             // Al tirar el arma (shuriken, bumerán, bomba)
   // Salto de pared: pica en la pared y vuela mirándola, hasta que vuelve a mover o hace otra cosa.
   // Dibujado con la pared a la derecha (el juego lo da vuelta).
-  saltoPared:      { cuadros: '19-20', fps: 10 },
+  saltoPared:      { cuadros: '19-20', fps: 10 },   // 19 un instante al picar; 20 hasta recuperar el control (sin loop)
   colgado:         { cuadros: '50' },                         // Agarrado o deslizando por la pared (pared a la derecha)
   trepar:          { cuadros: '50-52', fps: 12 },             // El saltito para trepar
   aterrizajeJusto: { cuadros: '29-30', fps: 8 },              // Boulder: saltó apenas a tiempo, aterriza sin perder el control

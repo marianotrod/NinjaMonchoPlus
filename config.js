@@ -17,6 +17,7 @@ export const ARRANQUE_DEBUG = {
   sala: DEBUG && parametros.has('sala'),         // arranca en la sala de pergaminos; con &mapa= usa esa sala
   enemigos: DEBUG ? leerEnemigosDePrueba(parametros.get('enemigos')) : null,  // lo elige el editor al probar (ver abajo)
   fase: DEBUG ? parametros.get('fase') : null,   // caceria: el nivel común arranca directo en la Cacería (para probar mapas)
+  gimnasio: DEBUG && parametros.has('gimnasio'),   // Gimnasio: sin reloj ni fin de nivel, para probar y calibrar (sistemas/Gimnasio.js)
   sinTiempo: DEBUG && parametros.has('sinTiempo'), // el reloj no baja (salvo en la sala de pergaminos): para probar mapas
   // pergaminos=parryDevuelve,katanaLarga: los dos jugadores arrancan con esos efectos (ids de datos/Pergaminos.js)
   pergaminos: DEBUG && parametros.get('pergaminos') ? parametros.get('pergaminos').split(',').filter(Boolean) : []
