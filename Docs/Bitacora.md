@@ -5,6 +5,18 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-17 - Claude: hoja de tiles nueva y paleta del editor
+
+- `MapTileSet.png` pasó a 512 de ancho (32 columnas): los 110 tiles de antes con el mismo número (0-127), y los ripeados
+  del original (Mariano) separados por ambiente con una fila vacía entre cada uno: Castillo, Bosque, Cueva (raíces y rocas),
+  Agua y cascadas, Acantilados, Bloques/lava/colinas, Cueva (estalactitas), Cielo/mar/piedras, Piedras de colores, Cristales.
+  Los cortes respetan el orden del ripeo; se verificó que estén los mismos tiles. Los repetidos quedaron (sacarlos dejaba
+  agujeros). Los nombres y rangos, en `public/assets/tiles/MapTileSet.json`: se pueden cambiar a mano.
+- Mapas y generador de niveles base: `"columnas"` de 10 a 32 (los números de tile no cambian). El fuego sigue en 91-94.
+- Editor: paleta por bloques plegables con nombre (abrir/cerrar todos), ocultar vacíos, zoom ×1/×2/×3, número del tile
+  al pasar el mouse, "ir al tile N". Recuerda lo elegido. Escenario `editor_paleta` (6/6); pasan `editor`, `editor_prueba`,
+  `editor_borrador`, `niveles`, `peligros`.
+
 ## 2026-11-15 - Claude: atracción y retroceso de la katana
 
 - Atracción (`FISICA.atraccionKatana`): al atacar de costado, en el piso o en el aire, si un enemigo o jefe queda adelante

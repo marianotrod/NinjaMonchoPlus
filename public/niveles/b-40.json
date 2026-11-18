@@ -7,7 +7,7 @@
   "musica": null,
   "fondoImagen": "fondo-cielo",
   "tiempo": null,
-  "tileset": {"clave":"MapTileSet","columnas":10},
+  "tileset": {"clave":"MapTileSet","columnas":32},
   "wrap": true,
   "capas": {
     "fondo": [

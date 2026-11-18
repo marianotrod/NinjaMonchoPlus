@@ -74,6 +74,14 @@ button.activo { background: #2563eb; border-color: #60a5fa; }
 #recientes canvas { width: 32px; height: 32px; image-rendering: pixelated; cursor: pointer; }
 
 #tileset { display: block; image-rendering: pixelated; cursor: pointer; }
+.controles-paleta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 6px; font-size: 12px; }
+.controles-paleta button { padding: 2px 6px; }
+.controles-paleta button.activo { border-color: #fbbf24; color: #fbbf24; }
+.controles-paleta .ir-tile { width: 76px; }
+#contenido-paleta details { border-top: 1px solid #374151; padding: 3px 0; }
+#contenido-paleta summary { cursor: pointer; font-size: 12px; color: #fbbf24; padding: 2px 0; }
+#contenido-paleta summary small { color: #9ca3af; }
+.tiles-seccion { display: block; image-rendering: pixelated; cursor: pointer; margin-top: 3px; }
 
 .opcion { display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 4px; text-align: left; }
 .muestra { width: 20px; height: 20px; border: 1px solid #000; flex: none; }

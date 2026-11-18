@@ -216,7 +216,7 @@ def generar(n):
     nivel = {
         'id': f'b-{n:02d}', 'nombre': f'Base {n:02d} · {nombre_familia}' + (' (wrap)' if wrap else ''),
         'tipo': 'normal', 'tier': tier, 'jefe': None, 'musica': None, 'fondoImagen': 'fondo-cielo', 'tiempo': None,
-        'tileset': {'clave': 'MapTileSet', 'columnas': 10},
+        'tileset': {'clave': 'MapTileSet', 'columnas': 32},
         'capas': {'fondo': [[-1] * COLUMNAS for _ in range(FILAS)], 'skin': skin(m), 'logica': m.l},
         'objetos': spawns(m)
     }

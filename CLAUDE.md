@@ -28,7 +28,8 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
   perdiendoVida y fin interrumpen. La UI se entera por eventos (`this.events.emit(...)`).
 - Reglas de juego: se consulta `this.reglas` (tabla de `reglas/Fases.js`), no `this.fase`. Todo golpe pasa por `resolverGolpe` (`reglas/Resolvedor.js`).
   Los proyectiles viven en un solo grupo (`this.proyectiles`), cada uno con `bando` y `duenio`.
-- Tiles de `MapTileSet.png`: la hoja crece hacia abajo y no cambia de ancho. Los índices especiales están en `TILES` (`config.js`). Los cuadros del fuego se animan solos desde el 91 hasta el primer tile vacío.
+- Tiles de `MapTileSet.png`: 512 px de ancho (32 columnas); crece hacia abajo y no cambia de ancho. Los bloques con nombre
+  de la paleta del editor están en `public/assets/tiles/MapTileSet.json` (`secciones`: nombre, desde, hasta). Los índices especiales están en `TILES` (`config.js`). Los cuadros del fuego se animan solos desde el 91 hasta el primer tile vacío.
 - `public/niveles/`: un JSON por nivel más `indice.json`. `public/assets/`: `musica/`, `sonidos/`, `sprites/` (hojas de cuadros),
   `tiles/` (`MapTileSet.png`), `fondos/`, `graficos/` (sueltos), `pergaminos/`; `sin_usar/` no se carga. `Docs/`: GDD, GDD técnico, lore, `Roadmap.md` y `Bitacora.md`.
 - `tools/editor/`: editor de niveles. Con el juego servido, abrir http://localhost:5501/tools/editor/ en Chrome o Edge.

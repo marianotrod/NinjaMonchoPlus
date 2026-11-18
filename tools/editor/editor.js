@@ -416,26 +416,152 @@ function dibujarRecientes() {
   }));
 }
 
-function paletaDeTiles() {
-  const escala = 3;
-  const tileset = document.createElement('canvas');
-  tileset.id = 'tileset';
-  tileset.width = columnasTileset() * T * escala;
-  tileset.height = filasTileset() * T * escala;
-  const pincel = tileset.getContext('2d');
+// --- Paleta de tiles ---
+// Los tiles se muestran por número, acomodados al ancho del panel, en bloques plegables. Los bloques (y sus nombres)
+// salen de public/assets/tiles/MapTileSet.json; si no está, bloques de 128. Las preferencias quedan en el navegador.
+const CLAVE_PALETA = 'editor-paleta';
+const paleta = { zoom: 2, ocultarVacios: true, abiertas: null, secciones: [], vacios: new Set() };
+try { Object.assign(paleta, JSON.parse(localStorage.getItem(CLAVE_PALETA)) || {}); } catch (e) {}
+const guardarPaleta = () => {
+  try { localStorage.setItem(CLAVE_PALETA, JSON.stringify({ zoom: paleta.zoom, ocultarVacios: paleta.ocultarVacios, abiertas: paleta.abiertas })); } catch (e) {}
+};
+
+// Qué tiles están vacíos (sin ningún píxel visible) y en qué bloques se agrupan
+async function prepararPaleta() {
+  const lienzo = document.createElement('canvas');
+  lienzo.width = imagenTileset.width;
+  lienzo.height = imagenTileset.height;
+  const c = lienzo.getContext('2d');
+  c.drawImage(imagenTileset, 0, 0);
+  const datos = c.getImageData(0, 0, lienzo.width, lienzo.height).data;
+  const cols = columnasTileset(), total = cols * filasTileset();
+  paleta.vacios = new Set();
+  for (let n = 0; n < total; n++) {
+    const x0 = (n % cols) * T, y0 = Math.floor(n / cols) * T;
+    let vacio = true;
+    for (let y = 0; y < T && vacio; y++) for (let x = 0; x < T; x++) if (datos[((y0 + y) * lienzo.width + x0 + x) * 4 + 3]) { vacio = false; break; }
+    if (vacio) paleta.vacios.add(n);
+  }
+  let secciones = [];
+  try { secciones = (await fetch('../../public/assets/tiles/MapTileSet.json', { cache: 'no-store' }).then(r => r.json())).secciones || []; } catch (e) {}
+  if (!secciones.length) for (let d = 0; d < total; d += 128) secciones.push({ nombre: `Tiles ${d}-${Math.min(total, d + 128) - 1}`, desde: d, hasta: Math.min(total, d + 128) - 1 });
+  // Si hay tiles con dibujo después del último bloque (se agregaron a la hoja y no al .json), van en uno más
+  const ultimo = Math.max(...secciones.map(s => s.hasta));
+  let ultimoConDibujo = total - 1;
+  while (ultimoConDibujo > ultimo && paleta.vacios.has(ultimoConDibujo)) ultimoConDibujo--;
+  if (ultimoConDibujo > ultimo) secciones.push({ nombre: 'Otros', desde: ultimo + 1, hasta: ultimoConDibujo });
+  paleta.secciones = secciones;
+  if (!Array.isArray(paleta.abiertas)) paleta.abiertas = secciones.map(s => s.nombre);
+}
+
+const seccionDeTile = (frame) => paleta.secciones.find(s => frame >= s.desde && frame <= s.hasta);
+
+// Un bloque: los tiles de la sección en filas del ancho que entra en el panel
+function lienzoDeSeccion(seccion, anchoPanel) {
+  const lado = T * paleta.zoom;
+  const tiles = [];
+  for (let n = seccion.desde; n <= seccion.hasta; n++) if (!paleta.ocultarVacios || !paleta.vacios.has(n)) tiles.push(n);
+  const porFila = Math.max(1, Math.floor(anchoPanel / lado));
+  const lienzo = document.createElement('canvas');
+  lienzo.className = 'tiles-seccion';
+  lienzo.width = porFila * lado;
+  lienzo.height = Math.max(1, Math.ceil(tiles.length / porFila)) * lado;
+  const pincel = lienzo.getContext('2d');
   pincel.imageSmoothingEnabled = false;
   pincel.fillStyle = '#000';
-  pincel.fillRect(0, 0, tileset.width, tileset.height);
-  pincel.drawImage(imagenTileset, 0, 0, tileset.width, tileset.height);
-  const lado = T * escala;
-  pincel.strokeStyle = '#fbbf24';
-  pincel.lineWidth = 3;
-  pincel.strokeRect((estado.tile % columnasTileset()) * lado + 1, Math.floor(estado.tile / columnasTileset()) * lado + 1, lado - 2, lado - 2);
-  tileset.addEventListener('click', (evento) => {
-    elegirTile(Math.floor(evento.offsetY / lado) * columnasTileset() + Math.floor(evento.offsetX / lado));
+  pincel.fillRect(0, 0, lienzo.width, lienzo.height);
+  tiles.forEach((n, i) => dibujarTile(pincel, n, (i % porFila) * lado, Math.floor(i / porFila) * lado, lado));
+  const i = tiles.indexOf(estado.tile);
+  if (i >= 0) {
+    pincel.strokeStyle = '#fbbf24';
+    pincel.lineWidth = 2;
+    pincel.strokeRect((i % porFila) * lado + 1, Math.floor(i / porFila) * lado + 1, lado - 2, lado - 2);
+  }
+  const tileEn = (evento) => tiles[Math.floor(evento.offsetY / lado) * porFila + Math.floor(evento.offsetX / lado)];
+  lienzo.addEventListener('mousemove', (evento) => { const n = tileEn(evento); lienzo.title = n === undefined ? '' : `Tile ${n}`; });
+  lienzo.addEventListener('click', (evento) => {
+    const n = tileEn(evento);
+    if (n === undefined) return;
+    elegirTile(n);
     dibujarPaleta();
   });
-  return tileset;
+  return lienzo;
+}
+
+// Zoom, ocultar vacíos, ir a un tile, abrir o cerrar todos
+function controlesDePaleta() {
+  const caja = document.createElement('div');
+  caja.className = 'controles-paleta';
+  const zoom = [1, 2, 3].map(z => {
+    const b = document.createElement('button');
+    b.textContent = `×${z}`;
+    if (paleta.zoom === z) b.className = 'activo';
+    b.addEventListener('click', () => { paleta.zoom = z; guardarPaleta(); dibujarPaleta(); });
+    return b;
+  });
+  const vacios = document.createElement('label');
+  const check = document.createElement('input');
+  check.type = 'checkbox';
+  check.checked = paleta.ocultarVacios;
+  check.addEventListener('change', () => { paleta.ocultarVacios = check.checked; guardarPaleta(); dibujarPaleta(); });
+  vacios.append(check, ' ocultar vacíos');
+  const ir = document.createElement('input');
+  ir.type = 'number';
+  ir.min = 0;
+  ir.placeholder = 'ir al tile';
+  ir.className = 'ir-tile';
+  ir.addEventListener('keydown', (evento) => {
+    if (evento.key !== 'Enter') return;
+    irAlTile(Number(ir.value));
+  });
+  const todos = (abrir) => () => { paleta.abiertas = abrir ? paleta.secciones.map(s => s.nombre) : []; guardarPaleta(); dibujarPaleta(); };
+  const abrirTodos = document.createElement('button');
+  abrirTodos.textContent = 'abrir todos';
+  abrirTodos.addEventListener('click', todos(true));
+  const cerrarTodos = document.createElement('button');
+  cerrarTodos.textContent = 'cerrar todos';
+  cerrarTodos.addEventListener('click', todos(false));
+  caja.append(...zoom, vacios, ir, abrirTodos, cerrarTodos);
+  return caja;
+}
+
+// Elige el tile N, abre su bloque y lo muestra
+function irAlTile(n) {
+  const seccion = seccionDeTile(n);
+  if (!Number.isInteger(n) || !seccion) { avisar(`No hay tile ${n}`, 'error'); return false; }
+  elegirTile(n);
+  if (!paleta.abiertas.includes(seccion.nombre)) paleta.abiertas.push(seccion.nombre);
+  if (paleta.vacios.has(n)) paleta.ocultarVacios = false;
+  guardarPaleta();
+  dibujarPaleta();
+  const bloque = [...$('contenido-paleta').querySelectorAll('details')].find(d => d.dataset.nombre === seccion.nombre);
+  if (bloque) bloque.scrollIntoView({ block: 'nearest' });
+  return true;
+}
+
+function paletaDeTiles() {
+  const contenido = $('contenido-paleta');
+  const ancho = (contenido.clientWidth || 330) - 14;  // Lo que deja la barra de desplazamiento
+  const bloques = paleta.secciones.map(seccion => {
+    const bloque = document.createElement('details');
+    bloque.dataset.nombre = seccion.nombre;
+    bloque.open = paleta.abiertas.includes(seccion.nombre);
+    const titulo = document.createElement('summary');
+    titulo.textContent = `${seccion.nombre} `;
+    const rango = document.createElement('small');
+    rango.textContent = `${seccion.desde}-${seccion.hasta}`;
+    titulo.append(rango);
+    bloque.append(titulo);
+    if (bloque.open) bloque.append(lienzoDeSeccion(seccion, ancho));
+    bloque.addEventListener('toggle', () => {
+      paleta.abiertas = paleta.abiertas.filter(n => n !== seccion.nombre);
+      if (bloque.open) paleta.abiertas.push(seccion.nombre);
+      guardarPaleta();
+      if (bloque.open && !bloque.querySelector('canvas')) bloque.append(lienzoDeSeccion(seccion, ancho));
+    });
+    return bloque;
+  });
+  return [controlesDePaleta(), ...bloques];
 }
 
 function opcionDePaleta(nombre, color, activa, alElegir) {
@@ -460,7 +586,7 @@ function dibujarPaleta() {
   $('recientes').style.display = usaTiles ? '' : 'none';
   if (usaTiles) {
     dibujarRecientes();
-    contenido.replaceChildren(paletaDeTiles());
+    contenido.replaceChildren(...paletaDeTiles());
   } else if (estado.capa === 'logica') {
     contenido.replaceChildren(...TIPOS_LOGICA.map(t => opcionDePaleta(t.nombre, t.color, estado.logica === t.valor, () => { estado.logica = t.valor; })));
   } else {
@@ -787,6 +913,7 @@ async function iniciar() {
     cargarImagen(imagenTileset, '../../public/assets/tiles/MapTileSet.png'),
     cargarImagen(imagenFondo, IMAGENES_FONDO['fondo-cielo'])
   ]);
+  await prepararPaleta();
   estado.indice = await leerIndice();
   leerOpcionesPrueba();
   conectarEventos();
@@ -799,6 +926,6 @@ async function iniciar() {
 }
 
 // Para el banco de pruebas
-window.editor = { estado, abrir, crear, duplicar, guardar, enviarBorrador, deshacer, rehacer, elegirCapa, elegirHerramienta, opcionesPrueba, direccionDePrueba };
+window.editor = { estado, paleta, irAlTile, abrir, crear, duplicar, guardar, enviarBorrador, deshacer, rehacer, elegirCapa, elegirHerramienta, opcionesPrueba, direccionDePrueba };
 
 iniciar().catch(error => avisar(error.message, 'error'));

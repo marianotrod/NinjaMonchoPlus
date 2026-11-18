@@ -1,0 +1,60 @@
+{
+  "columnas": 32,
+  "secciones": [
+    {
+      "nombre": "Originales",
+      "desde": 0,
+      "hasta": 127
+    },
+    {
+      "nombre": "Castillo",
+      "desde": 160,
+      "hasta": 278
+    },
+    {
+      "nombre": "Bosque",
+      "desde": 320,
+      "hasta": 439
+    },
+    {
+      "nombre": "Cueva: raíces y rocas",
+      "desde": 480,
+      "hasta": 590
+    },
+    {
+      "nombre": "Agua y cascadas",
+      "desde": 640,
+      "hasta": 737
+    },
+    {
+      "nombre": "Acantilados",
+      "desde": 800,
+      "hasta": 860
+    },
+    {
+      "nombre": "Bloques, lava y colinas",
+      "desde": 896,
+      "hasta": 962
+    },
+    {
+      "nombre": "Cueva: estalactitas",
+      "desde": 1024,
+      "hasta": 1119
+    },
+    {
+      "nombre": "Cielo, mar y piedras",
+      "desde": 1152,
+      "hasta": 1247
+    },
+    {
+      "nombre": "Piedras de colores",
+      "desde": 1280,
+      "hasta": 1403
+    },
+    {
+      "nombre": "Cristales",
+      "desde": 1440,
+      "hasta": 1525
+    }
+  ]
+}

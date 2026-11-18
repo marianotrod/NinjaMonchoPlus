@@ -1,0 +1,16 @@
+{
+  "descripcion": "Editor: paleta de tiles por bloques (MapTileSet.json), ocultar vacíos, zoom, ir a un tile y elegir con clic",
+  "pagina": "tools/editor/index.html",
+  "pasos": [
+    {"eval": "(localStorage.removeItem('editor-paleta'), true)"},
+    {"hasta": "window.editor && editor.estado.nivel && document.getElementById('mensaje').textContent === 'Listo'", "timeout": 8000, "nombre": "abre el editor"},
+    {"eval": "(editor.elegirCapa('skin'), true)"},
+    {"verificar": "la hoja nueva (32 columnas) y el mapa abierto coinciden, sin aviso de otro tileset", "eval": "({ columnas: editor.estado.nivel.tileset.columnas, aviso: document.getElementById('mensaje').className === 'error' })", "espera": {"columnas": 32, "aviso": false}},
+    {"verificar": "un bloque por ambiente, con su nombre, todos abiertos al empezar", "eval": "(() => { const b = [...document.querySelectorAll('#contenido-paleta details')]; return { bloques: b.length, primero: b[0].dataset.nombre, segundo: b[1].dataset.nombre, abiertos: b.every(d => d.open) }; })()", "espera": {"bloques": 11, "primero": "Originales", "segundo": "Castillo", "abiertos": true}},
+    {"verificar": "los vacíos no se muestran: Originales tiene 95 tiles con dibujo de 128", "eval": "(() => { const c = document.querySelector('#contenido-paleta details canvas'); const lado = 16 * editor.paleta.zoom; return { tiles: Math.round(c.width / lado) * Math.round(c.height / lado) >= 95 && Math.round(c.width / lado) * (Math.round(c.height / lado) - 1) < 95, vacios: editor.paleta.vacios.has(110) && !editor.paleta.vacios.has(91) }; })()", "espera": {"tiles": true, "vacios": true}},
+    {"verificar": "ir al tile 1050 lo elige y abre su bloque", "eval": "(editor.irAlTile(1050), { tile: editor.estado.tile, bloque: [...document.querySelectorAll('#contenido-paleta details')].find(d => d.open && d.querySelector('small').textContent === '1024-1119') ? true : false })", "espera": {"tile": 1050, "bloque": true}},
+    {"verificar": "un clic en el primer tile del bloque Castillo lo elige", "eval": "(() => { const d = [...document.querySelectorAll('#contenido-paleta details')].find(x => x.dataset.nombre === 'Castillo'); const c = d.querySelector('canvas'); const r = c.getBoundingClientRect(); c.dispatchEvent(new MouseEvent('click', { clientX: r.left + 2, clientY: r.top + 2, bubbles: true })); let primero = 160; while (editor.paleta.vacios.has(primero)) primero++; return { tile: editor.estado.tile, esperado: editor.estado.tile === primero }; })()", "espera": {"esperado": true}},
+    {"verificar": "cerrar todos y zoom ×3 se recuerdan", "eval": "(() => { [...document.querySelectorAll('.controles-paleta button')].find(b => b.textContent === 'cerrar todos').click(); [...document.querySelectorAll('.controles-paleta button')].find(b => b.textContent === '×3').click(); const g = JSON.parse(localStorage.getItem('editor-paleta')); return { abiertos: document.querySelectorAll('#contenido-paleta details[open]').length, zoom: g.zoom, guardados: g.abiertas.length }; })()", "espera": {"abiertos": 0, "zoom": 3, "guardados": 0}},
+    {"eval": "(localStorage.removeItem('editor-paleta'), true)"}
+  ]
+}
