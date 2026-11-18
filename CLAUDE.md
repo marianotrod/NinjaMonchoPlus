@@ -30,7 +30,8 @@ Hace falta un servidor estático (los módulos ES no cargan desde `file://`):
   Los proyectiles viven en un solo grupo (`this.proyectiles`), cada uno con `bando` y `duenio`.
 - Tiles de `MapTileSet.png`: 512 px de ancho (32 columnas); crece hacia abajo y no cambia de ancho. Los bloques con nombre
   de la paleta del editor están en `public/assets/tiles/MapTileSet.json` (`secciones`: nombre, desde, hasta). Los índices especiales están en `TILES` (`config.js`). Los cuadros del fuego se animan solos desde el 91 hasta el primer tile vacío.
-- `public/niveles/`: un JSON por nivel más `indice.json`. `public/assets/`: `musica/`, `sonidos/`, `sprites/` (hojas de cuadros),
+- `public/niveles/`: un JSON por nivel más `indice.json`. Capas: `fondo`, `skin`, `bordes` (opcional: encima del skin, tiles con
+  transparencia para contornos irregulares; solo se escribe si tiene algo), `logica` y `objetos`. Todo el dibujo va detrás de Moncho. `public/assets/`: `musica/`, `sonidos/`, `sprites/` (hojas de cuadros),
   `tiles/` (`MapTileSet.png`), `fondos/`, `graficos/` (sueltos), `pergaminos/`; `sin_usar/` no se carga. `Docs/`: GDD, GDD técnico, lore, `Roadmap.md` y `Bitacora.md`.
 - `tools/editor/`: editor de niveles. Con el juego servido, abrir http://localhost:5501/tools/editor/ en Chrome o Edge.
   Online, Probar no guarda: le pasa el nivel al juego por localStorage (`?debug&borrador`). Junto a Probar se elige en qué

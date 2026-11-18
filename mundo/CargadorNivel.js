@@ -1,5 +1,6 @@
 // CargadorNivel.js
-// Arma un nivel en la escena a partir de su JSON. Las capas "fondo" y "skin" son solo dibujo (índices del tileset);
+// Arma un nivel en la escena a partir de su JSON. Las capas "fondo", "skin" y "bordes" son solo dibujo (índices del tileset);
+// "bordes" (opcional) va encima del skin: tiles con transparencia para contornos irregulares, pasto, raíces.
 // la capa "logica" crea los bloques físicos, que son invisibles. La fila y la columna 0 del archivo están fuera de pantalla.
 // La trampa y el fuego son bloques sólidos. Lo que hacen está en NinjaMonchoScene y en mundo/Fuego.js.
 import { LOGICA, MUNDO, TILES } from '../config.js';
@@ -8,12 +9,15 @@ import { CARAS } from './Fuego.js';
 const aX = (col) => (col - MUNDO.columnasOcultas) * MUNDO.tile + MUNDO.tile / 2;
 const aY = (fila) => (fila - MUNDO.filasOcultas) * MUNDO.tile + MUNDO.tile / 2;
 
+// Profundidad de cada capa de dibujo: detrás de todo lo demás (ninjas, enemigos, ítems) y delante del fondo de la fase
+const PROFUNDIDAD = { fondo: -3, skin: -2, bordes: -1 };
+
 // Devuelve los dibujos por celda, para poder cambiarlos durante el nivel
-function dibujarCapa(scene, grilla, clave) {
+function dibujarCapa(scene, grilla, clave, profundidad) {
   const dibujos = new Map();
   grilla.forEach((fila, f) => fila.forEach((frame, c) => {
-    if (frame === TILES.FUEGO) dibujos.set(`${c},${f}`, scene.add.sprite(aX(c), aY(f), clave, frame).play('tile-fuego'));
-    else if (frame !== -1) dibujos.set(`${c},${f}`, scene.add.image(aX(c), aY(f), clave, frame));
+    if (frame === TILES.FUEGO) dibujos.set(`${c},${f}`, scene.add.sprite(aX(c), aY(f), clave, frame).play('tile-fuego').setDepth(profundidad));
+    else if (frame !== -1) dibujos.set(`${c},${f}`, scene.add.image(aX(c), aY(f), clave, frame).setDepth(profundidad));
   }));
   return dibujos;
 }
@@ -41,7 +45,7 @@ export function cambiarTile(scene, c, f, tipo, frame) {
   bloque.esTrampa = tipo === LOGICA.TRAMPA;
   const clave = `${c},${f}`;
   if (scene.dibujos.has(clave)) scene.dibujos.get(clave).destroy();
-  scene.dibujos.set(clave, scene.add.image(aX(c), aY(f), 'MapTileSet', frame));
+  scene.dibujos.set(clave, scene.add.image(aX(c), aY(f), 'MapTileSet', frame).setDepth(PROFUNDIDAD.skin));
 }
 
 // Doble salto nivel 2: una pasarela temporal en las celdas vacías bajo los pies, alineada a la grilla como cualquier otra
@@ -124,6 +128,7 @@ export function pintarCelda(scene, c, f, tipo) {
     const dibujo = tipo === LOGICA.FUEGO
       ? scene.add.sprite(aX(c), aY(f), 'MapTileSet', TILES.FUEGO).play('tile-fuego')
       : scene.add.image(aX(c), aY(f), 'MapTileSet', DIBUJO_DE[tipo]);
+    dibujo.setDepth(PROFUNDIDAD.skin);
     scene.dibujos.set(clave, dibujo);
   }
   scene.tilesFuego = [];
@@ -133,8 +138,9 @@ export function pintarCelda(scene, c, f, tipo) {
 
 export function construirNivel(scene, nivel) {
   const { clave } = nivel.tileset;
-  dibujarCapa(scene, nivel.capas.fondo, clave);
-  scene.dibujos = dibujarCapa(scene, nivel.capas.skin, clave);
+  dibujarCapa(scene, nivel.capas.fondo, clave, PROFUNDIDAD.fondo);
+  scene.dibujos = dibujarCapa(scene, nivel.capas.skin, clave, PROFUNDIDAD.skin);
+  if (nivel.capas.bordes) dibujarCapa(scene, nivel.capas.bordes, clave, PROFUNDIDAD.bordes);
 
   // Copia de la lógica: los pergaminos pueden cambiar tiles, y el archivo del nivel se usa de nuevo al recomenzar
   scene.logica = nivel.capas.logica.map(fila => [...fila]);

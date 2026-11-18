@@ -6,6 +6,13 @@ const CABECERA = ['id', 'nombre', 'tipo', 'tier', 'jefe', 'musica', 'fondoImagen
 
 const grillaVacia = (valor) => Array.from({ length: MUNDO.filas }, () => Array(MUNDO.columnas).fill(valor));
 const escribirFilas = (grilla) => grilla.map(fila => `      [${fila.join(',')}]`).join(',\n');
+const tieneDibujo = (grilla) => !!grilla && grilla.some(fila => fila.some(frame => frame !== -1));
+
+// Las capas opcionales que falten (niveles viejos sin "bordes") se agregan vacías para poder pintarlas
+export function completarCapas(nivel) {
+  if (!nivel.capas.bordes) nivel.capas.bordes = grillaVacia(-1);
+  return nivel;
+}
 
 export function serializarNivel(nivel) {
   // Los campos que un nivel no tiene no se escriben
@@ -15,6 +22,8 @@ export function serializarNivel(nivel) {
   return `{\n${cabecera}\n  "capas": {\n` +
     `    "fondo": [\n${escribirFilas(nivel.capas.fondo)}\n    ],\n` +
     `    "skin": [\n${escribirFilas(nivel.capas.skin)}\n    ],\n` +
+    // Los bordes se escriben solo si tienen algo: los niveles sin bordes quedan como siempre
+    (tieneDibujo(nivel.capas.bordes) ? `    "bordes": [\n${escribirFilas(nivel.capas.bordes)}\n    ],\n` : '') +
     `    "logica": [\n${escribirFilas(nivel.capas.logica)}\n    ]\n  },\n` +
     `  "objetos": [\n${objetos}\n  ]\n}\n`;
 }
@@ -27,7 +36,7 @@ export function nivelNuevo(id, columnasTileset) {
   return {
     id, nombre: id, tipo: 'normal', tier: 1, jefe: null, musica: null, fondoImagen: 'fondo-cielo', tiempo: null,
     tileset: { clave: 'MapTileSet', columnas: columnasTileset },
-    capas: { fondo: grillaVacia(-1), skin: grillaVacia(-1), logica: grillaVacia(LOGICA.VACIO) },
+    capas: { fondo: grillaVacia(-1), skin: grillaVacia(-1), bordes: grillaVacia(-1), logica: grillaVacia(LOGICA.VACIO) },
     objetos: [
       { tipo: 'spawnJugador', jugador: 1, col: 6, fila: 0 },
       { tipo: 'spawnJugador', jugador: 2, col: 19, fila: 0 }

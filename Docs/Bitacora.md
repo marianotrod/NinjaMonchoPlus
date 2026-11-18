@@ -5,6 +5,17 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-18 - Claude: capa de bordes
+
+- Capa nueva `bordes` en los mapas, encima del skin y detrás de Moncho: tiles con transparencia para contornos irregulares
+  (pasto que sobresale, tierra que se desgrana), así el skin puede ser relleno simple. Solo dibujo: la física sigue en `logica`.
+- Opcional: los mapas sin bordes no cambian (el editor la escribe solo si tiene algo). Editor: capa Bordes (atajo 3; Lógica
+  pasa a 4 y Objetos a 5), visible, copiar y estampar. Juego: profundidades fijas fondo -3, skin -2, bordes -1, para que los
+  tiles que cambian en pleno nivel (trampas, fuego, pincel del gimnasio) no tapen los bordes.
+- Idea pendiente (Mariano): rehacer los tiles de tierra con pasto como juego completo (esquinas, costados, relleno, esquinas
+  internas) y un pincel de terreno en el editor que elija las piezas solo.
+- Escenario `editor_bordes` (4/4).
+
 ## 2026-11-17 - Claude: hoja de tiles nueva y paleta del editor
 
 - `MapTileSet.png` pasó a 512 de ancho (32 columnas): los 110 tiles de antes con el mismo número (0-127), y los ripeados

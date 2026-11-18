@@ -22,8 +22,9 @@ export function cargarNiveles(load) {
 export function validarNivel(id, nivel) {
   if (!nivel) return [`${id}: no se pudo cargar`];
   const errores = [];
-  ['fondo', 'skin', 'logica'].forEach(capa => {
+  ['fondo', 'skin', 'bordes', 'logica'].forEach(capa => {
     const grilla = nivel.capas[capa];
+    if (!grilla && capa === 'bordes') return;  // Opcional
     if (grilla.length !== MUNDO.filas || grilla.some(fila => fila.length !== MUNDO.columnas)) {
       errores.push(`${id}: la capa ${capa} no mide ${MUNDO.columnas}×${MUNDO.filas}`);
     }

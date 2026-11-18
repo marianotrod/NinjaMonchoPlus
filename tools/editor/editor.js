@@ -1,12 +1,12 @@
 // editor.js
 // Editor de niveles de Ninja Moncho. Se abre con el juego servido: http://localhost:5501/tools/editor/
-// Pinta las capas de un nivel (fondo, skin, lógica y objetos) sobre la grilla completa, incluida la zona oculta.
+// Pinta las capas de un nivel (fondo, skin, bordes, lógica y objetos) sobre la grilla completa, incluida la zona oculta.
 import { CONFIG, LOGICA, MUNDO } from '../../config.js';
 import { Bestiario } from '../../datos/Bestiario.js';
 import { EFECTOS } from '../../datos/Pergaminos.js';
 import { i18n } from '../../i18n.js';
 import { CLAVE_BORRADOR, validarNivel } from '../../mundo/Niveles.js';
-import { nivelNuevo } from './formato.js';
+import { completarCapas, nivelNuevo } from './formato.js';
 import { guardarNivel, leerIndice, leerNivel } from './almacen.js';
 
 const T = MUNDO.tile;
@@ -19,6 +19,7 @@ const IMAGENES_FONDO = { 'fondo-cielo': '../../public/assets/fondos/Cielo.webp' 
 const CAPAS = [
   { id: 'fondo', nombre: 'Fondo' },
   { id: 'skin', nombre: 'Skin' },
+  { id: 'bordes', nombre: 'Bordes' },  // Encima del skin, con transparencia: contornos irregulares, pasto
   { id: 'logica', nombre: 'Lógica' },
   { id: 'objetos', nombre: 'Objetos' }
 ];
@@ -31,7 +32,7 @@ const HERRAMIENTAS = [
   { id: 'estampar', nombre: 'Estampar bloque', tecla: 'v' }
 ];
 // Las capas de tiles que se copian, con el valor que significa celda vacía
-const CAPAS_DE_BLOQUE = [['fondo', -1], ['skin', -1], ['logica', LOGICA.VACIO]];
+const CAPAS_DE_BLOQUE = [['fondo', -1], ['skin', -1], ['bordes', -1], ['logica', LOGICA.VACIO]];
 const TIPOS_LOGICA = [
   { valor: LOGICA.SOLIDO, nombre: 'Sólido', color: '#22c55e', letra: 'S' },
   { valor: LOGICA.PASARELA, nombre: 'Pasarela', color: '#3b82f6', letra: 'P' },
@@ -64,7 +65,7 @@ const estado = {
   logica: LOGICA.SOLIDO,
   objeto: 0,
   zoom: 2,
-  visibles: { fondo: true, skin: true, logica: true, objetos: true },
+  visibles: { fondo: true, skin: true, bordes: true, logica: true, objetos: true },
   grilla: true,
   deshacer: [],
   rehacer: [],
@@ -182,7 +183,7 @@ function dibujarGrilla(lado) {
 function dibujarBloqueEn(cursor, lado) {
   const { bloque } = estado;
   ctx.globalAlpha = 0.6;
-  ['fondo', 'skin'].forEach(capa => {
+  ['fondo', 'skin', 'bordes'].forEach(capa => {
     const grilla = bloque.capas[capa];
     if (!grilla) return;
     grilla.forEach((fila, f) => fila.forEach((frame, c) => {
@@ -220,6 +221,7 @@ function dibujar() {
   const { capas } = estado.nivel;
   if (estado.visibles.fondo) dibujarCapaTiles(capas.fondo, lado);
   if (estado.visibles.skin) dibujarCapaTiles(capas.skin, lado);
+  if (estado.visibles.bordes) dibujarCapaTiles(capas.bordes, lado);
   if (estado.visibles.logica) dibujarLogica(lado);
   if (estado.visibles.objetos) dibujarObjetos(lado);
   dibujarZonaOculta(lado);
@@ -582,7 +584,7 @@ function opcionDePaleta(nombre, color, activa, alElegir) {
 function dibujarPaleta() {
   const contenido = $('contenido-paleta');
   const desplazamiento = contenido.scrollTop;
-  const usaTiles = estado.capa === 'fondo' || estado.capa === 'skin';
+  const usaTiles = estado.capa === 'fondo' || estado.capa === 'skin' || estado.capa === 'bordes';
   $('recientes').style.display = usaTiles ? '' : 'none';
   if (usaTiles) {
     dibujarRecientes();
@@ -673,7 +675,7 @@ function dibujarSelector() {
 // Archivos
 // ------------------------------------------
 function ponerNivel(nivel, sucio = false) {
-  estado.nivel = nivel;
+  estado.nivel = completarCapas(nivel);
   estado.deshacer = [];
   estado.rehacer = [];
   marcarSucio(sucio);

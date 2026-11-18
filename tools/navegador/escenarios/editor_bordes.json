@@ -1,0 +1,15 @@
+{
+  "descripcion": "Capa de bordes: en el editor (capa nueva, solo se escribe si tiene algo) y en el juego (encima del skin, detrás de Moncho)",
+  "pagina": "tools/editor/index.html",
+  "pasos": [
+    {"hasta": "window.editor && editor.estado.nivel && document.getElementById('mensaje').textContent === 'Listo'", "timeout": 8000, "nombre": "abre el editor"},
+    {"verificar": "la capa Bordes está entre Skin y Lógica, con su casillero de visible", "eval": "(() => { const b = [...document.querySelectorAll('#capas button')].map(x => x.textContent); return { capas: b.join(','), bordes: Array.isArray(editor.estado.nivel.capas.bordes), visible: editor.estado.visibles.bordes }; })()", "espera": {"capas": "Fondo,Skin,Bordes,Lógica,Objetos", "bordes": true, "visible": true}},
+    {"verificar": "sin nada pintado en bordes, el nivel se escribe igual que antes (sin la capa)", "eval": "(async () => { const { serializarNivel } = await import('./formato.js'); const texto = serializarNivel(editor.estado.nivel); const original = await fetch('../../public/niveles/inicio.json', { cache: 'no-store' }).then(r => r.text()); return { sinBordes: !texto.includes('\"bordes\"'), igual: texto === original.replace(/\\r\\n/g, '\\n') }; })()", "espera": {"sinBordes": true, "igual": true}},
+    {"verificar": "con un tile en bordes, se escribe la capa, entre skin y logica, y se vuelve a leer igual", "eval": "(async () => { const { serializarNivel } = await import('./formato.js'); const n = structuredClone(editor.estado.nivel); n.capas.bordes[10][12] = 330; const texto = serializarNivel(n); const leido = JSON.parse(texto); return { orden: texto.indexOf('\"skin\"') < texto.indexOf('\"bordes\"') && texto.indexOf('\"bordes\"') < texto.indexOf('\"logica\"'), tile: leido.capas.bordes[10][12] }; })()", "espera": {"orden": true, "tile": 330}},
+    {"eval": "(async () => { const n = structuredClone(editor.estado.nivel); n.capas.bordes[18][12] = 330; n.capas.bordes[18][13] = 331; localStorage.setItem('ninja-moncho-borrador', JSON.stringify(n)); location.href = '../../index.html?debug&borrador&mapa=' + n.id + '&nivel=3&enemigos=ninguno'; return true; })()"},
+    {"wait": 800},
+    {"hasta": "window.prueba && prueba.enJuego()", "timeout": 8000, "nombre": "el juego arranca con el borrador"},
+    {"verificar": "el juego dibuja los bordes encima del skin y detrás de Moncho", "eval": "(() => { const s = window.game.scene.getScene('NinjaMonchoScene'); const imgs = s.children.list.filter(o => o.texture && o.texture.key === 'MapTileSet'); const bordes = imgs.filter(o => o.depth === -1); const skin = imgs.filter(o => o.depth === -2); return { bordes: bordes.length, frames: bordes.map(b => Number(b.frame.name)).sort().join(','), skinDebajo: skin.length > 0, monchoEncima: s.jugador.depth > -1 }; })()", "espera": {"bordes": 2, "frames": "330,331", "skinDebajo": true, "monchoEncima": true}},
+    {"eval": "(localStorage.removeItem('ninja-moncho-borrador'), true)"}
+  ]
+}
