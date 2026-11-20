@@ -5,6 +5,15 @@ El detalle fino de cada cambio está en `git log`.
 
 ---
 
+## 2026-11-19 - Claude: copiar bloques de la hoja en el editor
+
+- Paleta "como en la hoja" (32 columnas, con los vacíos y barra horizontal): se activa sola con Copiar bloque (C) o con su
+  botón. Arrastrar un rectángulo copia ese bloque de la hoja en la capa de tiles elegida (fondo, skin o bordes) y deja lista
+  la herramienta Estampar (V). Un clic sin arrastrar elige el tile, como siempre.
+- `tools/uso_tiles.py`: qué tiles usan los mapas y cuáles quedaron vacíos en la hoja (para revisar la hoja sin romper mapas).
+  Mariano no va a tocar los primeros 110 tiles; arma patrones nuevos del 128 en adelante.
+- `editor_paleta` (9/9); pasan `editor` y `editor_bordes`.
+
 ## 2026-11-18 - Claude: capa de bordes
 
 - Capa nueva `bordes` en los mapas, encima del skin y detrás de Moncho: tiles con transparencia para contornos irregulares

@@ -422,10 +422,10 @@ function dibujarRecientes() {
 // Los tiles se muestran por número, acomodados al ancho del panel, en bloques plegables. Los bloques (y sus nombres)
 // salen de public/assets/tiles/MapTileSet.json; si no está, bloques de 128. Las preferencias quedan en el navegador.
 const CLAVE_PALETA = 'editor-paleta';
-const paleta = { zoom: 2, ocultarVacios: true, abiertas: null, secciones: [], vacios: new Set() };
+const paleta = { zoom: 2, ocultarVacios: true, comoHoja: false, abiertas: null, secciones: [], vacios: new Set() };
 try { Object.assign(paleta, JSON.parse(localStorage.getItem(CLAVE_PALETA)) || {}); } catch (e) {}
 const guardarPaleta = () => {
-  try { localStorage.setItem(CLAVE_PALETA, JSON.stringify({ zoom: paleta.zoom, ocultarVacios: paleta.ocultarVacios, abiertas: paleta.abiertas })); } catch (e) {}
+  try { localStorage.setItem(CLAVE_PALETA, JSON.stringify({ zoom: paleta.zoom, ocultarVacios: paleta.ocultarVacios, comoHoja: paleta.comoHoja, abiertas: paleta.abiertas })); } catch (e) {}
 };
 
 // Qué tiles están vacíos (sin ningún píxel visible) y en qué bloques se agrupan
@@ -490,6 +490,96 @@ function lienzoDeSeccion(seccion, anchoPanel) {
   return lienzo;
 }
 
+// La paleta se ve como en la hoja (32 columnas, con los vacíos) si se pidió o si se está por copiar un bloque
+const vistaHoja = () => paleta.comoHoja || estado.herramienta === 'copiar';
+const capaDeTiles = () => (['fondo', 'skin', 'bordes'].includes(estado.capa) ? estado.capa : 'skin');
+
+// Copia un rectángulo de la hoja como bloque, en la capa de tiles elegida; queda listo para estampar (V)
+function copiarDeHoja(col1, fila1, col2, fila2) {
+  const cols = columnasTileset();
+  const [c1, c2] = [Math.min(col1, col2), Math.max(col1, col2)];
+  const [f1, f2] = [Math.min(fila1, fila2), Math.max(fila1, fila2)];
+  const grilla = [];
+  for (let f = f1; f <= f2; f++) {
+    const fila = [];
+    for (let c = c1; c <= c2; c++) { const n = f * cols + c; fila.push(paleta.vacios.has(n) ? -1 : n); }
+    grilla.push(fila);
+  }
+  const capa = capaDeTiles();
+  estado.bloque = { ancho: c2 - c1 + 1, alto: f2 - f1 + 1, capas: { [capa]: grilla } };
+  elegirHerramienta('estampar');
+  avisar(`Bloque de ${estado.bloque.ancho}×${estado.bloque.alto} copiado de la hoja (capa ${capa}): V lo estampa`, 'ok');
+}
+
+// Un bloque de la paleta tal como está en la hoja: las filas que ocupa, enteras. Lo que es de otro bloque se ve apagado.
+// Clic elige un tile; arrastrar (o clic con Copiar bloque) copia el rectángulo.
+function lienzoHojaDeSeccion(seccion) {
+  const cols = columnasTileset(), lado = T * paleta.zoom;
+  const fila0 = Math.floor(seccion.desde / cols), filas = Math.floor(seccion.hasta / cols) - fila0 + 1;
+  const lienzo = document.createElement('canvas');
+  lienzo.className = 'tiles-seccion hoja';
+  lienzo.width = cols * lado;
+  lienzo.height = filas * lado;
+  const pincel = lienzo.getContext('2d');
+  pincel.imageSmoothingEnabled = false;
+  let seleccion = null;
+  const pintar = () => {
+    pincel.fillStyle = '#000';
+    pincel.fillRect(0, 0, lienzo.width, lienzo.height);
+    for (let f = 0; f < filas; f++) for (let c = 0; c < cols; c++) {
+      const n = (fila0 + f) * cols + c;
+      pincel.globalAlpha = n < seccion.desde || n > seccion.hasta ? 0.3 : 1;
+      dibujarTile(pincel, n, c * lado, f * lado, lado);
+    }
+    pincel.globalAlpha = 1;
+    const elegido = estado.tile - fila0 * cols;
+    if (elegido >= 0 && elegido < filas * cols) {
+      pincel.strokeStyle = '#fbbf24';
+      pincel.lineWidth = 2;
+      pincel.strokeRect((elegido % cols) * lado + 1, Math.floor(elegido / cols) * lado + 1, lado - 2, lado - 2);
+    }
+    if (seleccion) {
+      const [c1, c2] = [Math.min(seleccion.c1, seleccion.c2), Math.max(seleccion.c1, seleccion.c2)];
+      const [f1, f2] = [Math.min(seleccion.f1, seleccion.f2), Math.max(seleccion.f1, seleccion.f2)];
+      pincel.strokeStyle = '#facc15';
+      pincel.lineWidth = 2;
+      pincel.strokeRect(c1 * lado + 1, f1 * lado + 1, (c2 - c1 + 1) * lado - 2, (f2 - f1 + 1) * lado - 2);
+    }
+  };
+  const celda = (evento) => ({ c: Math.min(cols - 1, Math.max(0, Math.floor(evento.offsetX / lado))), f: Math.min(filas - 1, Math.max(0, Math.floor(evento.offsetY / lado))) });
+  lienzo.addEventListener('mousedown', (evento) => {
+    if (evento.button !== 0) return;
+    const { c, f } = celda(evento);
+    seleccion = { c1: c, f1: f, c2: c, f2: f };
+    pintar();
+  });
+  lienzo.addEventListener('mousemove', (evento) => {
+    const { c, f } = celda(evento);
+    lienzo.title = `Tile ${(fila0 + f) * cols + c}`;
+    if (!seleccion || !(evento.buttons & 1)) return;
+    seleccion.c2 = c;
+    seleccion.f2 = f;
+    pintar();
+  });
+  const soltar = () => {
+    if (!seleccion) return;
+    const { c1, f1, c2, f2 } = seleccion;
+    seleccion = null;
+    const unSolo = c1 === c2 && f1 === f2;
+    if (unSolo && estado.herramienta !== 'copiar') {
+      const n = (fila0 + f1) * cols + c1;
+      if (!paleta.vacios.has(n)) elegirTile(n);
+      dibujarPaleta();
+      return;
+    }
+    copiarDeHoja(c1, fila0 + f1, c2, fila0 + f2);
+  };
+  lienzo.addEventListener('mouseup', soltar);
+  lienzo.addEventListener('mouseleave', (evento) => { if (seleccion && (evento.buttons & 1)) soltar(); else { seleccion = null; pintar(); } });
+  pintar();
+  return lienzo;
+}
+
 // Zoom, ocultar vacíos, ir a un tile, abrir o cerrar todos
 function controlesDePaleta() {
   const caja = document.createElement('div');
@@ -523,7 +613,12 @@ function controlesDePaleta() {
   const cerrarTodos = document.createElement('button');
   cerrarTodos.textContent = 'cerrar todos';
   cerrarTodos.addEventListener('click', todos(false));
-  caja.append(...zoom, vacios, ir, abrirTodos, cerrarTodos);
+  const hoja = document.createElement('button');
+  hoja.textContent = 'como en la hoja';
+  hoja.title = 'Ver los bloques como están en la hoja (32 columnas): arrastrando se copia un bloque. Con Copiar bloque (C) se ve así solo.';
+  if (vistaHoja()) hoja.className = 'activo';
+  hoja.addEventListener('click', () => { paleta.comoHoja = !paleta.comoHoja; guardarPaleta(); dibujarPaleta(); });
+  caja.append(...zoom, hoja, vacios, ir, abrirTodos, cerrarTodos);
   return caja;
 }
 
@@ -554,12 +649,13 @@ function paletaDeTiles() {
     rango.textContent = `${seccion.desde}-${seccion.hasta}`;
     titulo.append(rango);
     bloque.append(titulo);
-    if (bloque.open) bloque.append(lienzoDeSeccion(seccion, ancho));
+    const lienzoDe = () => (vistaHoja() ? lienzoHojaDeSeccion(seccion) : lienzoDeSeccion(seccion, ancho));
+    if (bloque.open) bloque.append(lienzoDe());
     bloque.addEventListener('toggle', () => {
       paleta.abiertas = paleta.abiertas.filter(n => n !== seccion.nombre);
       if (bloque.open) paleta.abiertas.push(seccion.nombre);
       guardarPaleta();
-      if (bloque.open && !bloque.querySelector('canvas')) bloque.append(lienzoDeSeccion(seccion, ancho));
+      if (bloque.open && !bloque.querySelector('canvas')) bloque.append(lienzoDe());
     });
     return bloque;
   });
@@ -633,8 +729,10 @@ function elegirCapa(capa) {
 }
 
 function elegirHerramienta(herramienta) {
+  const antes = vistaHoja();
   estado.herramienta = herramienta;
   dibujarBotones();
+  if (vistaHoja() !== antes && paleta.secciones.length) dibujarPaleta();
 }
 
 function campoDePropiedad({ clave, etiqueta, opciones, numero }) {
@@ -928,6 +1026,6 @@ async function iniciar() {
 }
 
 // Para el banco de pruebas
-window.editor = { estado, paleta, irAlTile, abrir, crear, duplicar, guardar, enviarBorrador, deshacer, rehacer, elegirCapa, elegirHerramienta, opcionesPrueba, direccionDePrueba };
+window.editor = { estado, paleta, irAlTile, copiarDeHoja, abrir, crear, duplicar, guardar, enviarBorrador, deshacer, rehacer, elegirCapa, elegirHerramienta, opcionesPrueba, direccionDePrueba };
 
 iniciar().catch(error => avisar(error.message, 'error'));
